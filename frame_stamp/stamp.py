@@ -4,17 +4,21 @@ from PIL import Image, ImageDraw
 from .shape import get_shape_class
 from .utils.exceptions import PresetError
 from .utils import exceptions
+from pathlib import Path
+import cgflogging
+
+logger = cgflogging.getLogger(__name__)
 
 
 class FrameStamp(object):
     class FORMAT:
+        # должно совпадать со списокм форматов из Image.SAVE
         JPG = "JPEG"
         PNG = "PNG"
 
     def __init__(self, preset, variables, **kwargs):
         self._preset = preset
-        self.defaults = {}
-        self.variables = variables
+        self._variables = variables
         self._shapes = []
         self._scope = {}
         self._source = None
@@ -28,6 +32,16 @@ class FrameStamp(object):
             shape_cls = get_shape_class(shape_type)     # type: BaseShape
             shape = shape_cls(shape_config, self, **kwargs)
             self.add_shape(shape)
+
+    @property
+    def variables(self):
+        v = self._variables.copy()
+        v.update(self.preset.get('vars', {}))
+        return v
+
+    @property
+    def defaults(self):
+        return self.preset.get('defaults', {})
 
     @property
     def scope(self):
@@ -76,38 +90,49 @@ class FrameStamp(object):
         """
         return self._shapes
 
-    def set_source(self, draw):
-        self._source = draw
+    @property
+    def source(self):
+        return self._source
 
-    def render(self, input_path: str, output_path: str, context: dict, **kwargs):
+    def set_source(self, input_path):
+        img = Image.open(input_path).convert('RGBA')  # type: Image
+        self._source = img
+
+    def render(self, output_path: str, **kwargs):
         """
         Рендер всех шейп на кадре
 
         Parameters
         ----------
-        input_path
         output_path
-        context: dict
         kwargs
 
         Returns
         -------
         str
         """
+        if not self.source:
+            raise RuntimeError('Source image not set')
         # формат файла
         frmt = self._get_output_format(output_path)
-        # создание объекта Image
-        img = Image.open(input_path)    # type: Image
-        if frmt == self.FORMAT.PNG:
-            img = img.convert('RGBA')
-        # создание объекта Draw
-        painter = ImageDraw.Draw(img)
-        self.set_source(painter)
-        # рисование всех шейп
+        # создаём новый пустой слой по размеру исходника
+        overlay = Image.new('RGBA', self.source.size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(overlay)
+        # рисование всех шейп на слое
         for shape in self.get_shapes():     # type: BaseShape
-            shape.render(painter, **kwargs)
-        img.save(output_path, frmt)
+            logger.debug('Render shape %s', shape)
+            # переменные для рендера берутся из словаря self.variables
+            shape.render(draw, **kwargs)
+        # склеивание исходника и слоя
+        out = Image.alpha_composite(self.source, overlay)
+        # сохраняем отрендеренный файл в формате RGB
+        logger.debug('Save format %s to file %s', frmt, output_path)
+        out.convert("RGB").save(output_path, frmt)
         return output_path
 
     def _get_output_format(self, path):
-        return self.FORMAT.PNG
+        path = Path(path)
+        if path.suffix.strip('.') == 'jpg':
+            return self.FORMAT.JPG
+        elif path.suffix.strip('.') == 'png':
+            return self.FORMAT.PNG

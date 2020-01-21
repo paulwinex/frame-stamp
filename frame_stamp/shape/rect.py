@@ -5,17 +5,20 @@ from .base_shape import BaseShape
 class RectShape(BaseShape):
     shape_name = 'rect'
 
-    def top(self, absolute=False):
-        pass
+    @property
+    def top(self):
+        return self.y0
 
-    def left(self, absolute=False):
-        pass
+    @property
+    def left(self):
+        return self.x0
 
-    def bottom(self, absolute=False):
-        pass
+    @property
+    def bottom(self):
+        return self.y1
 
-    def right(self, absolute=False):
-        pass
+    def right(self):
+        return self.x1
 
     @property
     def x(self):
@@ -31,7 +34,7 @@ class RectShape(BaseShape):
 
     @property
     def x1(self):
-        return
+        return self.x0+self.width
 
     @property
     def y0(self):
@@ -39,20 +42,23 @@ class RectShape(BaseShape):
 
     @property
     def y1(self):
-        return
+        return self.y0+self.height
 
+    @property
     def width(self):
         return self._eval_parameter('width')
 
+    @property
     def height(self):
         return self._eval_parameter('hight')
 
-    def center(self, absolute=False):
-        pass
-
     @property
-    def color(self):
-        return 'red'
+    def center(self):
+        return
 
-    def render(self, painter, **kwargs):
-        return painter.rectangle([self.x0, self.y0, self.x1, self.y1], self.color)
+    def render(self, img, **kwargs):
+        img.rectangle([(self.x0, self.y0), (self.x1, self.y1)], self.color)
+
+    def text_line(self, line_num):
+        text_size = self.defaults.get('text_size', 14)
+        pass
