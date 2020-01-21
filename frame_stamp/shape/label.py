@@ -13,8 +13,9 @@ class LabelShape(BaseShape):
         y
         text
         text_color
+        text_spacing
         font_size
-        font
+        font_name
         margin
         bound:  (100, 0)
         parent
@@ -34,6 +35,10 @@ class LabelShape(BaseShape):
         if size == 0:
             raise ValueError('Font size can`t be zero. Shape "{}"'.format(self))
         return size
+
+    @property
+    def spacing(self):
+        return self._eval_parameter('text_spacing')
 
     @property
     def font(self):
@@ -65,16 +70,29 @@ class LabelShape(BaseShape):
     def text_color(self):
         return self._eval_parameter('text_color')
 
+    @property
+    def text_margin(self):
+        return self._eval_parameter('text_margin')
+
     def render(self, img, **kwargs):
         bound = self.bound
+        is_multiline = '\n' in self.text
+        printer = img.multiline_text if is_multiline else img.text
+        text_args = dict(
+            font=self.font,
+            fill=self.text_color
+        )
+        if is_multiline:
+
+            text_args['spacing'] = self.spacing
         if bound:
             # todo: не реализовано!
             import textwrap
             margin = offset = 40
             for line in textwrap.wrap(self.text, width=40):
-                img.text((margin, offset), line, font=self.font, fill=self.text_color)
+                printer((margin, offset), line, **text_args)
                 offset += self.font.getsize(line)[1]
         else:
-            img.text((self.x, self.y), self.text, font=self.font, fill=self.text_color)
+            printer((self.x+self.text_margin, self.y+self.text_margin), self.text, **text_args)
 
 

@@ -4,15 +4,17 @@ import re
 from PIL.ImageDraw import ImageDraw
 
 
-class BaseShape(object):
+class AbstractShape(object):
     shape_name = None
     __instances__ = {}
 
     def __init__(self, shape_data, renderer, **kwargs):
+        if shape_data.get('id') == 'parent':
+            raise NameError('ID cannot be named as "parent"')
         self._data = shape_data
-        self.renderer = ref(renderer)   # type: FrameStamp
+        self.renderer = ref(renderer)
 
-        self._parent = None
+        self._parent = DefaultParent(renderer)
         if 'parent' in shape_data:
             if shape_data['parent'] not in self.scope:
                 raise RuntimeError('Parent object {} not found in scope. Maybe parent object not defined yet?')
@@ -47,36 +49,18 @@ class BaseShape(object):
     @property
     def render_variables(self):
         return dict(
-            source_width=self.source_size()[0],
-            source_height=self.source_size()[1]
+            source_width=self.renderer().source.size[0],
+            source_height=self.renderer().source.size[1]
         )
 
     @property
     def scope(self):
         return {k: v for k, v in self.renderer().scope.items() if k != self.id}
+    #
+    # def source_size(self):
+    #     return self.renderer().source.size
 
-    def source_size(self):
-        return self.renderer().source.size
-
-    @property
-    def color(self):
-        return self._eval_parameter('color')
-
-    @property
-    def x(self):
-        val = self._eval_parameter('x')
-        if self.parent:
-            return self.parent.x + val
-        return val
-
-    @property
-    def y(self):
-        val = self._eval_parameter('y')
-        if self.parent:
-            return self.parent.y + val
-        return val
-
-    def _eval_parameter(self, key: str, default_key=None):
+    def _eval_parameter(self, key: str, default_key=None, **kwargs):
         """
         Получение значения параметра по имени из данных шейпы
 
@@ -92,7 +76,7 @@ class BaseShape(object):
             raise KeyError(f'Key "{key}" not found')
         return self._eval_parameter_convert(key, val) or val
 
-    def _eval_parameter_convert(self, key, val: str, default_key=None):
+    def _eval_parameter_convert(self, key, val: str, **kwargs):
         """
         Получение реального значения параметра
 
@@ -117,11 +101,11 @@ class BaseShape(object):
                      self._eval_from_scope,
                      self._eval_from_variables,
                      self._eval_expression]:
-            res = func(key, val, default_key=default_key)
+            res = func(key, val, **kwargs)
             if res is not None:
                 return res
 
-    def _eval_percent_of_default(self, key, val, default_key=None):
+    def _eval_percent_of_default(self, key, val, **kwargs):
         """
         Вычисление процентного отношения от дефолного значения
 
@@ -141,7 +125,7 @@ class BaseShape(object):
         if not match:
             return
         percent = float(match.group(1))
-        default = self.defaults.get(default_key or key)
+        default = kwargs.get('default_value', self.defaults.get(kwargs.get('default_key') or key))
         if default is None:
             raise KeyError('No default value for key {}'.format(key))
         if isinstance(percent, (float, int)):
@@ -149,7 +133,7 @@ class BaseShape(object):
         else:
             raise TypeError('Percent value must be int or float, not {}'.format(type(percent)))
 
-    def _eval_from_scope(self, key:str, val: str, default_key=None):
+    def _eval_from_scope(self, key:str, val: str, **kwargs):
         """
         Обращение к значениям параметрам других шейп
 
@@ -167,12 +151,14 @@ class BaseShape(object):
         name, attr = match.groups()
         if name == self.id:
             raise RecursionError('')
+        if name == 'parent':
+            return getattr(self.parent, attr)
         if name not in self.scope:
             # raise ValueError('Name "{}" not exists'.format(name))
             return
         return getattr(self.scope[name], attr)
 
-    def _eval_from_variables(self, key:str, val: str, default_key=None):
+    def _eval_from_variables(self, key:str, val: str, **kwargs):
         """
         Получение значения из глобального контекста переменных
 
@@ -197,7 +183,7 @@ class BaseShape(object):
         else:
             raise KeyError('No key "{}" in context or defaults'.format(variable))
 
-    def _eval_expression(self, key: str, expr: str, default_key=None):
+    def _eval_expression(self, key: str, expr: str, **kwargs):
         """
         Выполнение экспрешена. Экспрешен должен бысть строкой, начинающийся со знака "="
 
@@ -225,3 +211,54 @@ class BaseShape(object):
     def render(self, img: ImageDraw, **kwargs):
         pass
 
+
+class DefaultParent:
+    def __init__(self, renderer):
+        self._renderer = ref(renderer)
+
+    @property
+    def _source(self):
+        return self._renderer().source
+
+    @property
+    def x(self):
+        return 0
+
+    @property
+    def y(self):
+        return 0
+
+    @property
+    def width(self):
+        return self._source.size[0]
+
+    @property
+    def height(self):
+        return self._source.size[1]
+
+    @property
+    def size(self):
+        return self._source.size
+
+
+class BaseShape(AbstractShape):
+
+    @property
+    def color(self):
+        return self._eval_parameter('color')
+
+    @property
+    def x(self):
+        val = self._eval_parameter('x')
+        if val < 0:
+            return self.parent.width + val
+        else:
+            return self.parent.x + val
+
+    @property
+    def y(self):
+        val = self._eval_parameter('y')
+        if val < 0:
+            return self.parent.height + val
+        else:
+            return self.parent.y + val
