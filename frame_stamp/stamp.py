@@ -127,7 +127,7 @@ class FrameStamp(object):
         out = Image.alpha_composite(self.source, overlay)
         # сохраняем отрендеренный файл в формате RGB
         logger.debug('Save format %s to file %s', frmt, output_path)
-        out.convert("RGB").save(output_path, frmt)
+        out.convert("RGB").save(output_path, frmt, quality=100)
         return output_path
 
     def _get_output_format(self, path):

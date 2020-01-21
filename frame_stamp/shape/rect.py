@@ -3,6 +3,17 @@ from .base_shape import BaseShape
 
 
 class RectShape(BaseShape):
+    """
+    Прямоугольник
+
+    Allowed parameters:
+        x
+        y
+        width
+        hight
+        color
+
+    """
     shape_name = 'rect'
 
     @property
@@ -21,28 +32,20 @@ class RectShape(BaseShape):
         return self.x1
 
     @property
-    def x(self):
-        return self.x0
-
-    @property
-    def y(self):
-        return self.y0
-
-    @property
     def x0(self):
-        return self._eval_parameter('x')
+        return self.x
 
     @property
     def x1(self):
-        return self.x0+self.width
+        return self.x0 + self.width
 
     @property
     def y0(self):
-        return self._eval_parameter('y')
+        return self.y
 
     @property
     def y1(self):
-        return self.y0+self.height
+        return self.y0 + self.height
 
     @property
     def width(self):
@@ -54,11 +57,15 @@ class RectShape(BaseShape):
 
     @property
     def center(self):
-        return
+        return (
+            (self.x0+self.x1)/2,
+            (self.y0+self.y1)/2
+        )
+
+    @property
+    def bound(self):
+        return self.x0, self.y0, self.y0, self.y1
 
     def render(self, img, **kwargs):
         img.rectangle([(self.x0, self.y0), (self.x1, self.y1)], self.color)
 
-    def text_line(self, line_num):
-        text_size = self.defaults.get('text_size', 14)
-        pass
