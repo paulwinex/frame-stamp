@@ -58,14 +58,10 @@ class ImageShape(BaseShape):
             if not source:
                 raise RuntimeError('Image source not set')
             img = self._get_image(source)
-            # применение маски
-            # mask = self.mask
-            # if mask:
-            #     img.putalpha(mask)
-            # else:
-            #     print('put int alpha')
-            #     img.putalpha(int(255*self.transparency))
-            #     # mask = Image.new('L', img.size, color=int(255*self.transparency))
+            # применение прозрачности
+            # transp = self.transparency
+            # if transp:
+            #      img.putalpha(min(max(int(255*transp), 0), 255))
             # ресайз
             if self.keep_aspect:
                 img.thumbnail(self.size, Image.ANTIALIAS)
@@ -75,20 +71,19 @@ class ImageShape(BaseShape):
             self.__dict__['_saved_source'] = img.convert('RGBA')
         return self.__dict__['_saved_source']
 
-    @property
-    def mask(self):
-        if '_saved_mask' not in self.__dict__:
-            mask = self._data.get('mask')
-            if not mask:
-                print('No mask')
-                return
-            img = self._get_image(mask)
-            if self.keep_aspect:
-                img.thumbnail(self.size, Image.ANTIALIAS)
-            else:
-                img = img.resize(self.size, Image.ANTIALIAS)
-            self.__dict__['_saved_mask'] = img.convert('L')
-        return self.__dict__['_saved_mask']
+    # @property
+    # def mask(self):
+    #     if '_saved_mask' not in self.__dict__:
+    #         mask = self._data.get('mask')
+    #         if not mask:
+    #             return
+    #         img = self._get_image(mask)
+    #         if self.keep_aspect:
+    #             img.thumbnail(self.size, Image.ANTIALIAS)
+    #         else:
+    #             img = img.resize(self.size, Image.ANTIALIAS)
+    #         self.__dict__['_saved_mask'] = img.convert('L')
+    #     return self.__dict__['_saved_mask']
 
     @property
     def width(self):
@@ -103,9 +98,9 @@ class ImageShape(BaseShape):
     def size(self):
         return self.width, self. height
 
-    @property
-    def transparency(self):
-        return self._eval_parameter('transparency', default=1)
+    # @property
+    # def transparency(self):
+    #     return self._eval_parameter('transparency', default=1)
 
     @property
     def keep_aspect(self):
