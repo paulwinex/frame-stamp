@@ -56,9 +56,10 @@ class AbstractShape(object):
     @property
     def scope(self):
         return {k: v for k, v in self.renderer().scope.items() if k != self.id}
-    #
-    # def source_size(self):
-    #     return self.renderer().source.size
+
+    @property
+    def source_image(self):
+        return self.renderer().source
 
     def _eval_parameter(self, key: str, default_key=None, **kwargs):
         """
@@ -73,6 +74,8 @@ class AbstractShape(object):
         if val is None:
             val = self.defaults.get(default_key or key)
         if val is None:
+            if 'default' in kwargs:
+                return kwargs['default']
             raise KeyError(f'Key "{key}" not found')
         return self._eval_parameter_convert(key, val) or val
 
@@ -150,9 +153,12 @@ class AbstractShape(object):
             return
         name, attr = match.groups()
         if name == self.id:
-            raise RecursionError('')
+            raise RecursionError('Don`t use ID of same object in itself expression. '
+                                 'Use name "self": "x": "=-10-self.width.')
         if name == 'parent':
             return getattr(self.parent, attr)
+        if name == 'self':
+            return getattr(self, attr)
         if name not in self.scope:
             # raise ValueError('Name "{}" not exists'.format(name))
             return
@@ -209,7 +215,7 @@ class AbstractShape(object):
         return res
 
     def render(self, img: ImageDraw, **kwargs):
-        pass
+        raise NotImplementedError
 
 
 class DefaultParent:
@@ -251,14 +257,14 @@ class BaseShape(AbstractShape):
     def x(self):
         val = self._eval_parameter('x')
         if val < 0:
-            return self.parent.width + val
+            return int(self.parent.x + self.parent.width + val)
         else:
-            return self.parent.x + val
+            return int(self.parent.x + val)
 
     @property
     def y(self):
         val = self._eval_parameter('y')
         if val < 0:
-            return self.parent.height + val
+            return int(self.parent.y + self.parent.height + val)
         else:
-            return self.parent.y + val
+            return int(self.parent.y + val)

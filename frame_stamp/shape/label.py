@@ -9,16 +9,17 @@ class LabelShape(BaseShape):
     Текст
 
     Allowed parameters:
-        x
-        y
-        text
-        text_color
-        text_spacing
-        font_size
-        font_name
-        margin
-        bound:  (100, 0)
-        parent
+        x                  : Координата Х
+        y                  : Координата У
+        text               : Текст. Поддерживается форматирование переменных их конеткста "Project: $project_name"
+        text_color         : Цвет текста
+        text_spacing       : Расстояние между строк в многосточном тексте. По умолчанию 0
+        font_size          : Размер шрифта
+        font_name          : Используемый шрифт
+        text_margin        : Отступ текста от указанных координат
+        bound:  (100, 0)   : Допустимый объем для текста. Также можно использовать для выравнивания TODO
+        alight             : Направление выравнивания   TODO
+        parent             : Родительский объект
     """
     shape_name = 'label'
 
@@ -73,6 +74,13 @@ class LabelShape(BaseShape):
     @property
     def text_margin(self):
         return self._eval_parameter('text_margin')
+
+    # def center_text(img, font, text, color=(255, 255, 255)):  todo
+    #     draw = ImageDraw.Draw(img)
+    #     text_width, text_height = draw.textsize(text, font)
+    #     position = ((strip_width - text_width) / 2, (strip_height - text_height) / 2)
+    #     draw.text(position, text, color, font=font)
+    #     return img
 
     def render(self, img, **kwargs):
         bound = self.bound

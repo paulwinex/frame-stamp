@@ -95,10 +95,41 @@ class FrameStamp(object):
         return self._source
 
     def set_source(self, input_path):
-        img = Image.open(input_path).convert('RGBA')  # type: Image
-        self._source = img
+        self._source = Image.open(input_path).convert('RGBA')  # type: Image
 
     def render(self, output_path: str, **kwargs):
+        """
+        Рендер всех шейп на кадре
+
+        Parameters
+        ----------
+        output_path
+        kwargs
+
+        Returns
+        -------
+        str
+        """
+        if not self.source:
+            raise RuntimeError('Source image not set')
+        # формат файла
+        frmt = self._get_output_format(output_path)
+        for shape in self.get_shapes():     # type: BaseShape
+            # создаём новый пустой слой по размеру исходника
+            overlay = Image.new('RGBA', self.source.size, (0, 0, 0, 0))
+            draw = ImageDraw.Draw(overlay)
+            # рисование всех шейп на слое
+            logger.debug('Render shape %s', shape)
+            # переменные для рендера берутся из словаря self.variables
+            shape.render(draw, **kwargs)
+            self._source = Image.alpha_composite(self.source, overlay)
+        # склеивание исходника и слоя
+        # сохраняем отрендеренный файл в формате RGB
+        logger.debug('Save format %s to file %s', frmt, output_path)
+        self._source.convert("RGB").save(output_path, frmt, quality=100)
+        return output_path
+
+    def render1(self, output_path: str, **kwargs):
         """
         Рендер всех шейп на кадре
 

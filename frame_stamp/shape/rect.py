@@ -12,6 +12,8 @@ class RectShape(BaseShape):
         width
         hight
         color
+        border_color
+        border_width
 
     """
     shape_name = 'rect'
@@ -28,6 +30,7 @@ class RectShape(BaseShape):
     def bottom(self):
         return self.y1
 
+    @property
     def right(self):
         return self.x1
 
@@ -66,6 +69,25 @@ class RectShape(BaseShape):
     def bound(self):
         return self.x0, self.y0, self.y0, self.y1
 
+    @property
+    def border_width(self):
+        return self._eval_parameter('border_width', default=0)
+
+    @property
+    def border_color(self):
+        return self._eval_parameter('border_color', default='black')
+
     def render(self, img, **kwargs):
         img.rectangle([(self.x0, self.y0), (self.x1, self.y1)], self.color)
+        border = self.border_width
+        if border:
+            # img.rectangle([(self.x0, self.y0), (self.x1, self.y1)], outline='red')
+            points = [
+                (self.left, self.top),
+                (self.right, self.top),
+                (self.right, self.bottom),
+                (self.left, self.bottom),
+                (self.left, self.top)
+            ]
+            img.line(points, self.border_color, self.border_width)
 
