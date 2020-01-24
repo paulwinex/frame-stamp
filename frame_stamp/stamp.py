@@ -16,19 +16,19 @@ class FrameStamp(object):
         JPG = "JPEG"
         PNG = "PNG"
 
-    def __init__(self, preset, variables, **kwargs):
-        self._preset = preset
+    def __init__(self, template, variables, **kwargs):
+        self._template = template
         self._variables = variables
         self._shapes = []
         self._scope = {}
         self._source = None
-        self._create_shapes_from_preset(**kwargs)
+        self._create_shapes_from_template(**kwargs)
 
-    def _create_shapes_from_preset(self, **kwargs):
-        for shape_config in self.preset['shapes']:
+    def _create_shapes_from_template(self, **kwargs):
+        for shape_config in self.template['shapes']:
             shape_type = shape_config.pop('type', None)
             if not shape_type:
-                raise PresetError('Shape type not defined in preset element')
+                raise PresetError('Shape type not defined in template element')
             shape_cls = get_shape_class(shape_type)     # type: BaseShape
             shape = shape_cls(shape_config, self, **kwargs)
             self.add_shape(shape)
@@ -36,28 +36,27 @@ class FrameStamp(object):
     @property
     def variables(self):
         v = self._variables.copy()
-        v.update(self.preset.get('vars', {}))
+        v.update(self.template.get('vars', {}))
         return v
 
     @property
     def defaults(self):
-        return self.preset.get('defaults', {})
+        return self.template.get('defaults', {})
 
     @property
     def scope(self):
         return self._scope
 
     @property
-    def preset(self):
+    def template(self):
         """
-        Текущий пресет с применёнными оверрайдами
+        Текущий шаблон с применёнными оверрайдами
 
         Returns
         -------
         dict
         """
-
-        return self._preset
+        return self._template
 
     def add_shape(self, shape, **kwargs):
         """
@@ -94,26 +93,31 @@ class FrameStamp(object):
     def source(self):
         return self._source
 
-    def set_source(self, input_path):
-        self._source = Image.open(input_path).convert('RGBA')  # type: Image
+    def set_source(self, input_image):
+        if Image.isImageType(input_image):
+            self._source = input_image.convert('RGBA')  # type: Image.Image
+        elif isinstance(input_image, str):
+            self._source = Image.open(input_image).convert('RGBA')  # type: Image.Image
 
-    def render(self, output_path: str, **kwargs):
+    def render(self, input_image: str=None, save_path: str=None, **kwargs):
         """
         Рендер всех шейп на кадре
 
         Parameters
         ----------
-        output_path
+        input_image
+        save_path
         kwargs
 
         Returns
         -------
         str
         """
+        if input_image:
+            self.set_source(input_image)
         if not self.source:
             raise RuntimeError('Source image not set')
         # формат файла
-        frmt = self._get_output_format(output_path)
         for shape in self.get_shapes():     # type: BaseShape
             # создаём новый пустой слой по размеру исходника
             overlay = Image.new('RGBA', self.source.size, (0, 0, 0, 0))
@@ -123,11 +127,15 @@ class FrameStamp(object):
             # переменные для рендера берутся из словаря self.variables
             shape.render(draw, **kwargs)
             self._source = Image.alpha_composite(self.source, overlay)
-        # склеивание исходника и слоя
-        # сохраняем отрендеренный файл в формате RGB
-        logger.debug('Save format %s to file %s', frmt, output_path)
-        self._source.convert("RGB").save(output_path, frmt, quality=100)
-        return output_path
+
+        if save_path:
+            # сохраняем отрендеренный файл в формате RGB
+            frmt = self._get_output_format(save_path)
+            logger.debug('Save format %s to file %s', frmt, save_path)
+            self._source.convert("RGB").save(save_path, frmt, quality=100)
+            return save_path
+        else:
+            return self._source
 
     def render1(self, output_path: str, **kwargs):
         """
