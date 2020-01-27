@@ -17,11 +17,52 @@ class LabelShape(BaseShape):
         font_size          : Размер шрифта
         font_name          : Используемый шрифт
         text_margin        : Отступ текста от указанных координат
-        bound:  (100, 0)   : Допустимый объем для текста. Также можно использовать для выравнивания TODO
-        alight             : Направление выравнивания   TODO
+        bound:  (100, 0)   : Допустимый объем для текста TODO
+        alight_x           : Выравнивание относительно координаты X (left, right, center)
+        alight_y           : Выравнивание относительно координаты X (top, bottom, center)
         parent             : Родительский объект
     """
     shape_name = 'label'
+
+    @property
+    def x(self):
+        x = super(LabelShape, self).x
+        x_size, _ = self.get_size()
+        align_x = self.align_x
+        if align_x:
+            if align_x not in ['left', 'right', 'center']:
+                raise ValueError('Align X value must be only left, right or center')
+            if align_x == 'left':
+                pass    # default
+            elif align_x == 'right':
+                x -= x_size
+            else:
+                x -= x_size//2
+        return x
+
+    @property
+    def y(self):
+        y = super(LabelShape, self).y
+        _, y_size = self.get_size()
+        align_y = self.align_y
+        if align_y:
+            if align_y not in ['top', 'bottom', 'center']:
+                raise ValueError('Align Y value must be only top, bottom or center')
+            if align_y == 'top':
+                pass  # default
+            elif align_y == 'bottom':
+                y -= y_size
+            else:
+                y -= y_size // 2
+        return y
+
+    @property
+    def align_x(self):
+        return self._eval_parameter('align_x', default=None)
+
+    @property
+    def align_y(self):
+        return self._eval_parameter('align_y', default=None)
 
     @property
     def text(self):
@@ -75,12 +116,15 @@ class LabelShape(BaseShape):
     def text_margin(self):
         return self._eval_parameter('text_margin')
 
-    # def center_text(img, font, text, color=(255, 255, 255)):  todo
-    #     draw = ImageDraw.Draw(img)
-    #     text_width, text_height = draw.textsize(text, font)
-    #     position = ((strip_width - text_width) / 2, (strip_height - text_height) / 2)
-    #     draw.text(position, text, color, font=font)
-    #     return img
+    def get_size(self):
+        """
+        Размер текста в пикселях
+
+        Returns
+        -------
+        tuple
+        """
+        return self.font.getsize(self.text)
 
     def render(self, img, **kwargs):
         bound = self.bound
