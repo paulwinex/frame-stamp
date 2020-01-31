@@ -26,9 +26,9 @@ class FrameStamp(object):
 
     def _create_shapes_from_template(self, **kwargs):
         for shape_config in self.template['shapes']:
-            shape_type = shape_config.pop('type', None)
-            if not shape_type:
-                raise PresetError('Shape type not defined in template element')
+            shape_type = shape_config.get('type')
+            if shape_type is None:
+                raise PresetError('Shape type not defined in template element: {}'.format(shape_config))
             shape_cls = get_shape_class(shape_type)     # type: BaseShape
             shape = shape_cls(shape_config, self, **kwargs)
             self.add_shape(shape)
@@ -123,7 +123,6 @@ class FrameStamp(object):
             overlay = Image.new('RGBA', self.source.size, (0, 0, 0, 0))
             draw = ImageDraw.Draw(overlay)
             # рисование всех шейп на слое
-            logger.debug('Render shape %s', shape)
             # переменные для рендера берутся из словаря self.variables
             shape.render(draw, **kwargs)
             self._source = Image.alpha_composite(self.source, overlay)

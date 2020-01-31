@@ -20,8 +20,8 @@ class AbstractShape(object):
                 raise RuntimeError('Parent object {} not found in scope. Maybe parent object not defined yet?')
             parent = self.scope[shape_data['parent']]
             from .rect import RectShape
-            if not isinstance(parent, (RectShape,)):
-                raise TypeError('Parent object can`t be {}'.format(type(parent)))
+            # if not issubclass(parent.__class__, (RectShape,)):
+            #     raise TypeError('Parent object can`t be {}'.format(type(parent)))
             self._parent = parent
 
     def __repr__(self):
@@ -124,7 +124,7 @@ class AbstractShape(object):
         -------
 
         """
-        match = re.match('^(\d+)%$', val)
+        match = re.match(r'^(\d+)%$', val)
         if not match:
             return
         percent = float(match.group(1))
@@ -207,9 +207,8 @@ class AbstractShape(object):
         for op in re.findall(r"[\w\d.%$]+", expr):
             val = self._eval_parameter_convert(key, op)
             if val is None:
-                raise ValueError('Expression operand "{}" is nt correct: {}'.format(op, expr))
-            if isinstance(val, str):
-                val = f"'{val}'"
+                val = op
+                # raise ValueError('Expression operand "{}" is nt correct: {}'.format(op, expr))
             expr = expr.replace(op, str(val if not callable(val) else val()))
         res = eval(expr)
         return res

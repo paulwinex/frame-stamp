@@ -20,6 +20,7 @@ class LabelShape(BaseShape):
         bound:  (100, 0)   : Допустимый объем для текста TODO
         alight_x           : Выравнивание относительно координаты X (left, right, center)
         alight_y           : Выравнивание относительно координаты X (top, bottom, center)
+        align              : Выравнивание строк между собой для многострочного текста
         parent             : Родительский объект
     """
     shape_name = 'label'
@@ -63,6 +64,10 @@ class LabelShape(BaseShape):
     @property
     def align_y(self):
         return self._eval_parameter('align_y', default=None)
+
+    @property
+    def align(self):
+        return self._eval_parameter('align', default='left')
 
     @property
     def text(self):
@@ -126,6 +131,14 @@ class LabelShape(BaseShape):
         """
         return self.font.getsize(self.text)
 
+    @property
+    def width(self):
+        return self.get_size()[0]
+
+    @property
+    def height(self):
+        return self.get_size()[1]
+
     def render(self, img, **kwargs):
         bound = self.bound
         is_multiline = '\n' in self.text
@@ -135,15 +148,16 @@ class LabelShape(BaseShape):
             fill=self.text_color
         )
         if is_multiline:
-
             text_args['spacing'] = self.spacing
+            text_args['align'] = self.align
         if bound:
+            pass
             # todo: не реализовано!
-            import textwrap
-            margin = offset = 40
-            for line in textwrap.wrap(self.text, width=40):
-                printer((margin, offset), line, **text_args)
-                offset += self.font.getsize(line)[1]
+            # import textwrap
+            # margin = offset = 40
+            # for line in textwrap.wrap(self.text, width=40):
+            #     printer((margin, offset), line, **text_args)
+            #     offset += self.font.getsize(line)[1]
         else:
             printer((self.x+self.text_margin, self.y+self.text_margin), self.text, **text_args)
 
