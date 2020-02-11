@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from weakref import ref
 import re
 from PIL.ImageDraw import ImageDraw
@@ -14,15 +13,19 @@ class AbstractShape(object):
         self._data = shape_data
         self.renderer = ref(renderer)
 
-        self._parent = DefaultParent(renderer)
         if 'parent' in shape_data:
-            if shape_data['parent'] not in self.scope:
-                raise RuntimeError('Parent object {} not found in scope. Maybe parent object not defined yet?')
-            parent = self.scope[shape_data['parent']]
-            from .rect import RectShape
-            # if not issubclass(parent.__class__, (RectShape,)):
-            #     raise TypeError('Parent object can`t be {}'.format(type(parent)))
+            parent_name = shape_data['parent'].split('.')[0]
+            if parent_name not in self.scope:
+                raise RuntimeError('Parent object "{}" not found in scope. '
+                                   'Maybe parent object not defined yet?'.format(parent_name))
+            parent = self.scope[parent_name]
+            # if parent_name != shape_data['parent']:
+            #     obj = eval(f"parent.{shape_data['parent'].split('.', 1)[1]}")
+            #     self._parent = obj
+            # else:
             self._parent = parent
+        else:
+            self._parent = Cell(renderer)
 
     def __repr__(self):
         return '<{} {}>'.format(self.__class__.__name__, self.id or 'no-id')
@@ -217,7 +220,7 @@ class AbstractShape(object):
         raise NotImplementedError
 
 
-class DefaultParent:
+class Cell:
     def __init__(self, renderer):
         self._renderer = ref(renderer)
 
@@ -255,15 +258,15 @@ class BaseShape(AbstractShape):
     @property
     def x(self):
         val = self._eval_parameter('x')
-        if val < 0:
-            return int(self.parent.x + self.parent.width + val)
-        else:
-            return int(self.parent.x + val)
+        # if val < 0:
+        #     return int(self.parent.x + self.parent.width + val)
+        # else:
+        return int(self.parent.x + val)
 
     @property
     def y(self):
         val = self._eval_parameter('y')
-        if val < 0:
-            return int(self.parent.y + self.parent.height + val)
-        else:
-            return int(self.parent.y + val)
+        # if val < 0:
+        #     return int(self.parent.y + self.parent.height + val)
+        # else:
+        return int(self.parent.y + val)

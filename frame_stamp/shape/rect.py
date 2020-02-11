@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from .base_shape import BaseShape
 
 
@@ -66,6 +65,13 @@ class RectShape(BaseShape):
         )
 
     @property
+    def font_size(self) -> int:
+        size = self._eval_parameter('font_size')    # type: int
+        if size == 0:
+            raise ValueError('Font size can`t be zero. Shape "{}"'.format(self))
+        return size
+
+    @property
     def bound(self):
         return self.x0, self.y0, self.y0, self.y1
 
@@ -91,3 +97,10 @@ class RectShape(BaseShape):
             ]
             img.line(points, self.border_color, self.border_width)
 
+
+class Cell(object):
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
