@@ -16,12 +16,13 @@ class FrameStamp(object):
         JPG = "JPEG"
         PNG = "PNG"
 
-    def __init__(self, template, variables, **kwargs):
+    def __init__(self, image, template, variables, **kwargs):
         self._template = template
         self._variables = variables
         self._shapes = []
         self._scope = {}
         self._source = None
+        self.set_source(image)
         self._create_shapes_from_template(**kwargs)
 
     def _create_shapes_from_template(self, **kwargs):
@@ -29,8 +30,12 @@ class FrameStamp(object):
             shape_type = shape_config.get('type')
             if shape_type is None:
                 raise PresetError('Shape type not defined in template element: {}'.format(shape_config))
-            shape_cls = get_shape_class(shape_type)     # type: BaseShape
+            shape_cls = get_shape_class(shape_type)
             shape = shape_cls(shape_config, self, **kwargs)
+            # if shape.id is not None:
+            #     if shape.id in self._scope:
+            #         raise exceptions.PresetError('Duplicate shape ID: {}'.format(shape.id))
+            #     self._scope[shape.id] = shape
             self.add_shape(shape)
 
     @property
@@ -136,37 +141,37 @@ class FrameStamp(object):
         else:
             return self._source
 
-    def render1(self, output_path: str, **kwargs):
-        """
-        Рендер всех шейп на кадре
-
-        Parameters
-        ----------
-        output_path
-        kwargs
-
-        Returns
-        -------
-        str
-        """
-        if not self.source:
-            raise RuntimeError('Source image not set')
-        # формат файла
-        frmt = self._get_output_format(output_path)
-        # создаём новый пустой слой по размеру исходника
-        overlay = Image.new('RGBA', self.source.size, (0, 0, 0, 0))
-        draw = ImageDraw.Draw(overlay)
-        # рисование всех шейп на слое
-        for shape in self.get_shapes():     # type: BaseShape
-            logger.debug('Render shape %s', shape)
-            # переменные для рендера берутся из словаря self.variables
-            shape.render(draw, **kwargs)
-        # склеивание исходника и слоя
-        out = Image.alpha_composite(self.source, overlay)
-        # сохраняем отрендеренный файл в формате RGB
-        logger.debug('Save format %s to file %s', frmt, output_path)
-        out.convert("RGB").save(output_path, frmt, quality=100)
-        return output_path
+    # def render1(self, output_path: str, **kwargs):
+    #     """
+    #     Рендер всех шейп на кадре
+    #
+    #     Parameters
+    #     ----------
+    #     output_path
+    #     kwargs
+    #
+    #     Returns
+    #     -------
+    #     str
+    #     """
+    #     if not self.source:
+    #         raise RuntimeError('Source image not set')
+    #     # формат файла
+    #     frmt = self._get_output_format(output_path)
+    #     # создаём новый пустой слой по размеру исходника
+    #     overlay = Image.new('RGBA', self.source.size, (0, 0, 0, 0))
+    #     draw = ImageDraw.Draw(overlay)
+    #     # рисование всех шейп на слое
+    #     for shape in self.get_shapes():     # type: BaseShape
+    #         logger.debug('Render shape %s', shape)
+    #         # переменные для рендера берутся из словаря self.variables
+    #         shape.render(draw, **kwargs)
+    #     # склеивание исходника и слоя
+    #     out = Image.alpha_composite(self.source, overlay)
+    #     # сохраняем отрендеренный файл в формате RGB
+    #     logger.debug('Save format %s to file %s', frmt, output_path)
+    #     out.convert("RGB").save(output_path, frmt, quality=100)
+    #     return output_path
 
     def _get_output_format(self, path):
         path = Path(path)

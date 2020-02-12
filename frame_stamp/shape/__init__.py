@@ -21,7 +21,8 @@ def get_shape_class(name):
         # mod = load_module.load_from_path(full_path, os.path.splitext(file)[0])
         for attr in dir(mod):
             cls = getattr(mod, attr)
-            if inspect.isclass(cls) and BaseShape in cls.__bases__:
+            # if inspect.isclass(cls) and BaseShape in cls.__bases__:
+            if inspect.isclass(cls) and issubclass(cls, BaseShape):
                 if cls.shape_name == name:
                     return cls
     raise NameError('Shape name "{}" not found'.format(name))

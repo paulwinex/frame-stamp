@@ -12,7 +12,7 @@ class LabelShape(BaseShape):
         x                  : Координата Х
         y                  : Координата У
         text               : Текст. Поддерживается форматирование переменных их конеткста "Project: $project_name"
-        text_color         : Цвет текста
+        color              : Цвет текста
         text_spacing       : Расстояние между строк в многосточном тексте. По умолчанию 0
         font_size          : Размер шрифта
         font_name          : Используемый шрифт
@@ -32,7 +32,10 @@ class LabelShape(BaseShape):
         x = super(LabelShape, self).x
         x_size, _ = self.get_size()
         align_x = self.align_x
+        margin = self.margin_left
+        t_margin = self.text_margin
         if align_x:
+            margin = 0
             if align_x not in ['left', 'right', 'center']:
                 raise ValueError('Align X value must be only left, right or center')
             if align_x == 'left':
@@ -40,23 +43,27 @@ class LabelShape(BaseShape):
             elif align_x == 'right':
                 b = self.bound
                 if b:
-                    x = x+b[0]-x_size
+                    x = x+b[0] - x_size
                 else:
                     x -= x_size
             else:   # center
+                t_margin = 0
                 b = self.bound
                 if b:
-                    x = x - x_size//2 + b[0]//2
+                    x = x + b[0]//2 - x_size//2
                 else:
                     x -= x_size//2
-        return x+self.margin_left
+        return x+margin+t_margin
 
     @property
     def y(self):
         y = super(LabelShape, self).y
         _, y_size = self.get_size()
         align_y = self.align_y
+        margin = self.margin_top
+        t_margin = self.text_margin
         if align_y:
+            margin = 0
             if align_y not in ['top', 'bottom', 'center']:
                 raise ValueError('Align Y value must be only top, bottom or center')
             if align_y == 'top':
@@ -68,12 +75,13 @@ class LabelShape(BaseShape):
                 else:
                     y -= y_size
             else:   # center
+                t_margin = 0
                 b = self.bound
                 if b:
                     y = y + (b[1]//2) - y_size//2
                 else:
                     y -= y_size // 2
-        return y+self.margin_top
+        return y+margin+t_margin
 
     @property
     def align_x(self):
@@ -89,11 +97,12 @@ class LabelShape(BaseShape):
 
     @property
     def text(self):
-        # text = self._eval_parameter('text')
         text = self._data['text']
         if '$' in text:
             text = string.Template(text).substitute(**self.context)
-        return text
+        # if text.startswith('='):
+        text = self._eval_expression('text', text) or text
+        return str(text)
 
     @property
     def font_size(self) -> int:
@@ -131,7 +140,7 @@ class LabelShape(BaseShape):
             return []
 
     @property
-    def text_color(self):
+    def color(self):
         return self._eval_parameter('text_color')
 
     @property
@@ -158,7 +167,6 @@ class LabelShape(BaseShape):
         y = sum([self.font.getsize(text)[1] for text in self.text.split('\n')]) + \
             (self.spacing * (len(self.text.split('\n'))-1))
         return x, y
-        # return self.font.getsize(self.text)
 
     @property
     def width(self):
@@ -169,26 +177,19 @@ class LabelShape(BaseShape):
         return self.get_size()[1]
 
     def render(self, img, **kwargs):
-        bound = self.bound
         is_multiline = '\n' in self.text
         printer = img.multiline_text if is_multiline else img.text
         text_args = dict(
             font=self.font,
-            fill=self.text_color
+            fill=self.color
         )
         if is_multiline:
             text_args['spacing'] = self.spacing
             if self.align_x:
                 text_args['align'] = self.align_x
-        # if bound:
-        #     pass
-            # todo: не реализовано!
-            # import textwrap
-            # margin = offset = 40
-            # for line in textwrap.wrap(self.text, width=40):
-            #     printer((margin, offset), line, **text_args)
-            #     offset += self.font.getsize(line)[1]
-        # else:
-        printer((self.x+self.text_margin, self.y+self.text_margin), self.text, **text_args)
+        printer((self.x, self.y+self.text_margin), self.text, **text_args)
+        return img
+
+
 
 
