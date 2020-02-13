@@ -18,7 +18,7 @@ class AbstractShape(object):
 
         if 'parent' in shape_data:
             parent_name = shape_data['parent']
-            if isinstance(parent_name, (BaseShape, DummyBox)):
+            if isinstance(parent_name, EmptyShape):
                 self._parent = parent_name
             else:
                 parent_name = parent_name.split('.')[0]
@@ -28,7 +28,7 @@ class AbstractShape(object):
                 parent = self.scope[parent_name]
                 self._parent = parent
         else:
-            self._parent = DummyBox({}, renderer)
+            self._parent = EmptyShape({}, renderer)
         self._debug_render = os.environ.get('DEBUG_SHAPES')
 
     def __repr__(self):
@@ -232,16 +232,24 @@ class AbstractShape(object):
 
 
 class EmptyShape(AbstractShape):
+    """
+    x
+    y
+    padding_top
+    padding_bottom
+    padding_left
+    padding_right
+    """
 
     @property
     def x(self):
-        val = self._eval_parameter('x')
-        return int(self.parent.x + val)
+        val = self._eval_parameter('x', default=0)
+        return int(self.parent.x + val + self.padding_left)
 
     @property
     def y(self):
-        val = self._eval_parameter('y')
-        return int(self.parent.y + val)
+        val = self._eval_parameter('y', default=0)
+        return int(self.parent.y + val + self.padding_top)
 
     @property
     def top(self):
@@ -277,18 +285,47 @@ class EmptyShape(AbstractShape):
 
     @property
     def width(self):
-        return self._eval_parameter('width')
+        return self._eval_parameter('width') - self.padding_right
 
     @property
     def height(self):
-        return self._eval_parameter('height')
+        return self._eval_parameter('height') - self.padding_bottom
 
     @property
     def center(self):
         return (
-            (self.x0 + self.x1) / 2,
-            (self.y0 + self.y1) / 2
+            (self.x0 + self.x1) // 2,
+            (self.y0 + self.y1) // 2
         )
+
+    @property
+    def padding_top(self):
+        return self._eval_parameter('padding_top', default=0)
+
+    @property
+    def padding_bottom(self):
+        return self._eval_parameter('padding_bottom', default=0)
+
+    @property
+    def padding_left(self):
+        return self._eval_parameter('padding_left', default=0)
+
+    @property
+    def padding_right(self):
+        return self._eval_parameter('padding_right', default=0)
+
+    @property
+    def padding(self):
+        return [self.padding_top, self.padding_right, self.padding_bottom, self.padding_left]
+
+    @property
+    def bound_rec(self):
+        return [self.x0, self.y0, self.x1, self.y1]
+
+    @property
+    def parent_rect(self):
+        if self.parent:
+            return self.parent.bound_rec
 
     @property
     def color(self):
