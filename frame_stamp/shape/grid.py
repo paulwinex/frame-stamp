@@ -5,6 +5,13 @@ from ..shape import get_shape_class
 
 
 class GridShape(BaseShape):
+    """
+    Составная фигура в виде Таблицы.
+
+    Allowed parameters:
+        rows           : Количество строк
+        columns        : Количество колонок
+    """
     shape_name = 'grid'
 
     def __init__(self, *args, **kwargs):
@@ -45,18 +52,11 @@ class GridShape(BaseShape):
         return self._eval_parameter('rows', default='auto')
 
     @property
-    def width(self):
-        return self._eval_parameter('width')
-
-    @property
-    def height(self):
-        return self._eval_parameter('height')
-
-    @property
     def columns(self):
         return self._eval_parameter('columns', default='auto')
 
-    def generate_cells(self, count, cols=None, rows=None, align_x=None, align_y=None):
+    def generate_cells(self, count, cols=None, rows=None):
+        # todo: выравнивание неполных строк и колонок
         cells = []
         columns = cols or self.columns
         if columns == 'auto':

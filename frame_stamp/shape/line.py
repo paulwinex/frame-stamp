@@ -7,12 +7,11 @@ class LineShape(BaseShape):
     Линия
 
     Allowed parameters:
+        x0
         x1
-        x2
+        y0
         y1
-        y2
         width
-        color
     """
     shape_name = 'line'
 

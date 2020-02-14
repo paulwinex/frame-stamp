@@ -10,15 +10,10 @@ class ImageShape(BaseShape):
     Картинка
 
     Allowed parameters:
-        x
-        y
-        parent
-        source
-        height
-        width
-        opacity
-        keep_aspect
-        mask
+        source          : путь к исходному файлу
+        transparency    : прозрчность (0-1)
+        keep_aspect     : сохранять пропорции при изменении размера
+        mask            : чёрно-белая маска
     """
     shape_name = 'image'
 
@@ -87,24 +82,17 @@ class ImageShape(BaseShape):
 
     @property
     def width(self):
+        # todo: высота более приоритетна, поэтому надо рассчитать правильную ширину если keep_aspect=True
         return self._eval_parameter('width')
 
     @property
-    def height(self):
-        # todo: рассчитать правильную высоту если keep_aspect=True
-        return self._eval_parameter('height')
-
-    @property
-    def size(self):
-        return self.width, self. height
-
-    # @property
-    # def transparency(self):
-    #     return self._eval_parameter('transparency', default=1)
+    def transparency(self):
+        return self._eval_parameter('transparency', default=0)
 
     @property
     def keep_aspect(self):
         return bool(self._eval_parameter('keep_aspect'))
 
     def render(self, img, **kwargs):
+        # todo
         self.source_image.paste(self.source, (self.x, self.y), self.source)

@@ -2,6 +2,12 @@ from .grid import GridShape
 
 
 class RowShape(GridShape):
+    """
+    Частный случай формы таблицы. 1 строка.
+
+    Allowed parameters:
+        columns        : Количество колонок
+    """
     shape_name = 'row'
 
     def __init__(self, shape_data, renderer, **kwargs):

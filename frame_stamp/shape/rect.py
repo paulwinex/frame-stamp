@@ -6,14 +6,8 @@ class RectShape(BaseShape):
     Прямоугольник
 
     Allowed parameters:
-        x
-        y
-        width
-        hight
-        color
-        border_color
-        border_width
-
+        border_width    : толщина обводки
+        border_color    : цвет обводки
     """
     shape_name = 'rect'
 

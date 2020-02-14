@@ -1,9 +1,14 @@
-from functools import wraps
 import re, os
 from PIL.ImageDraw import ImageDraw
 
 
 class AbstractShape(object):
+    """
+    Абстрактная фигура.
+
+        - Инициализация данных
+        - Методы ресолвинга параметров
+    """
     shape_name = None
     __instances__ = {}
     names_stop_list = ['parent']
@@ -228,7 +233,22 @@ class AbstractShape(object):
 
 
 class BaseShape(AbstractShape):
+    """
+    Базовая фигура.
+     - Реализация системы координат
+     - Цвет
+     - Дебаг
 
+    Allowed parameters:
+        x                  : Координата Х
+        y                  : Координата У
+        color              : Цвет текста
+        alight_h           : Выравнивание относительно координаты X (left, right, center)
+        alight_v           : Выравнивание относительно координаты X (top, bottom, center)
+        padding            : Выравнивание строк между собой для многострочного текста
+        parent             : Родительский объект
+
+    """
     def __getattribute__(self, item):
         if item == 'render' and self._debug_render:
             orig = super(AbstractShape, self).__getattribute__(item)
