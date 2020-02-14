@@ -6,19 +6,18 @@ from PIL.ImageDraw import ImageDraw
 class AbstractShape(object):
     shape_name = None
     __instances__ = {}
+    names_stop_list = ['parent']
 
-    def __init__(self, shape_data, renderer, **kwargs):
-        if shape_data.get('id') == 'parent':
+    def __init__(self, shape_data, context, **kwargs):
+        if shape_data.get('id') in self.names_stop_list:
             raise NameError('ID cannot be named as "parent"')
         self._data = shape_data
-        if isinstance(renderer, ref):
-            self._renderer = renderer
-        else:
-            self._renderer = ref(renderer)
+        self._parent = None
+        self._context = context
 
         if 'parent' in shape_data:
             parent_name = shape_data['parent']
-            if isinstance(parent_name, EmptyShape):
+            if isinstance(parent_name, BaseShape):
                 self._parent = parent_name
             else:
                 parent_name = parent_name.split('.')[0]
@@ -28,7 +27,7 @@ class AbstractShape(object):
                 parent = self.scope[parent_name]
                 self._parent = parent
         else:
-            self._parent = EmptyShape({}, renderer)
+            self._parent = RootParent(context)
         self._debug_render = os.environ.get('DEBUG_SHAPES')
 
     def __repr__(self):
@@ -38,42 +37,44 @@ class AbstractShape(object):
         return '{} #{}'.format(self.__class__.__name__, self.id or 'none')
 
     @property
-    def renderer(self):
-        return self._renderer()
-
-    @property
     def parent(self):
         return self._parent
+
+    @property
+    def context(self):
+        return self._context
 
     @property
     def id(self):
         return self._data.get('id')
 
     @property
-    def context(self) -> dict:
-        return self.renderer.variables
+    def variables(self) -> dict:
+        return self.context['variables']
 
     @property
     def defaults(self):
-        return self.renderer.defaults
-
-    @property
-    def render_variables(self):
-        source = self.source_image
-        if not source:
-            raise ValueError(f'Source not set in "{self}", {self.renderer}, {self.renderer.source}')
-        return dict(
-            source_width=source.size[0],
-            source_height=source.size[1]
-        )
+        return self.context['defaults']
 
     @property
     def scope(self):
-        return {k: v for k, v in self.renderer.scope.items() if k != self.id}
+        """
+        Список всех зарегистрированных нод, исключая себя и ноды без ID
+
+        Returns
+        -------
+        dict
+        """
+        return {k: v for k, v in self.context['scope'].items() if k != self.id}
 
     @property
     def source_image(self):
-        return self.renderer.source
+        return self.context['source_image']
+
+    def add_shape(self, shape):
+        return self.context['add_shape'](shape)
+
+    # expressions
 
     def _eval_parameter(self, key: str, default_key=None, **kwargs):
         """
@@ -109,7 +110,7 @@ class AbstractShape(object):
         if not isinstance(val, str):
             raise TypeError('Unsupported type {}'.format(type(val)))
         # остается только строка
-        if val.isdigit():   # int
+        if val.isdigit():  # int
             return int(val)
         elif re.match(r"^\d*\.\d*$", val):  # float
             return float(val)
@@ -146,11 +147,11 @@ class AbstractShape(object):
         if default is None:
             raise KeyError('No default value for key {}'.format(key))
         if isinstance(percent, (float, int)):
-            return (default/100)*percent
+            return (default / 100) * percent
         else:
             raise TypeError('Percent value must be int or float, not {}'.format(type(percent)))
 
-    def _eval_from_scope(self, key:str, val: str, **kwargs):
+    def _eval_from_scope(self, key: str, val: str, **kwargs):
         """
         Обращение к значениям параметрам других шейп
 
@@ -174,11 +175,10 @@ class AbstractShape(object):
         if name == 'self':
             return getattr(self, attr)
         if name not in self.scope:
-            # raise ValueError('Name "{}" not exists'.format(name))
             return
         return getattr(self.scope[name], attr)
 
-    def _eval_from_variables(self, key:str, val: str, **kwargs):
+    def _eval_from_variables(self, key: str, val: str, **kwargs):
         """
         Получение значения из глобального контекста переменных
 
@@ -194,12 +194,10 @@ class AbstractShape(object):
         if not match:
             return
         variable = match.group(1)
-        if variable in self.context:
-            return self.context[variable]
+        if variable in self.variables:
+            return self.variables[variable]
         elif variable in self.defaults:
             return self.defaults[variable]
-        elif variable in self.render_variables:
-            return self.render_variables[variable]
         else:
             raise KeyError('No key "{}" in context or defaults'.format(variable))
 
@@ -227,110 +225,6 @@ class AbstractShape(object):
         res = eval(expr)
         return res
 
-    def render(self, img: ImageDraw, **kwargs):
-        raise NotImplementedError
-
-
-class EmptyShape(AbstractShape):
-    """
-    x
-    y
-    padding_top
-    padding_bottom
-    padding_left
-    padding_right
-    """
-
-    @property
-    def x(self):
-        val = self._eval_parameter('x', default=0)
-        return int(self.parent.x + val + self.padding_left)
-
-    @property
-    def y(self):
-        val = self._eval_parameter('y', default=0)
-        return int(self.parent.y + val + self.padding_top)
-
-    @property
-    def top(self):
-        return self.y0
-
-    @property
-    def left(self):
-        return self.x0
-
-    @property
-    def bottom(self):
-        return self.y1
-
-    @property
-    def right(self):
-        return self.x1
-
-    @property
-    def x0(self):
-        return self.x
-
-    @property
-    def x1(self):
-        return self.x0 + self.width
-
-    @property
-    def y0(self):
-        return self.y
-
-    @property
-    def y1(self):
-        return self.y0 + self.height
-
-    @property
-    def width(self):
-        return self._eval_parameter('width') - self.padding_right
-
-    @property
-    def height(self):
-        return self._eval_parameter('height') - self.padding_bottom
-
-    @property
-    def center(self):
-        return (
-            (self.x0 + self.x1) // 2,
-            (self.y0 + self.y1) // 2
-        )
-
-    @property
-    def padding_top(self):
-        return self._eval_parameter('padding_top', default=0)
-
-    @property
-    def padding_bottom(self):
-        return self._eval_parameter('padding_bottom', default=0)
-
-    @property
-    def padding_left(self):
-        return self._eval_parameter('padding_left', default=0)
-
-    @property
-    def padding_right(self):
-        return self._eval_parameter('padding_right', default=0)
-
-    @property
-    def padding(self):
-        return [self.padding_top, self.padding_right, self.padding_bottom, self.padding_left]
-
-    @property
-    def bound_rec(self):
-        return [self.x0, self.y0, self.x1, self.y1]
-
-    @property
-    def parent_rect(self):
-        if self.parent:
-            return self.parent.bound_rec
-
-    @property
-    def color(self):
-        return self._eval_parameter('color')
-
 
 class BaseShape(AbstractShape):
 
@@ -348,40 +242,41 @@ class BaseShape(AbstractShape):
                     (self.left, self.top)
                 ]
                 img.line(points, 'red', 1)
-                if self.parent:
-                    points = [
-                        (self.parent.left, self.parent.top),
-                        (self.parent.right, self.parent.top),
-                        (self.parent.right, self.parent.bottom),
-                        (self.parent.left, self.parent.bottom),
-                        (self.parent.left, self.parent.top)
-                    ]
-                    img.line(points, 'yellow', 1)
-                bound = getattr(self, 'bound', None)
-                if bound:
-                    points = [
-                        (self.left, self.top),
-                        (self.left+bound[0], self.top),
-                        (self.left+bound[0], self.top+bound[1]),
-                        (self.left, self.top+bound[1]),
-                        (self.left, self.top),
-                    ]
-                    img.line(points, 'orange', 1)
+
             return wrapper
         else:
             return super(AbstractShape, self).__getattribute__(item)
 
+    def render(self, img: ImageDraw, **kwargs):
+        raise NotImplementedError
+
     @property
     def x(self):
-        val = self._eval_parameter('x')
+        val = self._eval_parameter('x', default=0)
         return int(self.parent.x + val)
 
     @property
     def y(self):
-        val = self._eval_parameter('y')
+        val = self._eval_parameter('y', default=0)
         return int(self.parent.y + val)
 
     @property
+    def x_draw(self):
+        return self.x0 + self.padding_left
+
+    @property
+    def y_draw(self):
+        return self.y0 + self.padding_top
+
+    @property
+    def width_draw(self):
+        return self.x1 - self.padding_right
+
+    @property
+    def height_draw(self):
+        return self.y1 - self.padding_bottom
+
+    @property
     def top(self):
         return self.y0
 
@@ -415,94 +310,96 @@ class BaseShape(AbstractShape):
 
     @property
     def width(self):
-        return self._eval_parameter('width')
+        return self._eval_parameter('width', default=0)
 
     @property
     def height(self):
-        return self._eval_parameter('height')
+        return self._eval_parameter('height', default=0)
 
     @property
     def center(self):
         return (
-            (self.x0+self.x1)/2,
-            (self.y0+self.y1)/2
+            (self.x0 + self.x1) // 2,
+            (self.y0 + self.y1) // 2
         )
+
+    @property
+    def padding(self):
+        param = self._eval_parameter('padding', default=(0, 0, 0, 0))
+        if not isinstance(param, (list, tuple)):
+            raise TypeError('Padding parameter must be list or tuple')
+        if len(param) != 4:
+            raise ValueError('Padding parameter must be size = 4')
+        return tuple(param)
+
+    @property
+    def padding_top(self):
+        return self._eval_parameter('padding_top', default=None) or self.padding[0]
+
+    @property
+    def padding_right(self):
+        return self._eval_parameter('padding_right', default=None) or self.padding[1]
+
+    @property
+    def padding_bottom(self):
+        return self._eval_parameter('padding_bottom', default=None) or self.padding[2]
+
+    @property
+    def padding_left(self):
+        return self._eval_parameter('padding_left', default=None) or self.padding[3]
 
     @property
     def color(self):
-        return self._eval_parameter('color')
+        clr = self._eval_parameter('color', default=(0, 0, 0, 255))
+        if isinstance(clr, list):
+            clr = tuple(clr)
+        return clr
 
 
-class DummyBox:
-    def __init__(self, shape_data, renderer, **kwargs):
-        self.kwargs = kwargs
-        self.shape_data = shape_data
-        self.parent = shape_data.get('parent')
-        self._renderer = ref(renderer)
+class EmptyShape(BaseShape):
+    shape_name = 'empty'
 
-    @property
-    def renderer(self):
-        return self._renderer()
+    def render(self, img: ImageDraw, **kwargs):
+        pass
 
-    @property
-    def source_image(self):
-        return self.renderer.source
+
+class RootParent(BaseShape):
+    def __init__(self, context, *args, **kwargs):
+        self._context = context
+        self._data = {}
+        self._parent = None
+
+    def render(self, *args, **kwargs):
+        pass
 
     @property
     def x(self):
-        return self.shape_data.get('x', 0) + (self.parent.x if self.parent else 0)
+        return 0
 
     @property
     def y(self):
-        return self.shape_data.get('y', 0) + (self.parent.y if self.parent else 0)
+        return 0
 
     @property
     def width(self):
-        return self.shape_data.get('width', self.source_image.size[0])
+        return self.source_image.size[0]
 
     @property
     def height(self):
-        return self.shape_data.get('height', self.source_image.size[1])
+        return self.source_image.size[1]
 
     @property
-    def size(self):
-        return [self.width, self.height]
+    def padding_top(self):
+        return 0
 
     @property
-    def top(self):
-        return self.y0
+    def padding_right(self):
+        return 0
 
     @property
-    def left(self):
-        return self.x0
+    def padding_bottom(self):
+        return 0
 
     @property
-    def bottom(self):
-        return self.y1
-
-    @property
-    def right(self):
-        return self.x1
-
-    @property
-    def x0(self):
-        return self.x
-
-    @property
-    def x1(self):
-        return self.x0 + self.width
-
-    @property
-    def y0(self):
-        return self.y
-
-    @property
-    def y1(self):
-        return self.y0 + self.height
-
-    @property
-    def center(self):
-        return (
-            (self.x0+self.x1)/2,
-            (self.y0+self.y1)/2
-        )
+    def padding_left(self):
+        return 0

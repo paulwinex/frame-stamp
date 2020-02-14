@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from .base_shape import BaseShape, DummyBox
+from .base_shape import BaseShape, EmptyShape
 from ..utils.exceptions import PresetError
 from ..shape import get_shape_class
 
@@ -23,14 +23,13 @@ class GridShape(BaseShape):
                 raise PresetError('Shape type not defined in template element: {}'.format(shape_config))
             shape_cls = get_shape_class(shape_type)
             cells[i]['parent'] = self
-            shape_config['parent'] = DummyBox(cells[i], renderer=self.renderer)
-            shape_config['bound'] = ['parent.width', 'parent.height']
-            shape = shape_cls(shape_config, self.renderer, **kwargs)
+            shape_config['parent'] = EmptyShape(cells[i], self.context)
+            shape = shape_cls(shape_config, self.context, **kwargs)
             shapes.append(shape)
             if shape.id is not None:
                 if shape.id in self.scope:
                     raise PresetError('Duplicate shape ID: {}'.format(shape.id))
-            self.renderer.scope[shape.id] = shape
+            self.add_shape(shape)
         return shapes
 
     @property
