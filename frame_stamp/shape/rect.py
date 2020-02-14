@@ -17,13 +17,6 @@ class RectShape(BaseShape):
     """
     shape_name = 'rect'
 
-    # @property
-    # def font_size(self) -> int:
-    #     size = self._eval_parameter('font_size')    # type: int
-    #     if size == 0:
-    #         raise ValueError('Font size can`t be zero. Shape "{}"'.format(self))
-    #     return size
-
     @property
     def border_width(self):
         return self._eval_parameter('border_width', default=0)

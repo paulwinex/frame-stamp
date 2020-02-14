@@ -23,11 +23,11 @@ class FrameStamp(object):
         self._scope = {}
         self._source = None
         self._shared_context = dict(
-            variables=self.variables,   # переменные для рендеринга
-            source_image=self._source,  # исходная картинка. Для получения размера и других данных
-            defaults=self.defaults,     # дефолтные значения из шаблона
-            scope=self._scope,          # список всех доступных шейп. Нужен для обращения к полям других шейп
-            add_shape=self.add_shape    # ссылка на функцию добавления шейпы, это нужно для составных шейп
+            variables=self.variables,           # переменные для рендеринга
+            source_image=self._source,          # исходная картинка. Для получения размера и других данных
+            defaults=self.defaults,             # дефолтные значения из шаблона
+            scope=self._scope,                  # список всех доступных шейп. Нужен для обращения к полям других шейп
+            add_shape=self._add_shape_to_scope  # ссылка на функцию добавления шейпы, это нужно для составных шейп
         )
         self.set_source(image)
         self._create_shapes_from_template(**kwargs)
@@ -80,11 +80,14 @@ class FrameStamp(object):
         """
         if not isinstance(shape, BaseShape):
             raise TypeError('Shape bus be subclass of {}'.format(BaseShape.__name__))
+        self._add_shape_to_scope(shape)
+        self._shapes.append(shape)
+
+    def _add_shape_to_scope(self, shape):
         if shape.id is not None:
             if shape.id in self._scope:
                 raise exceptions.PresetError('Duplicate shape ID: {}'.format(shape.id))
             self._scope[shape.id] = shape
-        self._shapes.append(shape)
 
     def get_shapes(self):
         """

@@ -1,4 +1,4 @@
-from weakref import ref
+from functools import wraps
 import re, os
 from PIL.ImageDraw import ImageDraw
 
@@ -9,6 +9,7 @@ class AbstractShape(object):
     names_stop_list = ['parent']
 
     def __init__(self, shape_data, context, **kwargs):
+        self._debug_render = bool(os.environ.get('DEBUG_SHAPES'))
         if shape_data.get('id') in self.names_stop_list:
             raise NameError('ID cannot be named as "parent"')
         self._data = shape_data
@@ -27,8 +28,7 @@ class AbstractShape(object):
                 parent = self.scope[parent_name]
                 self._parent = parent
         else:
-            self._parent = RootParent(context)
-        self._debug_render = os.environ.get('DEBUG_SHAPES')
+            self._parent = RootParent(context, **kwargs)
 
     def __repr__(self):
         return '<{} {}>'.format(self.__class__.__name__, self.id or 'no-id')
@@ -143,9 +143,10 @@ class AbstractShape(object):
         if not match:
             return
         percent = float(match.group(1))
-        default = kwargs.get('default_value', self.defaults.get(kwargs.get('default_key') or key))
+        default = kwargs.get('default', self.defaults.get(kwargs.get('default_key') or key))
         if default is None:
             raise KeyError('No default value for key {}'.format(key))
+        default = self._eval_expression('', default)
         if isinstance(percent, (float, int)):
             return (default / 100) * percent
         else:
@@ -234,15 +235,22 @@ class BaseShape(AbstractShape):
 
             def wrapper(img, **kwargs):
                 orig(img, **kwargs)
-                points = [
+                img.line([
                     (self.left, self.top),
                     (self.right, self.top),
                     (self.right, self.bottom),
                     (self.left, self.bottom),
                     (self.left, self.top)
-                ]
-                img.line(points, 'red', 1)
+                    ], 'red', 1)
 
+                img.line([
+                    (self.parent.left+1, self.parent.top+1),
+                    (self.parent.right-1, self.parent.top+1),
+                    (self.parent.right-1, self.parent.bottom-1),
+                    (self.parent.left+1, self.parent.bottom-1),
+                    (self.parent.left+1, self.parent.top+1)
+                    ], 'yellow', 1)
+            wrapper.__name__ = 'render'
             return wrapper
         else:
             return super(AbstractShape, self).__getattribute__(item)
@@ -253,12 +261,24 @@ class BaseShape(AbstractShape):
     @property
     def x(self):
         val = self._eval_parameter('x', default=0)
-        return int(self.parent.x + val)
+        align = self.align_h
+        if align == 'center':
+            return int(self.parent.x + val + (self.parent.width/2) - (self.width / 2))
+        elif align == 'right':
+            return int(self.parent.x + val + self.parent.width - self.width)
+        else:
+            return int(self.parent.x + val)
 
     @property
     def y(self):
         val = self._eval_parameter('y', default=0)
-        return int(self.parent.y + val)
+        align = self.align_v
+        if align == 'center':
+            return int(self.parent.y + val + (self.parent.height/2) - (self.height / 2))
+        elif align == 'bottom':
+            return int(self.parent.y + val + self.parent.height - self.height)
+        else:
+            return int(self.parent.y + val)
 
     @property
     def x_draw(self):
@@ -317,6 +337,22 @@ class BaseShape(AbstractShape):
         return self._eval_parameter('height', default=0)
 
     @property
+    def align_v(self):
+        return self._eval_parameter('align_v', default=None)
+
+    @property
+    def align_vertical(self):
+        return self.align_v
+
+    @property
+    def align_h(self):
+        return self._eval_parameter('align_h', default=None)
+
+    @property
+    def align_horizontal(self):
+        return self.align_h
+
+    @property
     def center(self):
         return (
             (self.x0 + self.x1) // 2,
@@ -368,6 +404,7 @@ class RootParent(BaseShape):
         self._context = context
         self._data = {}
         self._parent = None
+        self._debug_render = False
 
     def render(self, *args, **kwargs):
         pass
