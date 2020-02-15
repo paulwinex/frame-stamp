@@ -129,13 +129,10 @@ class FrameStamp(object):
         if not self.source:
             raise RuntimeError('Source image not set')
         # формат файла
+        img_size = self.source.size
         for shape in self.get_shapes():     # type: BaseShape
             # создаём новый пустой слой по размеру исходника
-            overlay = Image.new('RGBA', self.source.size, (0, 0, 0, 0))
-            draw = ImageDraw.Draw(overlay)
-            # рисование всех шейп на слое
-            # переменные для рендера берутся из словаря self.variables
-            shape.render(draw, **kwargs)
+            overlay = shape.render(img_size, **kwargs)
             self._source = Image.alpha_composite(self.source, overlay)
 
         if save_path:

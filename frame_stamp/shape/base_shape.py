@@ -1,5 +1,5 @@
 import re, os
-from PIL.ImageDraw import ImageDraw
+from PIL.ImageDraw import ImageDraw, Image
 
 
 class AbstractShape(object):
@@ -249,12 +249,17 @@ class BaseShape(AbstractShape):
         parent             : Родительский объект
 
     """
+    default_width = 0
+    default_height = 0
+
     def __getattribute__(self, item):
         if item == 'render' and self._debug_render:
             orig = super(AbstractShape, self).__getattribute__(item)
 
-            def wrapper(img, **kwargs):
-                orig(img, **kwargs)
+            def wrapper(size, **kwargs):
+                rendered = orig(size, **kwargs)
+                overlay = self._get_canvas(size)
+                img = ImageDraw(overlay)
                 img.line([
                     (self.left, self.top),
                     (self.right, self.top),
@@ -270,10 +275,14 @@ class BaseShape(AbstractShape):
                     (self.parent.left+1, self.parent.bottom-1),
                     (self.parent.left+1, self.parent.top+1)
                     ], 'yellow', 1)
+                return Image.alpha_composite(rendered, overlay)
             wrapper.__name__ = 'render'
             return wrapper
         else:
-            return super(AbstractShape, self).__getattribute__(item)
+            return super().__getattribute__(item)
+
+    def _get_canvas(self, size):
+        return Image.new('RGBA', size, (0, 0, 0, 0))
 
     def render(self, img: ImageDraw, **kwargs):
         raise NotImplementedError
@@ -350,11 +359,11 @@ class BaseShape(AbstractShape):
 
     @property
     def width(self):
-        return self._eval_parameter('width', default=0)
+        return self._eval_parameter('width', default=self.default_width)
 
     @property
     def height(self):
-        return self._eval_parameter('height', default=0)
+        return self._eval_parameter('height', default=self.default_height)
 
     @property
     def align_v(self):

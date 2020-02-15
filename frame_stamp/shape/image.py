@@ -32,8 +32,8 @@ class ImageShape(BaseShape):
         if value == '$source':  # исходная картинка кадра, не путать с source самой шейпы
             # возвращаем исходник кадра
             return self.source_image.copy()
-        if '$' in value:
-            value = string.Template(value).substitute(**self.context)
+        while '$' in value:
+            value = string.Template(value).substitute(**self.variables)
         path = Path(value).expanduser().resolve()
         if not path.exists():
             raise IOError(f'Path not exists: {path.as_posix()}')
@@ -54,17 +54,30 @@ class ImageShape(BaseShape):
                 raise RuntimeError('Image source not set')
             img = self._get_image(source)
             # применение прозрачности
-            # transp = self.transparency
-            # if transp:
-            #      img.putalpha(min(max(int(255*transp), 0), 255))
+            transp = self.transparency
+            if transp:
+                 img.putalpha(min(max(int(255*transp), 0), 255))
             # ресайз
-            if self.keep_aspect:
-                img.thumbnail(self.size, Image.ANTIALIAS)
-            else:
-                img = img.resize(self.size, Image.ANTIALIAS)
+            if not self.size == img.size:
+                target_size = list(self.size)
+                if target_size[0] == 0:
+                    target_size[0] = img.size[0]
+                if target_size[1] == 0:
+                    target_size[1] = img.size[1]
+                if self.keep_aspect:
+                    img.thumbnail(target_size, Image.ANTIALIAS)
+                else:
+                    img = img.resize(target_size, Image.ANTIALIAS)
 
             self.__dict__['_saved_source'] = img.convert('RGBA')
         return self.__dict__['_saved_source']
+
+    @property
+    def size(self):
+        src = getattr(self, '_saved_source', None)
+        if src:
+            return src.size
+        return (self.width, self.height)
 
     # @property
     # def mask(self):
@@ -82,8 +95,10 @@ class ImageShape(BaseShape):
 
     @property
     def width(self):
-        # todo: высота более приоритетна, поэтому надо рассчитать правильную ширину если keep_aspect=True
-        return self._eval_parameter('width')
+        src = getattr(self, '_saved_source', None)
+        if src:
+            return src.size[0]
+        return self._eval_parameter('width', default=0)
 
     @property
     def transparency(self):
@@ -91,8 +106,10 @@ class ImageShape(BaseShape):
 
     @property
     def keep_aspect(self):
-        return bool(self._eval_parameter('keep_aspect'))
+        return bool(self._eval_parameter('keep_aspect', default=True))
 
-    def render(self, img, **kwargs):
+    def render(self, size, **kwargs):
         # todo
-        self.source_image.paste(self.source, (self.x, self.y), self.source)
+        overlay = self._get_canvas(size)
+        overlay.paste(self.source, (self.x, self.y), self.source)
+        return overlay

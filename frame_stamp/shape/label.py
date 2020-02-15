@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from .base_shape import BaseShape
-from PIL import ImageFont
+from PIL import ImageFont, ImageDraw
 import string
 
 
@@ -22,8 +22,22 @@ class LabelShape(BaseShape):
         if '$' in text:
             text = string.Template(text).substitute(**self.variables)
         # if text.startswith('='):
-        text = self._eval_expression('text', text) or text
-        return str(text)
+        text = str(self._eval_expression('text', text) or text)
+        tr = self.truncate
+        if tr and len(text) > tr:
+            text = text[:tr] + '...'
+        ltr = self.ltruncate
+        if ltr:
+            text = '...' + text[-ltr:]
+        if self.lower:
+            text = text.lower()
+        if self.upper:
+            text = text.upper()
+        if self.title:
+            text = text.title()
+        if self.zfill:
+            text = text.zfill(self.zfill)
+        return text
 
     @property
     def font_size(self) -> int:
@@ -35,6 +49,31 @@ class LabelShape(BaseShape):
     @property
     def spacing(self):
         return self._eval_parameter('text_spacing')
+
+    @property
+    def truncate(self):
+        return self._eval_parameter('truncate', default=None)
+
+    @property
+    def ltruncate(self):
+        return self._eval_parameter('ltruncate', default=None)
+
+    @property
+    def title(self):
+        return self._eval_parameter('title', default=False)
+
+    @property
+    def upper(self):
+        return self._eval_parameter('upper', default=False)
+
+    @property
+    def lower(self):
+        return self._eval_parameter('lower', default=False)
+
+    @property
+    def zfill(self):
+        return self._eval_parameter('zfill', default=False)
+
 
     @property
     def font(self):
@@ -70,7 +109,9 @@ class LabelShape(BaseShape):
     def height(self):
         return self.get_size()[1]
 
-    def render(self, img, **kwargs):
+    def render(self, size, **kwargs):
+        canvas = self._get_canvas(size)
+        img = ImageDraw.Draw(canvas)
         is_multiline = '\n' in self.text
         printer = img.multiline_text if is_multiline else img.text
         text_args = dict(
@@ -82,8 +123,4 @@ class LabelShape(BaseShape):
             if self.align_h:
                 text_args['align'] = self.align_h
         printer((self.x_draw, self.y_draw), self.text, **text_args)
-        return img
-
-
-
-
+        return canvas
