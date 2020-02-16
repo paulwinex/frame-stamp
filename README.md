@@ -6,16 +6,26 @@
 Быстрый пример:
 
 ```python
-# создаём инстанс изображения из библиотеки PIL
-src_img = Image.open(img_path)
+
+input_file = '...'
+output_file = '...'
 # Шаблон стампинга
-template = {...}
+template = {}
 # контекст с переменными
-context = {...}
+variables = {}
 # инстанс рендерилки
-renderer = FrameStamp(template, context)
-# рендер кадра
-stamped_img = renderer.render(img)
-# сохранение результата
-stamped_img.save(output_path, 'JPG')
+fs = FrameStamp(input_file, template, variables)
+# рендерим результат в другой файл
+fs.render(save_path=output_file)
 ```
+
+
+### TODO
+
+- реализация паддинга для grid
+
+- вкл\выкл debug_shape через диалог
+
+- прозрачность картинки работает некорректно
+
+- маска артинки
