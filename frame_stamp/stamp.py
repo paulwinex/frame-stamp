@@ -110,7 +110,7 @@ class FrameStamp(object):
             self._source = Image.open(input_image).convert('RGBA')  # type: Image.Image
         self._shared_context['source_image'] = self._source
 
-    def render(self, input_image: str=None, save_path: str=None, **kwargs):
+    def render(self, input_image: str=None, save_path: str=None, **kwargs) -> Image.Image:
         """
         Рендер всех шейп на кадре
 
@@ -122,7 +122,7 @@ class FrameStamp(object):
 
         Returns
         -------
-        str
+        Image.Image
         """
         if input_image:
             self.set_source(input_image)
@@ -140,9 +140,7 @@ class FrameStamp(object):
             frmt = self._get_output_format(save_path)
             logger.debug('Save format %s to file %s', frmt, save_path)
             self._source.convert("RGB").save(save_path, frmt, quality=100)
-            return save_path
-        else:
-            return self._source
+        return self._source
 
     def _get_output_format(self, path):
         path = Path(path)

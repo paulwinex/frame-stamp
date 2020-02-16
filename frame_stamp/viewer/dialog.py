@@ -4,7 +4,7 @@ from Qt.QtGui import *
 from frame_stamp.viewer.canvas import Canvas
 from frame_stamp.viewer.watch import TemplateFileWatch
 import os, tempfile, traceback
-from cgf_tools import jsonc
+from cgf_tools import jsonc, proc
 from frame_stamp.stamp import FrameStamp
 # from py_console import console
 
@@ -33,6 +33,7 @@ class TemplateViewer(QMainWindow):
         self.setMenuBar(menubar)
 
         file_mn.addAction(QAction('New Template', file_mn, triggered=self.new_template))
+        file_mn.addAction(QAction('Set Template', file_mn, triggered=self.browse_template))
         file_mn.addAction(QAction('Set Background', file_mn, triggered=self.browse_image))
         file_mn.addSeparator()
         file_mn.addAction(QAction('Exit', file_mn, triggered=self.close))
@@ -40,12 +41,10 @@ class TemplateViewer(QMainWindow):
         view_mn.addAction(QAction('Actual Size', view_mn, triggered=self.actual_size))
         self.fs = QAction('Full Screen', view_mn, triggered=self.set_full_screen)
         view_mn.addAction(self.fs)
-
         self.nfs = QAction('No Full Screen', view_mn, triggered=self.set_no_full_screen)
         view_mn.addAction(self.nfs)
         self.nfs.setShortcut(QKeySequence(Qt.Key_Escape))
         self.nfs.setVisible(False)
-
 
         self.wd = QWidget(self)
         self.setCentralWidget(self.wd)
@@ -190,17 +189,22 @@ class TemplateViewer(QMainWindow):
 
     def new_template(self):
         from frame_stamp.viewer.default_template import default_template
-        path, filt = QFileDialog.getSaveFileName(self, 'New Template', os.path.expanduser('~'))
+        path, _ = QFileDialog.getSaveFileName(self, 'New Template', os.path.expanduser('~'))
         if path:
             norm_path = os.path.splitext(path)[0] + '.json'
             jsonc.dump(default_template, open(norm_path, 'w'), indent=2)
-            os.startfile(norm_path)
             self.set_template_file(norm_path)
+            proc.open_file(norm_path)
 
     def browse_image(self):
-        path, _ = QFileDialog.getOpenFileName(self, 'Select image', os.path.expanduser('~'), filter='Images (*.png *.jpg)')
+        path, _ = QFileDialog.getOpenFileName(self, 'Select Image', os.path.expanduser('~'), filter='Images (*.png *.jpg)')
         if path:
             self.set_image(path)
+
+    def browse_template(self):
+        path, _ = QFileDialog.getOpenFileName(self, 'Select Template', os.path.expanduser('~'), filter='JSON (*.png)')
+        if path:
+            self.set_template_file(path)
 
     def actual_size(self):
         if self.image:
