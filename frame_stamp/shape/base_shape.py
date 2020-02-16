@@ -284,7 +284,7 @@ class BaseShape(AbstractShape):
     def _get_canvas(self, size):
         return Image.new('RGBA', size, (0, 0, 0, 0))
 
-    def render(self, img: ImageDraw, **kwargs):
+    def render(self, size, **kwargs):
         raise NotImplementedError
 
     @property
