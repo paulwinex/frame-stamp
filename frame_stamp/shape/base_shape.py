@@ -14,12 +14,12 @@ class AbstractShape(object):
     names_stop_list = ['parent']
 
     def __init__(self, shape_data, context, **kwargs):
-        self._debug_render = bool(os.environ.get('DEBUG_SHAPES'))
         if shape_data.get('id') in self.names_stop_list:
             raise NameError('ID cannot be named as "parent"')
         self._data = shape_data
         self._parent = None
         self._context = context
+        self._debug_render = bool(os.environ.get('DEBUG_SHAPES')) or self.variables.get('debug_shapes')
 
         if 'parent' in shape_data:
             parent_name = shape_data['parent']

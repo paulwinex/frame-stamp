@@ -28,7 +28,9 @@ class GridShape(BaseShape):
         if self.height == 0:
             logger.warning('Grid height is 0')
         shapes = []
-        shape_list = self._data['shapes']
+        shape_list = self._data.get('shapes')
+        if not shape_list:
+            return
         cells = self.generate_cells(len(shape_list))
         for i, shape_config in enumerate(shape_list):
             if not shape_config:
@@ -73,6 +75,8 @@ class GridShape(BaseShape):
 
     def generate_cells(self, count, cols=None, rows=None):
         # todo: выравнивание неполных строк и колонок
+        if not count:
+            return
         cells = []
         # рассчитываем количество строк и колонок
         columns = cols or self.columns
@@ -110,7 +114,9 @@ class GridShape(BaseShape):
 
     def render(self, size, **kwargs):
         canvas = self._get_canvas(size)
-        for shape in self.get_cell_shapes():
-            overlay = shape.render(size)
-            canvas = Image.alpha_composite(canvas, overlay)
+        shapes = self.get_cell_shapes()
+        if shapes:
+            for shape in self.get_cell_shapes():
+                overlay = shape.render(size)
+                canvas = Image.alpha_composite(canvas, overlay)
         return canvas
