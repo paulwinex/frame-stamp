@@ -1,56 +1,100 @@
 {
-  "name": "example1",
-  "vars": {
-    "$backdrop_color": "black"
-  },
-  // переменные, локальные для пресета
-  "shapes": [
-    // прямоугольные зоны
+  "templates": [
     {
-      // простой бекдроп
-      "type":"rect",
-      "id": "id1",  // ID нужен для обращение к величинам этого объекта из других объектов
-      "x": 0, "y": 0, // позиция левого верхнего угла
-      "hight": 50, "width": 300,  // ширина и высота в пикселях
-      "color": "$backdrop_color",// цвет заливки, переменная из контекста шаблона
-    },
-    {
-      "type":"rect",
-      "id": "id2",
-      "x": 0, "y": -50, // отрицательные значения означают отсчет с противоположной стороны кадра
-      "hight": 50,
-      "width": "100%", // процентная величина от размера кадра
-      "color": [255, 0, 0, 100],  // цвет в формате RGBA
-    },
-    {
-      "type":"rect",
-      "id": "id3",
-      "x": 0,
-      "y": 0,
-      "hight": "3ln", // запись "3ln" означает высоту 3х линий текста, автоматически высчитывается из размера шрифта
-      "width": "100%",
-    },
-    {
-      "type":"image", // картинка
-      "id": "logo",
-      "path": "/path/to/example.png",
-      // размещаем картинку в центре прямоугольника id3
-      "x": "id3.center.x - (self.width/2)", // через обращение к своему параметру
-      "y": "id3.top_left.y",  // через готовый метод top_left
-      "width": 100, "hight": 100, // задаём жесткий размер картинки
-      "resize_mode": "crop", // crop: обрезать то что не местилось, stretch: растянуть в размер
-      "opacity": 100
-    },
-    {
-      "type":"image",  // картинка в углу без ресайза
-      "path": "/path/to/example.png",
-      "x": 100, "y": 100
-    },
-    {
-      "type":"label",  // текст
-      "text": "$project_name", // переменные из контекста рендеринга
-      "font_size": "140%", // увеличиваем размер шрифта
-      "pos": "id3.line[1]" // забираем координаты текстовой линии из прямоугольника
+      "name": "new",
+      "defaults": {
+        "font_size": 30,
+        "text_color": "lightgray",
+        "color": [0, 0, 0, 150],
+        "font_name": "FreeSansBold.ttf",
+        "text_spacing": 10
+      },
+      "variables": {
+        "panels_height": 50,
+        "project_name": "Project Name",
+        "shot_name": "SCN001",
+        "task_id": 10232,
+        "debug_shapes": 0,
+        "panel_height": "=$source_width*0.04",
+        "user": "username",
+        "frame_num": 123,
+        "pipeline_step": "compos",
+        "total_length": 300,
+        "is_demo": true
+        },
+      "shapes": [
+          {
+            "type": "rect", "id": "panel_top",
+            "height": "$panel_height", "width": "=parent.width*0.8",
+            "align_h": "center"
+          },
+          {
+            "type": "rect", "id": "panel_bottom",
+            "height": "$panel_height", "width": "=parent.width*0.8",
+            "align_h": "center", "align_v": "bottom"
+          },
+          {
+            "type": "row", "parent": "panel_top",
+            "width": "parent.width","height": "parent.height",
+            "padding_left": 20, "padding_right": 20,
+
+            "shapes":[
+              {
+                "type": "label", "text": "PRJ: $project_name",
+                "align_v": "center", "font_size": "=$panel_height*0.4"
+              },
+              {
+                "type": "label", "text": "TSK: $task_id",
+                "align_v": "center", "align_h": "center",
+                "font_size": "=$panel_height*0.4"
+              },
+              {
+                "type": "label", "text": "SHT: $shot_name",
+                "align_v": "center", "align_h": "right",
+                "font_size": "=$panel_height*0.4"
+              }
+            ]
+          },
+          {
+            "type": "row", "parent": "panel_bottom",
+            "width": "parent.width","height": "parent.height",
+            "padding_left": 20, "padding_right": 20,
+
+            "shapes":[
+              {
+                "type": "label", "text": "STP: $pipeline_step",
+                "align_v": "center", "font_size": "=$panel_height*0.4"
+              },
+              {
+                "type": "label", "text": "USR: $user",
+                "align_v": "center", "align_h": "center",
+                "font_size": "=$panel_height*0.4", "text_color": "yellow",
+                "upper": true
+              },
+              {
+                "type": "label", "text": "FRM: $frame_num/$total_length",
+                "align_v": "center", "align_h": "right",
+                "font_size": "=$panel_height*0.4"
+              }
+            ]
+          },
+          {
+            "type": "label", "x": 0, "y": "=panel_top.bottom+20", "id": "wrong",
+            "text": "DEMO CONTENT", "upper": true, "text_color": [255, 255, 0, 40],
+            "font_size": 100, "align_h": "center",
+            "enabled": "$is_demo"
+          },
+          {
+            "type": "line", "points": [
+                [0, 0], ["$source_width", "$source_height"]
+              ], "thickness": 30, "color": [255, 0, 0, 30]
+          },
+          {
+            "type": "line", "points": [
+                ["$source_width", 0], [0, "$source_height"]
+              ], "thickness": 30, "color": [255, 0, 0, 30]
+          }
+      ]
     }
   ]
 }

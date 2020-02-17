@@ -159,7 +159,7 @@ class AbstractShape(object):
         default = kwargs.get('default', self.defaults.get(kwargs.get('default_key') or key))
         if default is None:
             raise KeyError('No default value for key {}'.format(key))
-        default = self._eval_expression('', default)
+        default = self._eval_parameter_convert(key, default)
         if isinstance(percent, (float, int)):
             return (default / 100) * percent
         else:

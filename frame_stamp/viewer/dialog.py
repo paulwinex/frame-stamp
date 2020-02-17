@@ -85,18 +85,17 @@ class TemplateViewer(QMainWindow):
 
     def render_template(self):
         if self.template_file:
-            templates = jsonc.load(open(self.template_file))['templates']
-            for template in templates:
-                if template.get('name') == self.template_name:
-                    break
-            else:
-                QMessageBox.critical(self, 'Error', f'Template {self.template_name} not found')
+            templates = jsonc.load(open(self.template_file))
+            try:
+                template = self.get_template_from_data(templates, self.template_name)
+            except Exception as e:
+                QMessageBox.critical(self, 'Error', str(e))
                 return
         else:
             template = None
         image = self.image or self.get_dummy_image()
         if template:
-            fs = FrameStamp(image, template, template['variables'], debug_shapes=True)
+            fs = FrameStamp(image, template, template.get('variables', {}), debug_shapes=True)
             if not self.tmp_file:
                 self.tmp_file = tempfile.mktemp(suffix='.png')
             fs.render(save_path=self.tmp_file)
@@ -118,25 +117,40 @@ class TemplateViewer(QMainWindow):
 
     def set_template_file(self, path, template_name=None):
         self.template_file = path
-        data = jsonc.load(open(path))
-        templates = data['templates']
-        if not templates:
-            return
-        if not template_name and len(templates) > 1:
-            dial = SelectTemplate([x['name'] for x in templates])
-            if dial.exec_():
-                name = dial.list.selectedItems()[0].text()
-                t_name = name
-            else:
-                return
-        else:
-            t_name = template_name or templates[0]['name']
+        data = jsonc.load(open(path))       # type: dict
+        template = self.get_template_from_data(data, template_name)
+        if not template:
+            raise Exception('template not set')
+
         self.template_file = path
-        self.template_name = t_name
+        self.template_name = template['name']
 
         self.message('Set template: {} (Template name: {})'.format(self.template_file, self.template_name))
         self.watcher.set_file(self.template_file)
         self.update_image()
+
+    def get_template_from_data(self, data, name=None):
+        if 'templates' in data:
+            if len(data['templates']) > 1:
+                if name:
+                    for tmpl in data['templates']:
+                        if tmpl['name'] == name:
+                            return tmpl
+                        else:
+                            raise NameError(f'Template {name} not found')
+                else:
+                    dial = SelectTemplate([x['name'] for x in data['templates']])
+                    if dial.exec_():
+                        name = dial.list.selectedItems()[0].text()
+                        return data[name]
+                    else:
+                        raise Exception('Canceled')
+            else:
+                return data['templates'][0]
+        elif 'name' in data:
+            return data
+        else:
+            raise RuntimeError('Wrong template format')
 
     def set_image(self, path):
         self.image = path
@@ -174,18 +188,8 @@ class TemplateViewer(QMainWindow):
     def on_file_dropped(self, path):
         self.set_no_error()
         if os.path.splitext(path)[-1] == '.json':
-            try:
-                data = jsonc.load(open(path))
-            except:
-                self.set_error(traceback.format_exc())
-                return
-            templates = data.get('templates')
-            if not templates:
-                print('No templates in file: {}'.format(path))
-                return
-            else:
-                self.set_template_file(path)
-                return True
+            self.set_template_file(path)
+            return True
         elif os.path.splitext(path)[-1] in ['.jpg', '.png']:
             self.set_image(path)
             return True
