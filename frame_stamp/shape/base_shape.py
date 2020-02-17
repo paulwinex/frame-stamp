@@ -60,7 +60,6 @@ class AbstractShape(object):
             "source_height": self.source_image.size[1],
             **self.context['variables']
             }
-        # return self.context['variables']
 
     @property
     def defaults(self):
@@ -300,7 +299,6 @@ class BaseShape(AbstractShape):
         raise NotImplementedError
 
     @property
-    # @functools.lru_cache(maxsize=1)
     def x(self):
         val = self._eval_parameter('x', default=0)
         align = self.align_h
