@@ -19,46 +19,85 @@ class LineShape(BaseShape):
 
     @property
     def x0(self):
-        return self._eval_parameter('x0', default=0)
+        raise AttributeError
 
     @property
     def x1(self):
-        return self._eval_parameter('x1', default=10)
+        raise AttributeError
 
     @property
     def y0(self):
-        return self._eval_parameter('y0', default=0)
+        raise AttributeError
 
     @property
     def y1(self):
-        return self._eval_parameter('y1', default=10)
+        raise AttributeError
+
+    @property
+    def padding(self):
+        raise AttributeError
+
+    @property
+    def padding_top(self):
+        raise AttributeError
+
+    @property
+    def padding_left(self):
+        raise AttributeError
+
+    @property
+    def padding_bottom(self):
+        raise AttributeError
+
+    @property
+    def padding_right(self):
+        raise AttributeError
+
+    @property
+    def points(self):
+        return self._eval_parameter('points', default=[])
+
+    @property
+    def thickness(self):
+        return self._eval_parameter('thickness', default=self.default_width)
 
     @property
     def x(self):
-        return self.x0
+        pts = self.points
+        if pts:
+            return min([x[0] for x in pts])
+        else:
+            return 0
 
     @property
     def y(self):
-        return self.y0
+        pts = self.points
+        if pts:
+            return min([x[1] for x in pts])
+        else:
+            return 0
 
     @property
-    def x0_draw(self):
-        return self.x0 + self.padding_left
+    def width(self):
+        pts = self.points
+        if pts:
+            return max([x[0] for x in pts])
+        else:
+            return 0
 
     @property
-    def y0_draw(self):
-        return self.y0 + self.padding_top
-
-    @property
-    def x1_draw(self):
-        return self.x1 - self.padding_right
-
-    @property
-    def y1_draw(self):
-        return self.y1 - self.padding_bottom
+    def height(self):
+        pts = self.points
+        if pts:
+            return max([x[1] for x in pts])
+        else:
+            return 0
 
     def render(self, size, **kwargs):
         canvas = self._get_canvas(size)
-        img = ImageDraw.Draw(canvas)
-        img.line((self.x_draw, self.y_draw, self.x1_draw, self.y1_draw), width=self.width, fill=self.color)
+        pts = self.points
+        if pts:
+            pts = tuple(tuple([self._eval_parameter_convert('', c) for c in x]) for x in pts)
+            img = ImageDraw.Draw(canvas)
+            img.line(pts, width=self.thickness, fill=self.color)
         return canvas
