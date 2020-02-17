@@ -74,7 +74,6 @@ class LabelShape(BaseShape):
     def zfill(self):
         return self._eval_parameter('zfill', default=False)
 
-
     @property
     def font(self):
         fnt = ImageFont.truetype(self.font_name, int(self.font_size))
@@ -86,7 +85,10 @@ class LabelShape(BaseShape):
 
     @property
     def color(self):
-        return self._eval_parameter('text_color')
+        clr = self._eval_parameter('text_color')
+        if isinstance(clr, list):
+            clr = tuple(clr)
+        return clr
 
     def get_size(self):
         """

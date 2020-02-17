@@ -11,7 +11,8 @@ class TemplateFileWatch(QObject):
         self.fsw.fileChanged.connect(self.changed)
 
     def set_file(self, path):
-        self.fsw.removePaths(self.fsw.files())
+        if self.fsw.files():
+            self.fsw.removePaths(self.fsw.files())
         self.fsw.addPath(path)
 
 

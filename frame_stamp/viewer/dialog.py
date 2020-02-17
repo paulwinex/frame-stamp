@@ -56,7 +56,7 @@ class TemplateViewer(QMainWindow):
         self.err.hide()
 
         self.watcher = TemplateFileWatch()
-        self.watcher.changed.connect(self.update_image)
+        self.watcher.changed.connect(self.on_template_changed)
         self.status_line = QLabel()
         self.ly.addWidget(self.status_line)
         self.ly.setStretch(0, 1)
@@ -71,6 +71,9 @@ class TemplateViewer(QMainWindow):
     def set_no_error(self):
         self.err.hide()
         self.canvas.show()
+
+    def on_template_changed(self):
+        QTimer.singleShot(500, self.update_image)
 
     def update_image(self, *args):
         self.set_no_error()

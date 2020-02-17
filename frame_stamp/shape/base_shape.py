@@ -55,7 +55,12 @@ class AbstractShape(object):
 
     @property
     def variables(self) -> dict:
-        return self.context['variables']
+        return {
+            "source_width": self.source_image.size[0],
+            "source_height": self.source_image.size[1],
+            **self.context['variables']
+            }
+        # return self.context['variables']
 
     @property
     def defaults(self):
@@ -79,6 +84,9 @@ class AbstractShape(object):
     def add_shape(self, shape):
         return self.context['add_shape'](shape)
 
+    def is_enabled(self):
+        return self._eval_parameter('enabled', default=True)
+
     # expressions
 
     def _eval_parameter(self, key: str, default_key=None, **kwargs):
@@ -96,8 +104,9 @@ class AbstractShape(object):
         if val is None:
             if 'default' in kwargs:
                 return kwargs['default']
-            raise KeyError(f'Key "{key}" not found')
-        return self._eval_parameter_convert(key, val) or val
+            raise KeyError(f'Key "{key}" not found in defaults')
+        resolved = self._eval_parameter_convert(key, val)
+        return resolved if resolved is not None else val
 
     def _eval_parameter_convert(self, key, val: str, **kwargs):
         """
@@ -110,7 +119,7 @@ class AbstractShape(object):
         default_key: str
         """
         # определение типа
-        if isinstance(val, (int, float, list, tuple, dict)):
+        if isinstance(val, (int, float, list, tuple, dict, bool)):
             return val
         if not isinstance(val, str):
             raise TypeError('Unsupported type {}'.format(type(val)))
@@ -201,7 +210,7 @@ class AbstractShape(object):
             return
         variable = match.group(1)
         if variable in self.variables:
-            return self.variables[variable]
+            return self._eval_parameter_convert(key, self.variables[variable])
         elif variable in self.defaults:
             return self.defaults[variable]
         else:
