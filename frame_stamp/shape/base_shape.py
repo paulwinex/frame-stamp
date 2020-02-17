@@ -258,28 +258,31 @@ class BaseShape(AbstractShape):
 
             def wrapper(size, **kwargs):
                 rendered = orig(size, **kwargs)
-                overlay = self._get_canvas(size)
-                img = ImageDraw(overlay)
-                img.line([
-                    (self.left, self.top),
-                    (self.right, self.top),
-                    (self.right, self.bottom),
-                    (self.left, self.bottom),
-                    (self.left, self.top)
-                    ], 'red', 1)
-
-                img.line([
-                    (self.parent.left+1, self.parent.top+1),
-                    (self.parent.right-1, self.parent.top+1),
-                    (self.parent.right-1, self.parent.bottom-1),
-                    (self.parent.left+1, self.parent.bottom-1),
-                    (self.parent.left+1, self.parent.top+1)
-                    ], 'yellow', 1)
-                return Image.alpha_composite(rendered, overlay)
+                return self._render_debug(rendered, size)
             wrapper.__name__ = 'render'
             return wrapper
         else:
             return super().__getattribute__(item)
+
+    def _render_debug(self, default_render, size):
+        overlay = self._get_canvas(size)
+        img = ImageDraw(overlay)
+        img.line([
+            (self.left, self.top),
+            (self.right, self.top),
+            (self.right, self.bottom),
+            (self.left, self.bottom),
+            (self.left, self.top)
+        ], 'red', 1)
+
+        img.line([
+            (self.parent.left + 1, self.parent.top + 1),
+            (self.parent.right - 1, self.parent.top + 1),
+            (self.parent.right - 1, self.parent.bottom - 1),
+            (self.parent.left + 1, self.parent.bottom - 1),
+            (self.parent.left + 1, self.parent.top + 1)
+        ], 'yellow', 1)
+        return Image.alpha_composite(default_render, overlay)
 
     def _get_canvas(self, size):
         return Image.new('RGBA', size, (0, 0, 0, 0))
@@ -288,6 +291,7 @@ class BaseShape(AbstractShape):
         raise NotImplementedError
 
     @property
+    # @functools.lru_cache(maxsize=1)
     def x(self):
         val = self._eval_parameter('x', default=0)
         align = self.align_h

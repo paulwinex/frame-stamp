@@ -88,24 +88,32 @@ class GridShape(BaseShape):
         elif rows == 'auto':
             rows = count//columns
         # общая ширина, занимаемая колонками
-        cells_width = self.width - self.horizontal_spacing
+        all_h_spacing = self.horizontal_spacing * (columns-1)
+        cells_width = self.width - self.padding_left - self.padding_right - all_h_spacing
         one_cell_width = cells_width // columns
-        width_limit = self.max_column_width
-        if width_limit:
-            one_cell_width = min([one_cell_width, width_limit])
+        if self.max_column_width:
+            one_cell_width = min([one_cell_width, self.max_column_width])
         # общая ширина, занимаемая строками
-        cells_height = self.height - self.vertical_spacing
+        all_v_spacing = self.vertical_spacing * (rows-1)
+        cells_height = self.height - self.padding_bottom - self.padding_top - all_v_spacing
         one_cell_height = cells_height // rows
         height_limit = self.max_row_height
         if height_limit:
             one_cell_height = min([one_cell_height, height_limit])
-
+        # паддинги
+        h_space = self.horizontal_spacing
+        v_space = self.vertical_spacing
+        h_pad = self.padding_left
+        v_pad = self.padding_top
+        # рассчитываем ячейки
         for i in range(count):
+            col = i % columns
+            row = i//columns
             cells.append(dict(
-                x=(one_cell_width * (i % columns)) + self.horizontal_spacing,
-                y=(one_cell_height*(i//columns)) + self.vertical_spacing,
-                width=one_cell_width - self.horizontal_spacing,
-                height=one_cell_height - self.vertical_spacing
+                x=h_pad + ((one_cell_width + h_space) * col),
+                y=v_pad + ((one_cell_height+v_space)*row),
+                width=one_cell_width,
+                height=one_cell_height
             ))
         return cells
 
