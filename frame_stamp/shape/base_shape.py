@@ -135,6 +135,7 @@ class AbstractShape(object):
             res = func(key, val, **kwargs)
             if res is not None:
                 return res
+        return val
 
     def _eval_percent_of_default(self, key, val, **kwargs):
         """
@@ -213,7 +214,7 @@ class AbstractShape(object):
         elif variable in self.defaults:
             return self.defaults[variable]
         else:
-            raise KeyError('No key "{}" in context or defaults'.format(variable))
+            raise KeyError('No key "{}" in variables or defaults'.format(variable))
 
     def _eval_expression(self, key: str, expr: str, **kwargs):
         """

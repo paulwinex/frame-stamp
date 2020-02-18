@@ -79,20 +79,20 @@
             ]
           },
           {
-            "type": "label", "x": 0, "y": "=panel_top.bottom+20", "id": "wrong",
+            "type": "label",
             "text": "DEMO CONTENT", "upper": true, "text_color": [255, 255, 0, 40],
-            "font_size": 100, "align_h": "center",
+            "font_size": 100, "align_h": "center", "align_v": "center",
             "enabled": "$is_demo"
           },
           {
             "type": "line", "points": [
                 [0, 0], ["$source_width", "$source_height"]
-              ], "thickness": 30, "color": [255, 0, 0, 30]
+              ], "thickness": 30, "color": [255, 0, 0, 30], "enabled": "$is_demo"
           },
           {
             "type": "line", "points": [
                 ["$source_width", 0], [0, "$source_height"]
-              ], "thickness": 30, "color": [255, 0, 0, 30]
+              ], "thickness": 30, "color": [255, 0, 0, 30], "enabled": "$is_demo"
           }
       ]
     }

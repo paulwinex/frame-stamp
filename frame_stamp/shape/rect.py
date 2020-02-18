@@ -42,19 +42,3 @@ class RectShape(BaseShape):
             img.line(points, self.border_color, self.border_width)
         return overlay
 
-    # def render(self, img, **kwargs):
-    #     img.rectangle(
-    #         ((self.x_draw, self.y_draw),
-    #          (self.width_draw, self.height_draw)),
-    #         self.color)
-    #     border = self.border_width
-    #     if border:
-    #         points = [
-    #             (self.left, self.top),
-    #             (self.right, self.top),
-    #             (self.right, self.bottom),
-    #             (self.left, self.bottom),
-    #             (self.left, self.top)
-    #         ]
-    #         img.line(points, self.border_color, self.border_width)
-
