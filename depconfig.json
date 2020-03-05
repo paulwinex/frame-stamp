@@ -1,0 +1,7 @@
+{
+    "source_root" : "frame_stamp",
+    "targets": {
+        "default": "$PIPELINE/cgf_libs/all",
+        "testing": "$PIPELINE_TESTING/cgf_libs/all"
+    }
+}

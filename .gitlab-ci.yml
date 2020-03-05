@@ -1,0 +1,10 @@
+stages:
+  - deploy
+deploy:
+  stage: deploy
+  image: deploy:27
+  when: manual
+  only:
+    - master
+  script:
+    - tooldeploy prod

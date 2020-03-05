@@ -131,7 +131,7 @@ class FrameStamp(object):
             self.set_source(input_image)
         if not self.source:
             raise RuntimeError('Source image not set')
-        logger.debug(f'Start stamping with template "{self.template["name"]}"')
+        # logger.debug(f'Start stamping with template "{self.template["name"]}"')
         # формат файла
         img_size = self.source.size
         for shape in self.get_shapes():     # type: BaseShape
