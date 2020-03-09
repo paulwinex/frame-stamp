@@ -8,6 +8,11 @@ class AbstractShape(object):
 
         - Инициализация данных
         - Методы ресолвинга параметров
+
+    Parameters
+        id
+        parent
+        enabled
     """
     shape_name = None
     __instances__ = {}
@@ -253,6 +258,7 @@ class BaseShape(AbstractShape):
     Allowed parameters:
         x                  : Координата Х
         y                  : Координата У
+
         color              : Цвет текста
         alight_h           : Выравнивание относительно координаты X (left, right, center)
         alight_v           : Выравнивание относительно координаты X (top, bottom, center)
@@ -262,18 +268,6 @@ class BaseShape(AbstractShape):
     """
     default_width = 0
     default_height = 0
-
-    # def __getattribute__(self, item):
-    #     if item == 'render' and self._debug_render:
-    #         orig = super(AbstractShape, self).__getattribute__(item)
-    #
-    #         def wrapper(size, **kwargs):
-    #             rendered = orig(size, **kwargs)
-    #             return self._render_debug(rendered, size)
-    #         wrapper.__name__ = 'render'
-    #         return wrapper
-    #     else:
-    #         return super().__getattribute__(item)
 
     def _render_debug(self, default_render, size):
         overlay = self._get_canvas(size)
@@ -446,8 +440,8 @@ class BaseShape(AbstractShape):
 class EmptyShape(BaseShape):
     shape_name = 'empty'
 
-    def render(self, img: ImageDraw, **kwargs):
-        pass
+    def draw_shape(self, size, **kwargs):
+        return self._get_canvas(size)
 
 
 class RootParent(BaseShape):

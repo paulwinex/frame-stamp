@@ -8,11 +8,8 @@ class LineShape(BaseShape):
     Линия
 
     Allowed parameters:
-        x0
-        x1
-        y0
-        y1
-        width
+        points
+        thickness
     """
     shape_name = 'line'
     default_width = 2

@@ -8,7 +8,8 @@ Frame Stamp
    :maxdepth: 1
 
    make_template
-   dialog
+   viewer
    shapes/index
+   expressions
    development
-   api
+   video

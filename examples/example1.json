@@ -20,7 +20,7 @@
         "frame_num": 123,
         "pipeline_step": "compos",
         "total_length": 300,
-        "is_demo": true
+        "is_demo": 0
         },
       "shapes": [
           {
@@ -80,7 +80,7 @@
           },
           {
             "type": "label",
-            "text": "DEMO CONTENT", "upper": true, "text_color": [255, 255, 0, 40],
+            "text": "DEMO CONTENT", "upper": true, "text_color": [255, 255, 0, 80],
             "font_size": 100, "align_h": "center", "align_v": "center",
             "enabled": "$is_demo"
           },
@@ -92,7 +92,7 @@
           {
             "type": "line", "points": [
                 ["$source_width", 0], [0, "$source_height"]
-              ], "thickness": 30, "color": [255, 0, 0, 30], "enabled": "$is_demo"
+              ], "thickness": 30, "color": [255, 0, 0, 50], "enabled": "$is_demo"
           }
       ]
     }
