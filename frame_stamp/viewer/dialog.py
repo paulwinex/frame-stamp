@@ -16,6 +16,7 @@ class TemplateViewer(QMainWindow):
         super(TemplateViewer, self).__init__()
         self.setWindowTitle('Template Viewer')
         self.setAcceptDrops(True)
+        self.timer = QTimer()
         # self.c = console.Console(self)
         # self.c.show()
 
@@ -46,6 +47,10 @@ class TemplateViewer(QMainWindow):
         self.nfs.setShortcut(QKeySequence(Qt.Key_Escape))
         self.nfs.setVisible(False)
 
+        self.dbg = QAction('Debug Shapes', view_mn, triggered=self.on_template_changed)
+        self.dbg.setCheckable(True)
+        view_mn.addAction(self.dbg)
+
         self.wd = QWidget(self)
         self.setCentralWidget(self.wd)
         self.ly = QVBoxLayout(self.wd)
@@ -73,7 +78,7 @@ class TemplateViewer(QMainWindow):
         self.canvas.show()
 
     def on_template_changed(self):
-        QTimer.singleShot(500, self.update_image)
+        QTimer.singleShot(100, self.update_image)
 
     def update_image(self, *args):
         self.set_no_error()
@@ -94,8 +99,13 @@ class TemplateViewer(QMainWindow):
         else:
             template = None
         image = self.image or self.get_dummy_image()
+        viewer_variables = dict(
+            # todo: custom variables from GUI
+        )
         if template:
-            fs = FrameStamp(image, template, template.get('variables', {}), debug_shapes=True)
+            variables = {**template.get('variables', {}), **viewer_variables}
+            fs = FrameStamp(image, template, variables,
+                            debug_shapes=self.dbg.isChecked())
             if not self.tmp_file:
                 self.tmp_file = tempfile.mktemp(suffix='.png')
             fs.render(save_path=self.tmp_file)
@@ -111,9 +121,11 @@ class TemplateViewer(QMainWindow):
         p.save(self.blank_image, 'PNG')
         return self.blank_image
 
-    def message(self, text):
+    def message(self, text, timeout=3):
         self.status_line.setText(str(text))
-        QTimer.singleShot(3000, self.status_line.clear)
+        if self.timer.isActive():
+            self.timer.stop()
+        self.timer.singleShot(timeout*1000, self.status_line.clear)
 
     def set_template_file(self, path, template_name=None):
         self.template_file = path
@@ -156,6 +168,8 @@ class TemplateViewer(QMainWindow):
         self.image = path
         self.message('Set Image: {}'.format(path))
         self.update_image()
+        sz = QImage(path).size()
+        self.message('Image loaded: {}x{}'.format(sz.width(), sz.height()), 10)
 
     def dropEvent(self, event, *args, **kwargs):
         mimedata = event.mimeData()

@@ -23,7 +23,7 @@ class RectShape(BaseShape):
     def border_color(self):
         return self._eval_parameter('border_color', default='black')
 
-    def render(self, size, **kwargs):
+    def draw_shape(self, size, **kwargs):
         overlay = self._get_canvas(size)
         img = ImageDraw.Draw(overlay)
         img.rectangle(

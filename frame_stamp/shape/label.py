@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from .base_shape import BaseShape
 from PIL import ImageFont, ImageDraw
-import string
+import string, os
 
 
 class LabelShape(BaseShape):
@@ -76,12 +76,22 @@ class LabelShape(BaseShape):
 
     @property
     def font(self):
-        fnt = ImageFont.truetype(self.font_name, int(self.font_size))
+        try:
+            fnt = ImageFont.truetype(self.font_name, int(self.font_size))
+        except OSError:
+            fnt = ImageFont.truetype(self.default_font, int(self.font_size))
         return fnt
 
     @property
     def font_name(self):
-        return self._eval_parameter('font_name')
+        return self._eval_parameter('font_name', default=None) or self.default_font or 'OpenSansBold.ttf'
+
+    @property
+    def default_font(self):
+        df = self._eval_parameter('default_font', default=None)
+        if not df:
+            df = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'fonts', self._eval_parameter('default_font_name'))
+        return df
 
     @property
     def color(self):
@@ -111,7 +121,7 @@ class LabelShape(BaseShape):
     def height(self):
         return self.get_size()[1]
 
-    def render(self, size, **kwargs):
+    def draw_shape(self, size, **kwargs):
         canvas = self._get_canvas(size)
         img = ImageDraw.Draw(canvas)
         is_multiline = '\n' in self.text

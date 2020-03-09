@@ -20,7 +20,7 @@ class GridShape(BaseShape):
 
     def __init__(self, *args, **kwargs):
         super(GridShape, self).__init__(*args, **kwargs)
-        self._shapes = self._create_shapes_from_data()
+        self._shapes = self._create_shapes_from_data(**kwargs)
 
     def _create_shapes_from_data(self, **kwargs):
         if self.width == 0:
@@ -120,7 +120,7 @@ class GridShape(BaseShape):
     def get_cell_shapes(self):
         return self._shapes
 
-    def render(self, size, **kwargs):
+    def draw_shape(self, size, **kwargs):
         canvas = self._get_canvas(size)
         shapes = self.get_cell_shapes()
         if shapes:

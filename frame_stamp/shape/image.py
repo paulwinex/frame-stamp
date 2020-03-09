@@ -108,7 +108,7 @@ class ImageShape(BaseShape):
     def keep_aspect(self):
         return bool(self._eval_parameter('keep_aspect', default=True))
 
-    def render(self, size, **kwargs):
+    def draw_shape(self, size, **kwargs):
         # todo
         overlay = self._get_canvas(size)
         overlay.paste(self.source, (self.x, self.y), self.source)

@@ -19,8 +19,7 @@ class AbstractShape(object):
         self._data = shape_data
         self._parent = None
         self._context = context
-        self._debug_render = bool(os.environ.get('DEBUG_SHAPES')) or self.variables.get('debug_shapes')
-
+        self._debug = bool(os.environ.get('DEBUG_SHAPES')) or self.variables.get('debug_shapes') or kwargs.get('debug_shapes')
         if 'parent' in shape_data:
             parent_name = shape_data['parent']
             if isinstance(parent_name, BaseShape):
@@ -84,7 +83,10 @@ class AbstractShape(object):
         return self.context['add_shape'](shape)
 
     def is_enabled(self):
-        return self._eval_parameter('enabled', default=True)
+        try:
+            return self._eval_parameter('enabled', default=True)
+        except KeyError:
+            return False
 
     # expressions
 
@@ -261,17 +263,17 @@ class BaseShape(AbstractShape):
     default_width = 0
     default_height = 0
 
-    def __getattribute__(self, item):
-        if item == 'render' and self._debug_render:
-            orig = super(AbstractShape, self).__getattribute__(item)
-
-            def wrapper(size, **kwargs):
-                rendered = orig(size, **kwargs)
-                return self._render_debug(rendered, size)
-            wrapper.__name__ = 'render'
-            return wrapper
-        else:
-            return super().__getattribute__(item)
+    # def __getattribute__(self, item):
+    #     if item == 'render' and self._debug_render:
+    #         orig = super(AbstractShape, self).__getattribute__(item)
+    #
+    #         def wrapper(size, **kwargs):
+    #             rendered = orig(size, **kwargs)
+    #             return self._render_debug(rendered, size)
+    #         wrapper.__name__ = 'render'
+    #         return wrapper
+    #     else:
+    #         return super().__getattribute__(item)
 
     def _render_debug(self, default_render, size):
         overlay = self._get_canvas(size)
@@ -296,8 +298,16 @@ class BaseShape(AbstractShape):
     def _get_canvas(self, size):
         return Image.new('RGBA', size, (0, 0, 0, 0))
 
-    def render(self, size, **kwargs):
+    def draw_shape(self, size, **kwargs):
         raise NotImplementedError
+
+    def render(self, size, **kwargs):
+        if not self.is_enabled():
+            return self._get_canvas(size)
+        result = self.draw_shape(size, **kwargs)
+        if self._debug:
+            result = self._render_debug(result, size)
+        return result
 
     @property
     def x(self):

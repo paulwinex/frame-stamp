@@ -17,6 +17,9 @@ class LineShape(BaseShape):
     shape_name = 'line'
     default_width = 2
 
+    def _render_debug(self, default_render, size):
+        return default_render
+
     @property
     def x0(self):
         raise AttributeError
@@ -93,7 +96,7 @@ class LineShape(BaseShape):
         else:
             return 0
 
-    def render(self, size, **kwargs):
+    def draw_shape(self, size, **kwargs):
         canvas = self._get_canvas(size)
         pts = self.points
         if pts:

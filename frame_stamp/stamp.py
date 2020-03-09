@@ -39,10 +39,10 @@ class FrameStamp(object):
                 raise PresetError('Shape type not defined in template element: {}'.format(shape_config))
             shape_cls = get_shape_class(shape_type)
             shape = shape_cls(shape_config, self._shared_context, **kwargs)
-            if shape.is_enabled():
-                self.add_shape(shape)
-            else:
-                del shape
+            # if shape.is_enabled():
+            self.add_shape(shape)
+            # else:
+            #     del shape
 
     @property
     def variables(self):
