@@ -42,17 +42,17 @@
             "shapes":[
               {
                 "type": "label", "text": "PRJ: $project_name",
-                "align_v": "center", "font_size": "=$panel_height*0.4"
+                "align_v": "center", "font_size": "=$panel_height*0.6"
               },
               {
                 "type": "label", "text": "TSK: $task_id",
                 "align_v": "center", "align_h": "center",
-                "font_size": "=$panel_height*0.4"
+                "font_size": "=$panel_height*0.6"
               },
               {
                 "type": "label", "text": "SHT: $shot_name",
                 "align_v": "center", "align_h": "right",
-                "font_size": "=$panel_height*0.4"
+                "font_size": "=$panel_height*0.6"
               }
             ]
           },
@@ -64,7 +64,7 @@
             "shapes":[
               {
                 "type": "label", "text": "STP: $pipeline_step",
-                "align_v": "center", "font_size": "=$panel_height*0.4"
+                "align_v": "center", "font_size": "=$panel_height*0.6"
               },
               {
                 "type": "label", "text": "USR: $user",
@@ -75,7 +75,7 @@
               {
                 "type": "label", "text": "FRM: $frame_num/$total_length",
                 "align_v": "center", "align_h": "right",
-                "font_size": "=$panel_height*0.4"
+                "font_size": "=$panel_height*0.6"
               }
 
             ]
