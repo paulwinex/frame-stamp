@@ -10,28 +10,10 @@ class LineShape(BaseShape):
     Allowed parameters:
         points
         thickness
+        joints
     """
     shape_name = 'line'
     default_width = 2
-
-    def _render_debug(self, default_render, size):
-        return default_render
-
-    @property
-    def x0(self):
-        raise AttributeError
-
-    @property
-    def x1(self):
-        raise AttributeError
-
-    @property
-    def y0(self):
-        raise AttributeError
-
-    @property
-    def y1(self):
-        raise AttributeError
 
     @property
     def padding(self):
@@ -62,36 +44,44 @@ class LineShape(BaseShape):
         return self._eval_parameter('thickness', default=self.default_width)
 
     @property
+    def joints(self):
+        return self._eval_parameter('joints', default=True)
+
+    @property
     def x(self):
         pts = self.points
         if pts:
-            return min([x[0] for x in pts])
+            _x = min([x[0] for x in pts])
         else:
-            return 0
+            _x = 0
+        return _x + self.parent.x
 
     @property
     def y(self):
         pts = self.points
         if pts:
-            return min([x[1] for x in pts])
+            _y = min([x[1] for x in pts])
         else:
-            return 0
+            _y = 0
+        return _y + self.parent.y
 
     @property
     def width(self):
         pts = self.points
         if pts:
-            return max([x[0] for x in pts])
+            w = max([x[0] for x in pts])
         else:
-            return 0
+            w = 0
+        return w + self.parent.x - self.x
 
     @property
     def height(self):
         pts = self.points
         if pts:
-            return max([x[1] for x in pts])
+            h = max([x[1] for x in pts])
         else:
-            return 0
+            h = 0
+        return h + self.parent.y - self.y
 
     def draw_shape(self, size, **kwargs):
         canvas = self._get_canvas(size)
@@ -100,4 +90,8 @@ class LineShape(BaseShape):
             pts = tuple(tuple([self._eval_parameter_convert('', c) for c in x]) for x in pts)
             img = ImageDraw.Draw(canvas)
             img.line(pts, width=self.thickness, fill=self.color)
+            if self.joints:
+                for (x, y) in pts:
+                    img.ellipse(((x - self.thickness/2)+1, (y - self.thickness/2)+1,
+                                 (x + self.thickness/2)-1, (y + self.thickness/2)-1), fill=self.color)
         return canvas
