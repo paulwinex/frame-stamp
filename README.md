@@ -20,11 +20,9 @@ fs = FrameStamp(input_file, template, variables)
 fs.render(save_path=output_file)
 ```
 
-
 ### TODO
 
 - поиск шрфита
-- вкл\выкл debug_shape через диалог и аргументы
 - прозрачность картинки работает некорректно
 - маска картинки
 - выбор номера кадра или процента сиквенса для слейта
