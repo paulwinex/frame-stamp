@@ -59,7 +59,7 @@
     {
       "type": "image", "id": "logo",
       "source": "$logo_img",
-      "width": "top_line.h", "height": "top_line.w",
+      "width": "top_line.h", "height": "top_line.h",
       "parent": "top_line",
       "x": "4u", "y": "2u"
     },
@@ -68,9 +68,11 @@
       "type": "grid", "id": "top_title",
       "rows": "auto", "columns": 2,
       "width": "sidebar.width", "height": "sidebar.height",
-      "x": 0, "y": "=sidebar.top+4u", "max_row_height": "4.5u",
+      "x": 0, "y": "=sidebar.top",
+//      "max_row_height": "5u",
+//      "padding_top": "4u", "padding_bottom": "4u",
+      "padding": ["4u", 10, "4u", "2u"],
       "max_column_width": "=sidebar.width/3",
-      "padding": [10, 10, 10, 10],
       "horizontal_spacing": 20,
       "shapes": [
         {
@@ -180,16 +182,44 @@
         },
         // empty line
         null,
-        null,
-        {
+        null
+      ,{
           "type": "label", "id": "t14",
           "text": "ARTIST:",
           "align_h": "right", "text_color": "$title_text_color"
         },
         {
           "type": "label",
-          "text": "$user"
+          "text": "$user", "text_color": "yellow"
         }
+//      ,{
+//          "type": "label", "id": "t15",
+//          "text": "ARTIST:",
+//          "align_h": "right", "text_color": "$title_text_color"
+//        }
+//      ,{
+//          "type": "label",
+//          "text": "$user", "text_color": "yellow"
+//        }
+//       ,{
+//          "type": "label",
+//          "text": "ARTIST:",
+//          "align_h": "right", "text_color": "$title_text_color"
+//        }
+//       ,{
+//          "type": "label",
+//          "text": "$user", "text_color": "yellow"
+//        }
+//       ,{
+//          "type": "label",
+//          "text": "ARTIST:",
+//          "align_h": "right", "text_color": "$title_text_color"
+//        }
+//       ,{
+//          "type": "label",
+//          "text": "$user", "text_color": "yellow"
+//        }
+
       ]
     },
     // color grid
