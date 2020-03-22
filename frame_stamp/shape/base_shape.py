@@ -62,8 +62,14 @@ class AbstractShape(object):
         return {
             "source_width": self.source_image.size[0],
             "source_height": self.source_image.size[1],
+            "source_aspect": self.source_image.size[1]/self.source_image.size[0],
+            "unit": self.unit,
             **self.context['variables']
             }
+
+    @property
+    def unit(self):
+        return self.source_image.size[1]*0.01
 
     @property
     def defaults(self):
@@ -134,6 +140,9 @@ class AbstractShape(object):
             return int(val)
         elif re.match(r"^\d*\.\d*$", val):  # float
             return float(val)
+        # unit
+        if re.match(r"[\d.]+u", val):
+            return float(val.rstrip('u')) * self.unit
         # определение других вариантов
         for func in [self._eval_percent_of_default,
                      self._eval_from_scope,
@@ -375,11 +384,19 @@ class BaseShape(AbstractShape):
 
     @property
     def width(self):
-        return self._eval_parameter('width', default=self.default_width)
+        return self._eval_parameter('width', default=None) or self._eval_parameter('w', default=self.default_width)
+
+    @property
+    def w(self):
+        return self.width
 
     @property
     def height(self):
-        return self._eval_parameter('height', default=self.default_height)
+        return self._eval_parameter('height', default=None) or self._eval_parameter('h', default=self.default_height)
+
+    @property
+    def h(self):
+        return self.height
 
     @property
     def align_v(self):
