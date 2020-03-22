@@ -14,13 +14,14 @@
     "sg_entity_name": "asset_name",
     "sg_task": "task_name",
     "sg_version": "001",
+    "sg_sequence": "/mnt/projects/kg/dev/textures/base/publish/001/filename.exr",
     "source_length": 100,
     "source_camera": "cam1",
     "user": "UserName",
     "client":"Client Name"
   },
   "defaults": {
-    "font_size": 25,
+    "font_size": "3.5u",
     "text_color": "lightgray",
     "color": [0, 0, 0, 150],
     "font_name": "FreeSansBold.ttf",
@@ -37,7 +38,7 @@
     {
       "type": "rect", "id": "top_line",
       "color": "$backdrop_color",
-      "width": "parent.width", "height": "=parent.height*0.1",
+      "width": "parent.width", "height": "10u",
       "x": 0, "y": 0
     },
     // side bar
@@ -58,19 +59,19 @@
     {
       "type": "image", "id": "logo",
       "source": "$logo_img",
-      "width": "=parent.height/4", "height": "=parent.height/4",
-      "parent": "sidebar",
-      "x": 50
+      "width": "10u", "height": "10u",
+      "parent": "top_line",
+      "x": 10, "y": 10
     },
-    // top table
+    // table data
     {
       "type": "grid", "id": "top_title",
-      "rows": 4, "columns": 2,
-      "width": "=sidebar.width-logo.right", "height": "logo.height",
-      "x": "logo.right", "y": "logo.top",
-      "padding_right": 100,
+      "rows": "auto", "columns": 2,
+      "width": "sidebar.width", "height": "sidebar.height",
+      "x": 0, "y": "=sidebar.top+2u", "max_row_height": "4.5u",
+      "max_column_width": "=sidebar.width/3",
       "padding": [10, 10, 10, 10],
-      "horizontal_spacing": 30,
+      "horizontal_spacing": 20,
       "shapes": [
         {
           "type": "label", "id": "t1",
@@ -107,18 +108,7 @@
         {
           "type": "label",
           "text": "$client"
-        }
-
-      ]
-    },
-    // bottom table
-    {
-      "type": "grid",
-      "columns": 2, "rows": "auto",
-      "x": 50, "y": "=logo.bottom+50",
-      "width": "=sidebar.width-100", "height": "=parent.height-logo.bottom-50",
-      "max_column_width": 180, "max_row_height": 35, "horizontal_spacing": 30,
-      "shapes": [
+        },
         {
           "type": "label", "id": "t6",
           "text": "SCENE FILE:",
@@ -128,6 +118,16 @@
           "type": "label",
           "text": "$source_scene"
         },
+        {
+          "type": "label", "id": "t7",
+          "text": "SEQUENCE:",
+          "align_h": "right", "text_color": "$title_text_color"
+        },
+        {
+          "type": "label",
+          "text": "$sg_sequence"
+        },
+
         // empty line
         null,
         null,

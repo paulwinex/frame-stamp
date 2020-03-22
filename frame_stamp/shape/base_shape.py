@@ -1,5 +1,6 @@
 import re, os
 from PIL.ImageDraw import ImageDraw, Image
+from ..utils import cached_result
 
 
 class AbstractShape(object):
@@ -21,9 +22,11 @@ class AbstractShape(object):
     def __init__(self, shape_data, context, **kwargs):
         if shape_data.get('id') in self.names_stop_list:
             raise NameError('ID cannot be named as "parent"')
+        self.__cache__ = {}
         self._data = shape_data
         self._parent = None
         self._context = context
+        self._local_context = kwargs.get('local_context') or {}
         self._debug = bool(os.environ.get('DEBUG_SHAPES')) or self.variables.get('debug_shapes') or kwargs.get('debug_shapes')
         if 'parent' in shape_data:
             parent_name = shape_data['parent']
@@ -46,28 +49,34 @@ class AbstractShape(object):
         return '{} #{}'.format(self.__class__.__name__, self.id or 'none')
 
     @property
+    @cached_result
     def parent(self):
         return self._parent
 
     @property
+    @cached_result
     def context(self):
         return self._context
 
     @property
+    @cached_result
     def id(self):
         return self._data.get('id')
 
     @property
+    @cached_result
     def variables(self) -> dict:
         return {
             "source_width": self.source_image.size[0],
             "source_height": self.source_image.size[1],
             "source_aspect": self.source_image.size[1]/self.source_image.size[0],
             "unit": self.unit,
-            **self.context['variables']
+            **self.context['variables'],
+            **self._local_context
             }
 
     @property
+    @cached_result
     def unit(self):
         return round(self.source_image.size[1]*0.01, 3)
 
@@ -93,6 +102,7 @@ class AbstractShape(object):
     def add_shape(self, shape):
         return self.context['add_shape'](shape)
 
+    @cached_result
     def is_enabled(self):
         try:
             return self._eval_parameter('enabled', default=True)
@@ -313,6 +323,7 @@ class BaseShape(AbstractShape):
         return result
 
     @property
+    @cached_result
     def x(self):
         val = self._eval_parameter('x', default=0)
         align = self.align_h
@@ -324,6 +335,7 @@ class BaseShape(AbstractShape):
             return int(self.parent.x + val)
 
     @property
+    @cached_result
     def y(self):
         val = self._eval_parameter('y', default=0)
         align = self.align_v
@@ -383,6 +395,7 @@ class BaseShape(AbstractShape):
         return self.y0 + self.height
 
     @property
+    @cached_result
     def width(self):
         return self._eval_parameter('width', default=None) or self._eval_parameter('w', default=self.default_width)
 
@@ -391,6 +404,7 @@ class BaseShape(AbstractShape):
         return self.width
 
     @property
+    @cached_result
     def height(self):
         return self._eval_parameter('height', default=None) or self._eval_parameter('h', default=self.default_height)
 
@@ -399,6 +413,7 @@ class BaseShape(AbstractShape):
         return self.height
 
     @property
+    @cached_result
     def align_v(self):
         return self._eval_parameter('align_v', default=None)
 
@@ -407,6 +422,7 @@ class BaseShape(AbstractShape):
         return self.align_v
 
     @property
+    @cached_result
     def align_h(self):
         return self._eval_parameter('align_h', default=None)
 
@@ -422,6 +438,7 @@ class BaseShape(AbstractShape):
         )
 
     @property
+    @cached_result
     def padding(self):
         param = self._eval_parameter('padding', default=(0, 0, 0, 0))
         if not isinstance(param, (list, tuple)):
@@ -431,22 +448,27 @@ class BaseShape(AbstractShape):
         return tuple(param)
 
     @property
+    @cached_result
     def padding_top(self):
         return self._eval_parameter('padding_top', default=None) or self.padding[0]
 
     @property
+    @cached_result
     def padding_right(self):
         return self._eval_parameter('padding_right', default=None) or self.padding[1]
 
     @property
+    @cached_result
     def padding_bottom(self):
         return self._eval_parameter('padding_bottom', default=None) or self.padding[2]
 
     @property
+    @cached_result
     def padding_left(self):
         return self._eval_parameter('padding_left', default=None) or self.padding[3]
 
     @property
+    @cached_result
     def color(self):
         clr = self._eval_parameter('color', default=(0, 0, 0, 255))
         if isinstance(clr, list):
@@ -480,10 +502,12 @@ class RootParent(BaseShape):
         return 0
 
     @property
+    @cached_result
     def width(self):
         return self.source_image.size[0]
 
     @property
+    @cached_result
     def height(self):
         return self.source_image.size[1]
 

@@ -97,7 +97,7 @@ class TemplateViewer(QMainWindow):
 
     def render_template(self):
         if self.template_file:
-            templates = jsonc.load(open(self.template_file))
+            templates = jsonc.load(open(self.template_file, encoding='utf-8'))
             try:
                 template = self.get_template_from_data(templates, self.template_name)
             except Exception as e:
@@ -274,8 +274,8 @@ class TemplateViewer(QMainWindow):
         if os.path.exists(self.state_file):
             try:
                 data = jsonc.load(open(self.state_file))
-            except:
-                pass
+            except Exception as e:
+                print(e)
         data['image'] = self.image
         data['template_file'] = self.template_file
         data['template_name'] = self.template_name

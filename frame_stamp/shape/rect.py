@@ -1,5 +1,6 @@
 from .base_shape import BaseShape
-from PIL import Image, ImageDraw
+from PIL import ImageDraw
+from ..utils import cached_result
 
 
 class RectShape(BaseShape):
@@ -16,10 +17,12 @@ class RectShape(BaseShape):
     default_width = 100
 
     @property
+    @cached_result
     def border_width(self):
         return self._eval_parameter('border_width', default=0)
 
     @property
+    @cached_result
     def border_color(self):
         return self._eval_parameter('border_color', default='black')
 

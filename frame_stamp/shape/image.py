@@ -3,6 +3,7 @@ from PIL import Image
 from .base_shape import BaseShape
 from pathlib import Path
 import string
+from ..utils import cached_result
 
 
 class ImageShape(BaseShape):
@@ -40,6 +41,7 @@ class ImageShape(BaseShape):
         return Image.open(path.as_posix())
 
     @property
+    @cached_result
     def source(self):
         """
         Исходник картинки для рисования
@@ -73,6 +75,7 @@ class ImageShape(BaseShape):
         return self.__dict__['_saved_source']
 
     @property
+    @cached_result
     def size(self):
         src = getattr(self, '_saved_source', None)
         if src:
@@ -94,6 +97,7 @@ class ImageShape(BaseShape):
     #     return self.__dict__['_saved_mask']
 
     @property
+    @cached_result
     def width(self):
         src = getattr(self, '_saved_source', None)
         if src:
@@ -101,10 +105,12 @@ class ImageShape(BaseShape):
         return self._eval_parameter('width', default=0)
 
     @property
+    @cached_result
     def transparency(self):
         return self._eval_parameter('transparency', default=0)
 
     @property
+    @cached_result
     def keep_aspect(self):
         return bool(self._eval_parameter('keep_aspect', default=True))
 

@@ -39,9 +39,10 @@ class GridShape(BaseShape):
             if shape_type is None:
                 raise PresetError('Shape type not defined in template element: {}'.format(shape_config))
             cells[i]['parent'] = self
-            shape_config['parent'] = EmptyShape(cells[i], self.context)
+            lc = {'index': i, 'row': cells[i]['row'], 'column': cells[i]['column']}
+            shape_config['parent'] = EmptyShape(cells[i], self.context, local_context=lc)
             shape_cls = get_shape_class(shape_type)
-            shape = shape_cls(shape_config, self.context, **kwargs)
+            shape = shape_cls(shape_config, self.context, local_context=lc, **kwargs)
             shapes.append(shape)
             if shape.id is not None:
                 if shape.id in self.scope:
@@ -113,7 +114,9 @@ class GridShape(BaseShape):
                 x=h_pad + ((one_cell_width + h_space) * col),
                 y=v_pad + ((one_cell_height+v_space)*row),
                 width=one_cell_width,
-                height=one_cell_height
+                height=one_cell_height,
+                column=col,
+                row=row
             ))
         return cells
 
