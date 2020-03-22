@@ -69,7 +69,7 @@ class AbstractShape(object):
 
     @property
     def unit(self):
-        return self.source_image.size[1]*0.01
+        return round(self.source_image.size[1]*0.01, 3)
 
     @property
     def defaults(self):
