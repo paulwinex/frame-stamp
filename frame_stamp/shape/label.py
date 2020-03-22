@@ -28,14 +28,16 @@ class LabelShape(BaseShape):
             text = string.Template(text).substitute(**self.variables)
         text = self._render_special_characters(text)
         text = str(self._eval_expression('text', text) or text)
-        tr = self.truncate
-        if tr and len(text) > tr:
-            text = text[:tr] + '...'
-        ltr = self.ltruncate
-        if ltr:
-            text = '...' + text[-ltr:]
+        if self.truncate_path:
+            text = self._trunc_path(text, self.truncate_path, 1)
+        elif self.ltruncate_path:
+            text = self._trunc_path(text, self.ltruncate_path, 0)
         if self.lower:
             text = text.lower()
+        if self.truncate and len(text) > self.truncate:
+            text = text[:self.truncate] + '...'
+        if self.ltruncate and len(text) > self.ltruncate:
+            text = '...' + text[-self.ltruncate:]
         if self.upper:
             text = text.upper()
         if self.title:
@@ -43,6 +45,13 @@ class LabelShape(BaseShape):
         if self.zfill:
             text = text.zfill(self.zfill)
         return text
+
+    def _trunc_path(self, text, count, from_start=1):
+        parts = os.path.normpath(text).split(os.path.sep)
+        if from_start:
+            return os.path.sep.join(parts[:count+1])
+        else:
+            return os.path.sep.join(parts[-count:])
 
     def _render_special_characters(self, text):
         for char, val in self.special_characters.items():
@@ -71,6 +80,16 @@ class LabelShape(BaseShape):
     @cached_result
     def ltruncate(self):
         return self._eval_parameter('ltruncate', default=None)
+
+    @property
+    @cached_result
+    def truncate_path(self):
+        return self._eval_parameter('truncate_path', default=None)
+
+    @property
+    @cached_result
+    def ltruncate_path(self):
+        return self._eval_parameter('ltruncate_path', default=None)
 
     @property
     @cached_result

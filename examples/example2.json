@@ -59,16 +59,16 @@
     {
       "type": "image", "id": "logo",
       "source": "$logo_img",
-      "width": "10u", "height": "10u",
+      "width": "top_line.h", "height": "top_line.w",
       "parent": "top_line",
-      "x": 10, "y": 10
+      "x": "4u", "y": "2u"
     },
     // table data
     {
       "type": "grid", "id": "top_title",
       "rows": "auto", "columns": 2,
       "width": "sidebar.width", "height": "sidebar.height",
-      "x": 0, "y": "=sidebar.top+2u", "max_row_height": "4.5u",
+      "x": 0, "y": "=sidebar.top+4u", "max_row_height": "4.5u",
       "max_column_width": "=sidebar.width/3",
       "padding": [10, 10, 10, 10],
       "horizontal_spacing": 20,
@@ -125,7 +125,7 @@
         },
         {
           "type": "label",
-          "text": "$sg_sequence"
+          "text": "$sg_sequence", "ltruncate_path": 3
         },
 
         // empty line
