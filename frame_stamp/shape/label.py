@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from .base_shape import BaseShape
-from PIL import ImageFont, ImageDraw
+from PIL import ImageFont, ImageDraw, ImageFilter
 import string, os, html, re
 from ..utils import cached_result
 
@@ -141,6 +141,12 @@ class LabelShape(BaseShape):
             clr = tuple(clr)
         return clr
 
+    @property
+    @cached_result
+    def outline(self):
+        return self._eval_parameter('outline', default={})
+
+
     @cached_result
     def get_size(self):
         """
@@ -176,5 +182,22 @@ class LabelShape(BaseShape):
             text_args['spacing'] = self.spacing
             if self.align_h:
                 text_args['align'] = self.align_h
+        if self.outline:
+            outline_text_args = text_args.copy()
+            if isinstance(self.outline, (int, float)):
+                outline = {'width': self.outline}
+            elif isinstance(self.outline, dict):
+                outline = self.outline.copy()
+            else:
+                raise TypeError('Outline parameter must be type of dict or number')
+            outline_text_args['fill'] = outline.get('color', 'black')
+            printer((self.x_draw, self.y_draw), self.text, **outline_text_args)
+            canvas = canvas.filter(ImageFilter.GaussianBlur(outline.get('width', 3)))
+            x = outline.get('hardness', 10)
+            STROKE = type('STROKE', (ImageFilter.BuiltinFilter,),
+                          {'filterargs': ((3, 3), 1, 0, (x, x, x, x, 5, x, x, x, x,))})
+            canvas = canvas.filter(STROKE)
+            img = ImageDraw.Draw(canvas)
+            printer = img.multiline_text if is_multiline else img.text
         printer((self.x_draw, self.y_draw), self.text, **text_args)
         return canvas
