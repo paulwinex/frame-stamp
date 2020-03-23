@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from .base_shape import BaseShape
-from PIL import ImageFont, ImageDraw, ImageFilter
+from PIL import ImageFont, ImageDraw, ImageFilter, Image
 import string, os, html, re
 from ..utils import cached_result
 
@@ -44,6 +44,7 @@ class LabelShape(BaseShape):
             text = text.title()
         if self.zfill:
             text = text.zfill(self.zfill)
+        text = self._add_new_lines(text)
         return text
 
     def _trunc_path(self, text, count, from_start=1):
@@ -57,6 +58,13 @@ class LabelShape(BaseShape):
         for char, val in self.special_characters.items():
             text = re.sub(char, val, text)
         return html.unescape(text)
+
+    def _add_new_lines(self, text):
+        """
+        Добавление переноса если текст не помещается в размер парента
+        """
+        # TODO
+        return text
 
     @property
     @cached_result
@@ -146,6 +154,10 @@ class LabelShape(BaseShape):
     def outline(self):
         return self._eval_parameter('outline', default={})
 
+    @property
+    @cached_result
+    def backdrop(self):
+        return self._eval_parameter('backdrop', default=None)
 
     @cached_result
     def get_size(self):
@@ -207,4 +219,19 @@ class LabelShape(BaseShape):
             # пересоздаём паинтер
             printer = drw.multiline_text if is_multiline else drw.text
         printer((self.x_draw, self.y_draw), self.text, **text_args)
+        if self.backdrop:
+            if isinstance(self.backdrop, str):
+                backdrop = {'color': self.backdrop, "offset": 5}
+            elif isinstance(self.backdrop, dict):
+                backdrop = self.backdrop.copy()
+            else:
+                raise TypeError('Outline parameter must be type of dict or number')
+            bd = self._get_canvas(size)
+            drw = ImageDraw.Draw(bd)
+            ofs = backdrop.get('offset', 5)
+            clr = backdrop.get('color', 'black')
+            if isinstance(clr, list):
+                clr = tuple(clr)
+            drw.rectangle((self.x-ofs, self.y-ofs, self.right+ofs, self.bottom+ofs), fill=clr)
+            canvas = Image.alpha_composite(bd, canvas)
         return canvas
