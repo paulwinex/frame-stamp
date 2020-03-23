@@ -3,6 +3,9 @@ from .base_shape import BaseShape
 from PIL import ImageFont, ImageDraw, ImageFilter, Image
 import string, os, html, re
 from ..utils import cached_result
+import cgflogging
+
+logger = cgflogging.getLogger(__name__)
 
 
 class LabelShape(BaseShape):
@@ -19,6 +22,8 @@ class LabelShape(BaseShape):
     special_characters = {
         '&;': ''
     }
+    default_fonts_dir = os.path.dirname(os.path.dirname(__file__))
+    default_font_name = 'OpenSansBold.ttf'
 
     @property
     @cached_result
@@ -125,20 +130,21 @@ class LabelShape(BaseShape):
         try:
             fnt = ImageFont.truetype(self.font_name, int(self.font_size))
         except OSError:
+            logger.warning('Font {} not found, use default'.format(self.font_name))
             fnt = ImageFont.truetype(self.default_font, int(self.font_size))
         return fnt
 
     @property
     @cached_result
     def font_name(self):
-        return self._eval_parameter('font_name', default=None) or self.default_font or 'OpenSansBold.ttf'
+        return self._eval_parameter('font_name', default=None) or self.default_font_name
 
     @property
     @cached_result
     def default_font(self):
         df = self._eval_parameter('default_font', default=None)
         if not df:
-            df = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'fonts', self._eval_parameter('default_font_name'))
+            df = os.path.join(self.default_fonts_dir, 'fonts', self._eval_parameter('default_font_name'))
         return df
 
     @property
