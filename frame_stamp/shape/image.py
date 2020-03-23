@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from PIL import Image
+from PIL import Image, ImageChops
 from .base_shape import BaseShape
 from pathlib import Path
 import string
@@ -55,10 +55,8 @@ class ImageShape(BaseShape):
             if not source:
                 raise RuntimeError('Image source not set')
             img = self._get_image(source)
-            # применение прозрачности
-            transp = self.transparency
-            if transp:
-                 img.putalpha(min(max(int(255*transp), 0), 255))
+            # применение прозрачности и маски
+            img = self.apply_mask(img, self.mask, self.transparency)
             # ресайз
             if not self.size == img.size:
                 target_size = list(self.size)
@@ -82,19 +80,43 @@ class ImageShape(BaseShape):
             return src.size
         return (self.width, self.height)
 
-    # @property
-    # def mask(self):
-    #     if '_saved_mask' not in self.__dict__:
-    #         mask = self._data.get('mask')
-    #         if not mask:
-    #             return
-    #         img = self._get_image(mask)
-    #         if self.keep_aspect:
-    #             img.thumbnail(self.size, Image.ANTIALIAS)
-    #         else:
-    #             img = img.resize(self.size, Image.ANTIALIAS)
-    #         self.__dict__['_saved_mask'] = img.convert('L')
-    #     return self.__dict__['_saved_mask']
+    @property
+    @cached_result
+    def mask(self):
+        mask = self._data.get('mask')
+        if not mask:
+            return
+        img = self._get_image(mask)
+        return img.convert('L')
+
+    def apply_mask(self, img, mask, transparency=0):
+        # get source
+        if not Image.isImageType(img):
+            img = Image.open(img).convert('RGBA')
+        else:
+            img = img.convert('RGBA')
+        # extract original alpha
+        alpha = img.split()[-1]
+        # create clean image for new alpha
+        im_alpha = Image.new("RGBA", img.size, (0, 0, 0, 255))
+        # insert alpha with mask
+        im_alpha.paste(alpha, mask=alpha)
+        im_alpha = im_alpha.convert('L')
+        if transparency > 0:
+            # apply transparency
+            transp = Image.new("L", img.size, min(max(int(255 * (1 - self.transparency)), 0), 255))
+            im_alpha = ImageChops.multiply(im_alpha, transp)
+        if mask:
+            # apply mask
+            if not Image.isImageType(mask):
+                mask = Image.open(mask).convert('L')
+            else:
+                mask = mask.convert('L')
+            # multiply original alpha and mask
+            im_alpha = ImageChops.multiply(im_alpha, mask)
+        # put alpha to image
+        img.putalpha(im_alpha.convert('L'))
+        return img
 
     @property
     @cached_result
@@ -107,7 +129,7 @@ class ImageShape(BaseShape):
     @property
     @cached_result
     def transparency(self):
-        return self._eval_parameter('transparency', default=0)
+        return min(1, max(0, self._eval_parameter('transparency', default=0)))
 
     @property
     @cached_result
