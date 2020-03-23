@@ -171,9 +171,9 @@ class LabelShape(BaseShape):
 
     def draw_shape(self, size, **kwargs):
         canvas = self._get_canvas(size)
-        img = ImageDraw.Draw(canvas)
+        drw = ImageDraw.Draw(canvas)
         is_multiline = '\n' in self.text
-        printer = img.multiline_text if is_multiline else img.text
+        printer = drw.multiline_text if is_multiline else drw.text
         text_args = dict(
             font=self.font,
             fill=self.color
@@ -183,6 +183,7 @@ class LabelShape(BaseShape):
             if self.align_h:
                 text_args['align'] = self.align_h
         if self.outline:
+            # получаем словарь с параметрами обводки
             outline_text_args = text_args.copy()
             if isinstance(self.outline, (int, float)):
                 outline = {'width': self.outline}
@@ -190,14 +191,20 @@ class LabelShape(BaseShape):
                 outline = self.outline.copy()
             else:
                 raise TypeError('Outline parameter must be type of dict or number')
+            # заменяем цвет в аргументах
             outline_text_args['fill'] = outline.get('color', 'black')
+            # рисуем черный текст
             printer((self.x_draw, self.y_draw), self.text, **outline_text_args)
+            # размвка
             canvas = canvas.filter(ImageFilter.GaussianBlur(outline.get('width', 3)))
-            x = outline.get('hardness', 10)
+            # фильтр жёсткости границ
+            x = 0
+            y = outline.get('hardness', 10)
             STROKE = type('STROKE', (ImageFilter.BuiltinFilter,),
-                          {'filterargs': ((3, 3), 1, 0, (x, x, x, x, 5, x, x, x, x,))})
+                          {'filterargs': ((3, 3), 1, 0, (x, x, x, x, y, x, x, x, x,))})
             canvas = canvas.filter(STROKE)
-            img = ImageDraw.Draw(canvas)
-            printer = img.multiline_text if is_multiline else img.text
+            drw = ImageDraw.Draw(canvas)
+            # пересоздаём паинтер
+            printer = drw.multiline_text if is_multiline else drw.text
         printer((self.x_draw, self.y_draw), self.text, **text_args)
         return canvas

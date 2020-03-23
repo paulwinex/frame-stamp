@@ -141,10 +141,12 @@ class AbstractShape(object):
         default_key: str
         """
         # определение типа
-        if isinstance(val, (int, float,  dict, bool)):
+        if isinstance(val, (int, float, bool)):
             return val
         elif isinstance(val, (list, tuple)):
             return [self._eval_parameter_convert(key, x) for x in val]
+        elif isinstance(val, dict):
+            return {k: self._eval_parameter_convert(key, v) for k, v in val.items()}
         if not isinstance(val, str):
             raise TypeError('Unsupported type {}'.format(type(val)))
         # остается только строка
