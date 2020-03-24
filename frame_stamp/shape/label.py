@@ -77,7 +77,7 @@ class LabelShape(BaseShape):
         size = self._eval_parameter('font_size')    # type: int
         if size == 0:
             raise ValueError('Font size can`t be zero. Shape "{}"'.format(self))
-        return size
+        return int(size)
 
     @property
     @cached_result
@@ -130,11 +130,14 @@ class LabelShape(BaseShape):
         """
         Возвращает готовый шрифт для рендера
         """
-        try:
-            fnt = ImageFont.truetype(self.font_name or self.default_font_name, int(self.font_size))
-        except (OSError, AttributeError):
-            logger.warning('Font {} not found, use default'.format(self.font_name))
-            fnt = ImageFont.truetype(self.default_font_name, int(self.font_size))
+        if self.font_name:
+            try:
+                fnt = ImageFont.truetype(self.font_name or self.default_font_name, int(self.font_size))
+            except (OSError, AttributeError):
+                logger.debug('Font {} not found, use default'.format(self.font_name))
+                fnt = ImageFont.truetype(self.default_font_name, self.font_size)
+        else:
+            fnt = ImageFont.truetype(self.default_font_name, self.font_size)
         return fnt
 
     @property

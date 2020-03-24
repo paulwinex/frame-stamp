@@ -62,7 +62,10 @@ class ImageShape(BaseShape):
         """
         img = self.source
         # ресайз
-        if not self.size == img.size:
+        # size = (512, 512)
+        # fit_and_resized_image = ImageOps.fit(original_image, size, Image.ANTIALIAS)
+        if self.size != img.size:
+            # img = ImageOps.fit(img, self.size, Image.ANTIALIAS)
             target_size = list(self.size)
             if target_size[0] == 0:
                 target_size[0] = img.size[0]
