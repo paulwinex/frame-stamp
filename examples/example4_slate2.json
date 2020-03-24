@@ -33,7 +33,7 @@
     {
       "type": "image",
       "source": "$source",
-      "x": "=parent.width/5"
+      "x": "=parent.width/4"
     },
     // top bar
     {
@@ -67,7 +67,6 @@
     },
     // table data
     {
-      "enabled": 1,
       "type": "grid", "id": "top_title",
       "rows": "auto", "columns": 2,
       "width": "=sidebar.width-logo.right", "height": "sidebar.height",
@@ -94,13 +93,8 @@
       "rows": "auto", "columns": 2,
       "width": "=sidebar.width-10u", "height": "=sidebar.height-logo.height-4u",
       "x": "5u", "y": "=logo.bottom+8u",
-      "max_row_height": "4u",
       "padding_right": "10u",
-//      "padding": [0, 10, "4u", "2u"],
-//      "max_column_width": "=sidebar.width/3",
-      "max_row_height": "2u",
-      "horizontal_spacing": 20,
-      "vertical_spacing": "3u",
+      "max_row_height": "4u",
       "shapes": [
         {"type": "label", "text": "SCENE FILE", "text_color": "$title_text_color"},
         {"type": "label","text": "$source_scene"},

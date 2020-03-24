@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from PIL import Image, ImageChops
+from PIL import Image, ImageChops, ImageOps
 from .base_shape import BaseShape
 from pathlib import Path
 import string
@@ -65,14 +65,14 @@ class ImageShape(BaseShape):
         # size = (512, 512)
         # fit_and_resized_image = ImageOps.fit(original_image, size, Image.ANTIALIAS)
         if self.size != img.size:
-            # img = ImageOps.fit(img, self.size, Image.ANTIALIAS)
             target_size = list(self.size)
             if target_size[0] == 0:
                 target_size[0] = img.size[0]
             if target_size[1] == 0:
                 target_size[1] = img.size[1]
-            target_size = self._resize_values(img.size, target_size) if self.keep_aspect else target_size
-            img = img.resize(target_size, Image.ANTIALIAS)
+            img = ImageOps.fit(img, target_size, Image.ANTIALIAS)
+            # target_size = self._resize_values(img.size, target_size) if self.keep_aspect else target_size
+            # img = img.resize(target_size, Image.ANTIALIAS)
         return img
 
     def _resize_values(self, src_size, trg_size):

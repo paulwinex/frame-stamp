@@ -11,6 +11,7 @@ from frame_stamp.stamp import FrameStamp
 
 class TemplateViewer(QMainWindow):
     state_file = os.path.expanduser('~/.template_viewer.json')
+    help_url = 'http://docs.cgfww.com/frame_stamp/'
 
     def __init__(self):
         super(TemplateViewer, self).__init__()
@@ -30,6 +31,9 @@ class TemplateViewer(QMainWindow):
         menubar.addAction(file_mn.menuAction())
         view_mn = QMenu('View', menubar)
         menubar.addAction(view_mn.menuAction())
+        help_mn = QMenu('Help', menubar)
+        menubar.addAction(help_mn.menuAction())
+
         self.setMenuBar(menubar)
 
         file_mn.addAction(QAction('New Template', file_mn, triggered=self.new_template))
@@ -42,12 +46,14 @@ class TemplateViewer(QMainWindow):
         file_mn.addAction(QAction('Exit', file_mn, triggered=self.close))
 
         view_mn.addAction(QAction('Actual Size', view_mn, triggered=self.actual_size))
+        view_mn.addAction(QAction('Show Info', view_mn, triggered=self.show_info))
         self.fs = QAction('Full Screen', view_mn, triggered=self.set_full_screen)
         view_mn.addAction(self.fs)
         self.nfs = QAction('No Full Screen', view_mn, triggered=self.set_no_full_screen)
         view_mn.addAction(self.nfs)
         self.nfs.setShortcut(QKeySequence(Qt.Key_Escape))
         self.nfs.setVisible(False)
+        help_mn.addAction(QAction('Documentation', view_mn, triggered=lambda: __import__('webbrowser').open(self.help_url)))
 
         self.dbg = QAction('Debug Shapes', view_mn, triggered=self.on_template_changed)
         self.dbg.setCheckable(True)
@@ -304,6 +310,22 @@ class TemplateViewer(QMainWindow):
                 self.set_template_file(tmpl, data.get('template_name'))
             if data.get('fullscreen'):
                 self.set_full_screen()
+
+    def show_info(self):
+        dial = QMessageBox(self)
+        dial.setWindowTitle('Viewer info')
+        sz = QImage(self.image).size()
+        dial.setText('<b>Template File:</b><br>  {}<br><br>'
+                     '<b>Template Name:</b><br>  {}<br><br>'
+                     '<b>Image File:</b><br> {}<br><br>'
+                     '<b>Image Size:</b><br>  {}x{}<br><br>'.format(
+            self.template_file,
+            self.template_name,
+            self.image,
+            sz.width(), sz.height()
+
+        ))
+        dial.exec_()
 
 
 class SelectTemplate(QDialog):
