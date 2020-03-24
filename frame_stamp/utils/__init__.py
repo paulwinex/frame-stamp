@@ -1,4 +1,5 @@
 import os
+from functools import wraps
 
 USE_CACHE = not bool(os.getenv('NO_CACHE'))
 
@@ -7,6 +8,7 @@ def cached_result(func):
     """
     Кеширование значения для шейп
     """
+    @wraps(func)
     def wrapped(*args, **kwargs):
         if USE_CACHE:
             inst = args[0]

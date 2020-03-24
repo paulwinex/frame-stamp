@@ -1,0 +1,199 @@
+{"templates":[
+{
+  "name": "default_slate",
+  "variables": {
+    "backdrop_color": [40, 40, 40, 255],
+    "plate_padding": 10,
+    "grid_padding": [5, 5, 5, 5],
+    "logo_img": "~/.mversion/cgf-logo.png",
+    "title_text_color": "gray",
+    "sg_project_name": "KG",
+    "sg_fps": 25,
+    "date": "2020-03-01",
+    "source_scene": "scene_name.mb",
+    "sg_entity_name": "asset_name",
+    "sg_task": "task_name",
+    "sg_version": "001",
+    "source_path_padding": "/mnt/projects/kg/dev/textures/base/publish/001/filename_%04d.exr",
+    "source_filename_padding": "filename_%04d.exr",
+    "source_length": 100,
+    "source_camera": "cam1",
+    "user": "UserName",
+    "client":"Client Name"
+  },
+  "defaults": {
+    "font_size": "3u",
+    "text_color": "lightgray",
+    "color": [0, 0, 0, 150],
+    "font_name": "FreeSansBold.ttf",
+    "text_spacing": 10
+  },
+  "shapes": [
+    // frame preview
+    {
+      "type": "image",
+      "source": "$source",
+      "x": "=parent.width/5"
+    },
+    // top bar
+    {
+      "type": "rect", "id": "top_line",
+      "color": "$backdrop_color",
+      "width": "parent.width", "height": "10u",
+      "x": 0, "y": 0
+    },
+    // side bar
+    {
+      "type": "rect", "id": "sidebar",
+      "color": "$backdrop_color",
+      "width": "=parent.width/2", "height": "=parent.height-top_line.height-bottom_line.height",
+      "y": "top_line.bottom", "x": 0
+    },
+    // bottom line
+    {
+      "type": "rect", "id": "bottom_line",
+      "color": "$backdrop_color",
+      "width": "parent.width", "height": "=parent.height*0.1",
+      "align_v": "bottom", "x": 0, "y": 0
+    },
+    // logo
+    {
+      "type": "image", "id": "logo",
+      "source": "$logo_img",
+      "height": "10u",
+      "parent": "top_line",
+      "x": "5u", "y": "parent.bottom"
+    },
+    // table data
+    {
+      "enabled": 1,
+      "type": "grid", "id": "top_title",
+      "rows": "auto", "columns": 2,
+      "width": "=sidebar.width-logo.right", "height": "sidebar.height",
+      "x": "logo.right", "y": "=sidebar.top",
+      "max_row_height": "4u",
+      "padding": [0, 10, "4u", "2u"],
+      "horizontal_spacing": 20,
+      "shapes": [
+        {"type": "label", "text": "PROJECT:",
+          "align_h": "right", "text_color": "$title_text_color"},
+        {"type": "label", "text": "$sg_project_name"},
+
+        {"type": "label", "text": "FPS:",
+          "align_h": "right", "text_color": "$title_text_color"},
+        {"type": "label", "text": "$sg_fps"},
+
+        {"type": "label", "text": "DATE:",
+          "align_h": "right", "text_color": "$title_text_color"},
+        {"type": "label","text": "$date", "text_color": "#a5ee8e"}
+      ]
+    },
+    {
+      "type": "grid", "id": "main_title",
+      "rows": "auto", "columns": 2,
+      "width": "=sidebar.width-10u", "height": "=sidebar.height-logo.height-4u",
+      "x": "5u", "y": "=logo.bottom+8u",
+      "max_row_height": "4u",
+      "padding_right": "10u",
+//      "padding": [0, 10, "4u", "2u"],
+//      "max_column_width": "=sidebar.width/3",
+      "max_row_height": "2u",
+      "horizontal_spacing": 20,
+      "vertical_spacing": "3u",
+      "shapes": [
+        {"type": "label", "text": "SCENE FILE", "text_color": "$title_text_color"},
+        {"type": "label","text": "$source_scene"},
+        null, null,
+        {"type": "label", "text": "FILENAME", "text_color": "$title_text_color"},
+        {"type": "label","text": "$source_filename_padding"},
+
+        {"type": "label", "text": "SHOT", "text_color": "$title_text_color"},
+        {"type": "label","text": "$sg_entity_name"},
+
+        {"type": "label", "text": "VERSION", "text_color": "$title_text_color"},
+        {"type": "label","text": "v$sg_version", "text_color": "#a9c7e0"},
+
+        {"type": "label", "text": "LENGTH", "text_color": "$title_text_color"},
+        {"type": "label","text": "$source_length", "text_color": "#b6898d"},
+
+        {"type": "label", "text": "CAMERA NAME", "text_color": "$title_text_color"},
+        {"type": "label","text": "$source_camera"},
+        null, null,
+        {"type": "label", "text": "ARTIST", "text_color": "$title_text_color"},
+        {"type": "label","text": "$user", "text_color": "#ede8b3"},
+
+        {"type": "label", "text": "TASK", "text_color": "$title_text_color"},
+        {"type": "label","text": "$sg_task"},
+
+        {"type": "label", "text": "SQUENCE", "text_color": "$title_text_color"},
+        {"type": "label","text": "$source_path_padding", "ltruncate_path":  3}
+      ]
+    },
+    // color grid
+    {
+      "type": "grid", "id": "colors",
+      "rows": 2, "columns": 7,
+      "x": "sidebar.right", "y": "bottom_line.top",
+      "width": "=parent.width/2", "height": "bottom_line.height",
+      "shapes": [
+        {
+          "type": "rect", "color": "black",
+          "width": "parent.width","height": "parent.height"
+        },
+        {
+          "type": "rect", "color": [128, 128, 128],
+          "width": "parent.width", "height": "parent.height"
+        },
+        {
+          "type": "rect", "color": [255, 0, 0],
+          "width": "parent.width", "height": "parent.height"
+        },
+        {
+          "type": "rect", "color": [0, 255, 0],
+          "width": "parent.width", "height": "parent.height"
+        },
+        {
+          "type": "rect", "color": [0, 0, 255],
+          "width": "parent.width", "height": "parent.height"
+        },
+        {
+          "type": "rect", "color": [255, 255, 0],
+          "width": "parent.width", "height": "parent.height"
+        },
+        {
+          "type": "rect", "color": [0, 255, 255],
+          "width": "parent.width", "height": "parent.height"
+        },
+        {
+          "type": "rect", "color": "white",
+          "width": "parent.width", "height": "parent.height"
+        },
+        {
+          "type": "rect", "color": [255, 0, 255],
+          "width": "parent.width", "height": "parent.height"
+        },
+        {
+          "type": "rect", "color": "purple",
+          "width": "parent.width", "height": "parent.height"
+        },
+        {
+          "type": "rect", "color": "indigo",
+          "width": "parent.width", "height": "parent.height"
+        },
+        {
+          "type": "rect", "color": "bisque",
+          "width": "parent.width", "height": "parent.height"
+        },
+        {
+          "type": "rect", "color": "orange",
+          "width": "parent.width", "height": "parent.height"
+        },
+        {
+          "type": "rect", "color": "yellowgreen",
+          "width": "parent.width", "height": "parent.height"
+        }
+      ]
+    }
+  ]
+}
+]}

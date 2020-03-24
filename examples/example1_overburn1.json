@@ -1,0 +1,98 @@
+{
+  "templates": [
+    {
+      "name": "new",
+      "defaults": {
+        "font_size": "3.5u",
+        "text_color": "lightgray",
+        "text_color_green": "#77c191",
+        "color": [0, 0, 0, 150],
+        "text_spacing": 10
+      },
+      "variables": {
+        "source_path_padding": "/home/paul/Documents/testing/smoke_short/frame_%04d.jpg",
+        "sg_project_name": "KG",
+        "date": "23 Mar 2020",
+        "sg_entity_name": "SCN001",
+        "sg_version": "002",
+        "task_id": 10232,
+        "debug_shapes": 0,
+//        "panel_height": "=$source_width*0.04",
+        "panel_height": "5u",
+        "user": "username",
+        "frame_num": 123,
+        "sg_step": "layout",
+        "source_length": 300,
+        "resolution": [1920, 1080],
+        "is_demo": 1
+        },
+      "shapes": [
+          {
+            "type": "rect", "id": "panel_top",
+            "height": "$panel_height", "width": "=parent.width*0.8",
+            "align_h": "center"
+          },
+          {
+            "type": "rect", "id": "panel_bottom",
+            "height": "$panel_height", "width": "=parent.width*0.8",
+            "align_h": "center", "align_v": "bottom"
+          },
+          {
+            "type": "row", "parent": "panel_top",
+            "width": "parent.width","height": "parent.height",
+            "padding_left": 20, "padding_right": 20,
+
+            "shapes":[
+              {
+                "type": "label", "text": "CGF",
+                "align_v": "center", "font_size": "110%"
+              },
+              {
+                "type": "label", "text": "PATH: ", "y": "-0.4u",
+                "align_v": "center", "align_h": "right",
+                "text_color": "$text_color_green"
+              },
+              {
+                "type": "label", "text": "='$source_path_padding' % $frame_num",
+                "align_v": "center", "ltruncate_path": 3
+              },
+              null, null
+            ]
+          },
+          {
+            "type": "row", "parent": "panel_bottom",
+            "width": "parent.width","height": "parent.height",
+            "padding_left": 20, "padding_right": 20,
+
+            "shapes":[
+              {
+                "type": "label", "text": "$date",
+                "align_v": "center", "text_color": "$text_color_green"
+              },
+              {
+                "type": "label", "text": "$sg_project_name",
+                "align_v": "center", "align_h": "center",
+                "upper": true
+              },
+              {
+                "type": "label", "text": "v$sg_version",
+                "align_v": "center", "align_h": "center",
+                "text_color": "#7ab2d3"
+              },{
+                "type": "label", "text": "$sg_step",
+                "align_v": "center", "align_h": "center",
+                "upper": true
+              },{
+                "type": "label", "text": "$user",
+                "align_v": "center", "align_h": "center",
+                "text_color": "yellow", "upper": true
+              },{
+                "type": "label", "text": "$frame_num/$source_length",
+                "align_v": "center", "align_h": "center"
+              }
+            ]
+          }
+      ]
+    }
+  ]
+}

@@ -23,7 +23,7 @@ class LabelShape(BaseShape):
         '&;': ''
     }
     default_fonts_dir = os.path.dirname(os.path.dirname(__file__))
-    default_font_name = 'OpenSansBold.ttf'
+    _default_font_name = 'FreeSansBold.ttf'
 
     @property
     @cached_result
@@ -127,24 +127,34 @@ class LabelShape(BaseShape):
     @property
     @cached_result
     def font(self):
+        """
+        Возвращает готовый шрифт для рендера
+        """
         try:
-            fnt = ImageFont.truetype(self.font_name, int(self.font_size))
-        except OSError:
+            fnt = ImageFont.truetype(self.font_name or self.default_font_name, int(self.font_size))
+        except (OSError, AttributeError):
             logger.warning('Font {} not found, use default'.format(self.font_name))
-            fnt = ImageFont.truetype(self.default_font, int(self.font_size))
+            fnt = ImageFont.truetype(self.default_font_name, int(self.font_size))
         return fnt
 
     @property
     @cached_result
     def font_name(self):
-        return self._eval_parameter('font_name', default=None) or self.default_font_name
+        """
+        Путь к шрифту или имя шрифта из стандартных директорий
+        """
+        return self._eval_parameter('font_name', default=None)
 
     @property
     @cached_result
-    def default_font(self):
+    def default_font_name(self):
+        """
+        Путь или имя шрифта по умолчанию
+        """
+        default_name = self._eval_parameter('default_font_name', default=None) or self._default_font_name
         df = self._eval_parameter('default_font', default=None)
         if not df:
-            df = os.path.join(self.default_fonts_dir, 'fonts', self._eval_parameter('default_font_name'))
+            df = os.path.join(self.default_fonts_dir, 'fonts', default_name)
         return df
 
     @property

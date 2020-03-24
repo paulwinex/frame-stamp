@@ -97,7 +97,7 @@
               ], "thickness": 30, "color": [255, 0, 0, 50], "enabled": "$is_demo"
           },
           {
-            "type": "label", "text": "Wrong Size",
+            "type": "label", "text": "Wrong Size", "outline": {"width": 2, "hardness": 20},
             "align_h": "center", "y": "=parent.height/6",
             "font_size": 40, "text_color": "red",
             "enabled": "=$source_width!=$resolution[0]"

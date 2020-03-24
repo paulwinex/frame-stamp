@@ -155,7 +155,7 @@ class AbstractShape(object):
         elif re.match(r"^\d*\.\d*$", val):  # float
             return float(val)
         # unit
-        if re.match(r"[\d.]+u", val):
+        if re.match(r"-?[\d.]+u", val):
             return float(val.rstrip('u')) * self.unit
         # определение других вариантов
         for func in [self._eval_percent_of_default,
@@ -401,7 +401,7 @@ class BaseShape(AbstractShape):
     @property
     @cached_result
     def width(self):
-        return self._eval_parameter('width', default=None) or self._eval_parameter('w', default=self.default_width)
+        return int(self._eval_parameter('width', default=None) or self._eval_parameter('w', default=self.default_width))
 
     @property
     def w(self):
@@ -410,7 +410,7 @@ class BaseShape(AbstractShape):
     @property
     @cached_result
     def height(self):
-        return self._eval_parameter('height', default=None) or self._eval_parameter('h', default=self.default_height)
+        return int(self._eval_parameter('height', default=None) or self._eval_parameter('h', default=self.default_height))
 
     @property
     def h(self):
@@ -449,27 +449,27 @@ class BaseShape(AbstractShape):
             raise TypeError('Padding parameter must be list or tuple')
         if len(param) != 4:
             raise ValueError('Padding parameter must be size = 4')
-        return tuple(param)
+        return tuple(map(int, param))
 
     @property
     @cached_result
     def padding_top(self):
-        return self._eval_parameter('padding_top', default=None) or self.padding[0]
+        return int(self._eval_parameter('padding_top', default=None) or self.padding[0])
 
     @property
     @cached_result
     def padding_right(self):
-        return self._eval_parameter('padding_right', default=None) or self.padding[1]
+        return int(self._eval_parameter('padding_right', default=None) or self.padding[1])
 
     @property
     @cached_result
     def padding_bottom(self):
-        return self._eval_parameter('padding_bottom', default=None) or self.padding[2]
+        return int(self._eval_parameter('padding_bottom', default=None) or self.padding[2])
 
     @property
     @cached_result
     def padding_left(self):
-        return self._eval_parameter('padding_left', default=None) or self.padding[3]
+        return int(self._eval_parameter('padding_left', default=None) or self.padding[3])
 
     @property
     @cached_result

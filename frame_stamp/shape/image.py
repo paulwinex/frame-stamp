@@ -41,8 +41,18 @@ class ImageShape(BaseShape):
         return Image.open(path.as_posix())
 
     @property
-    @cached_result
     def source(self):
+        source = self._data.get('source')
+        if not source:
+            raise RuntimeError('Image source not set')
+        img = self._get_image(source)
+        # применение прозрачности и маски
+        img = self.apply_mask(img, self.mask, self.transparency)
+        return img
+
+    @property
+    @cached_result
+    def source_resized(self):
         """
         Исходник картинки для рисования
 
@@ -50,35 +60,54 @@ class ImageShape(BaseShape):
         -------
         Image.Image
         """
-        if '_saved_source' not in self.__dict__:
-            source = self._data.get('source')
-            if not source:
-                raise RuntimeError('Image source not set')
-            img = self._get_image(source)
-            # применение прозрачности и маски
-            img = self.apply_mask(img, self.mask, self.transparency)
-            # ресайз
-            if not self.size == img.size:
-                target_size = list(self.size)
-                if target_size[0] == 0:
-                    target_size[0] = img.size[0]
-                if target_size[1] == 0:
-                    target_size[1] = img.size[1]
-                if self.keep_aspect:
-                    img.thumbnail(target_size, Image.ANTIALIAS)
-                else:
-                    img = img.resize(target_size, Image.ANTIALIAS)
+        img = self.source
+        # ресайз
+        if not self.size == img.size:
+            target_size = list(self.size)
+            if target_size[0] == 0:
+                target_size[0] = img.size[0]
+            if target_size[1] == 0:
+                target_size[1] = img.size[1]
+            if self.keep_aspect:
+                img.thumbnail(target_size, Image.ANTIALIAS)
+            else:
+                img = img.resize(target_size, Image.ANTIALIAS)
+        return img
 
-            self.__dict__['_saved_source'] = img.convert('RGBA')
-        return self.__dict__['_saved_source']
+    @property
+    @cached_result
+    def height(self):
+        h = super(ImageShape, self).height
+        if h:
+            return h
+        w = super(ImageShape, self).width
+        if not w:
+            return self.source.size[1]
+        else:
+            if self.keep_aspect:
+                return int(w * (self.source.size[0]/self.source.size[1]))
+            else:
+                return self.source.size[1]
+
+    @property
+    @cached_result
+    def width(self):
+        w = super(ImageShape, self).width
+        if w:
+            return w
+        h = super(ImageShape, self).height
+        if not h:
+            return self.source.size[0]
+        else:
+            if self.keep_aspect:
+                return int(h * (self.source.size[0]/self.source.size[1]))
+            else:
+                return self.source.size[0]
 
     @property
     @cached_result
     def size(self):
-        src = getattr(self, '_saved_source', None)
-        if src:
-            return src.size
-        return (self.width, self.height)
+        return self.width, self.height
 
     @property
     @cached_result
@@ -120,14 +149,6 @@ class ImageShape(BaseShape):
 
     @property
     @cached_result
-    def width(self):
-        src = getattr(self, '_saved_source', None)
-        if src:
-            return src.size[0]
-        return self._eval_parameter('width', default=0)
-
-    @property
-    @cached_result
     def transparency(self):
         return min(1, max(0, self._eval_parameter('transparency', default=0)))
 
@@ -137,7 +158,6 @@ class ImageShape(BaseShape):
         return bool(self._eval_parameter('keep_aspect', default=True))
 
     def draw_shape(self, size, **kwargs):
-        # todo
         overlay = self._get_canvas(size)
-        overlay.paste(self.source, (self.x, self.y), self.source)
+        overlay.paste(self.source_resized, (self.x, self.y), self.source_resized)
         return overlay
