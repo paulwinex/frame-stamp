@@ -34,7 +34,7 @@ class ImageShape(BaseShape):
             # возвращаем исходник кадра
             return self.source_image.copy()
         while '$' in value:
-            value = string.Template(value).substitute(**self.variables)
+            value = string.Template(value).substitute({**self.variables, **self.defaults})
         path = Path(value).expanduser().resolve()
         if not path.exists():
             raise IOError(f'Path not exists: {path.as_posix()}')
