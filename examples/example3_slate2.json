@@ -60,7 +60,8 @@
     {
       "type": "image", "id": "logo",
       "source": "$logo_img",
-      "height": "10u",
+//      "height": "10u",
+      "w": "=sidebar.width/5",
       "parent": "top_line",
       "x": "5u", "y": "parent.bottom"
     },

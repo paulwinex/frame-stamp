@@ -68,11 +68,16 @@ class ImageShape(BaseShape):
                 target_size[0] = img.size[0]
             if target_size[1] == 0:
                 target_size[1] = img.size[1]
-            if self.keep_aspect:
-                img.thumbnail(target_size, Image.ANTIALIAS)
-            else:
-                img = img.resize(target_size, Image.ANTIALIAS)
+            target_size = self._resize_values(img.size, target_size) if self.keep_aspect else target_size
+            img = img.resize(target_size, Image.ANTIALIAS)
         return img
+
+    def _resize_values(self, src_size, trg_size):
+        a1 = trg_size[0] / src_size[0]
+        a2 = trg_size[1] / src_size[1]
+        scale = min([a1, a2])
+        result = [int(x * scale) for x in src_size]
+        return result
 
     @property
     @cached_result
@@ -85,7 +90,7 @@ class ImageShape(BaseShape):
             return self.source.size[1]
         else:
             if self.keep_aspect:
-                return int(w * (self.source.size[0]/self.source.size[1]))
+                return int(w * (self.source.size[1]/self.source.size[0]))
             else:
                 return self.source.size[1]
 
