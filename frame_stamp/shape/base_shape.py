@@ -324,7 +324,20 @@ class BaseShape(AbstractShape):
         result = self.draw_shape(size, **kwargs)
         if self._debug:
             result = self._render_debug(result, size)
+        # if self.rotate:
+        #     result = result.rotate(self.rotate, expand=False, center=self.rotate_pivot)
+        result = self._apply_rotate(result)
         return result
+
+    def _apply_rotate(self, img):
+        if self.rotate:
+            img = img.rotate(self.rotate, expand=False, center=self.rotate_pivot, resample=Image.BICUBIC)
+        par = self.parent
+        while par:
+            if par.rotate:
+                img = img.rotate(par.rotate, expand=False, center=par.rotate_pivot, resample=Image.BICUBIC)
+            par = par.parent
+        return img
 
     @property
     @cached_result
@@ -440,6 +453,16 @@ class BaseShape(AbstractShape):
             (self.x0 + self.x1) // 2,
             (self.y0 + self.y1) // 2
         )
+
+    @property
+    @cached_result
+    def rotate(self):
+        return self._eval_parameter('rotate', default=0)# + (self.parent.rotate if self.parent else 0)
+
+    @property
+    @cached_result
+    def rotate_pivot(self):
+        return self._eval_parameter('rotate_pivot', default=self.center)
 
     @property
     @cached_result
