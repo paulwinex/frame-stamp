@@ -23,7 +23,7 @@ class LabelShape(BaseShape):
         '&;': ''
     }
     default_fonts_dir = os.path.dirname(os.path.dirname(__file__))
-    _default_font_name = 'FreeSansBold.ttf'
+    _default_font_name = 'FreeSansBold.ttf' if not os.name == 'nt' else 'arial.ttf'
 
     @property
     @cached_result
