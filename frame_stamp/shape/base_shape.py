@@ -158,10 +158,10 @@ class AbstractShape(object):
         if re.match(r"-?[\d.]+u", val):
             return float(val.rstrip('u')) * self.unit
         # определение других вариантов
-        for func in [self._eval_percent_of_default,
-                     self._eval_from_scope,
-                     self._eval_from_variables,
-                     self._eval_expression]:
+        for func in [self._eval_percent_of_default,     # процент от значения по умолчанию
+                     self._eval_from_scope,             # данные от другой шейпы
+                     self._eval_from_variables,         # данные из переменных шаблона или из дефолтов
+                     self._eval_expression]:            # выполнения экспрешена
             res = func(key, val, **kwargs)
             if res is not None:
                 return res
