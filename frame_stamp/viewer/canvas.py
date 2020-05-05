@@ -16,7 +16,7 @@ class Canvas(QWidget):
     def paintEvent(self, event):
         painter = QPainter()
         painter.begin(self)
-        painter.fillRect(event.rect(), QColor('black'))
+        painter.fillRect(event.rect(), QColor('#646565'))
         if self.image:
             size = QSize(
                 min([self.image.width(), event.rect().width()]),
