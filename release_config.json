@@ -1,0 +1,5 @@
+{ // Pyblish API
+  "tool_name": "frame_stamp",
+  "include_files": ["frame_stamp/*"],
+  "install_path": "toolbox/lib/"
+}
