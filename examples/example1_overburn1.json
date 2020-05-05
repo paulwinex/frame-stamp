@@ -10,7 +10,7 @@
         "text_spacing": 10
       },
       "variables": {
-        "source_path_padding": "/home/paul/Documents/testing/smoke_short/frame_%04d.jpg",
+        "source_path_padding": "/sc001/shot001/frame_%04d.jpg",
         "sg_project_name": "KG",
         "date": "23 Mar 2020",
         "sg_entity_name": "SCN001",

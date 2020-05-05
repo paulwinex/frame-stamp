@@ -7,8 +7,10 @@ class Canvas(QWidget):
     def __init__(self):
         super(Canvas, self).__init__()
         self.image = None
+        self.path = None
 
     def set_image(self, path):
+        self.path = path
         pix = QPixmap(path)
         self.image = pix
         self.repaint()

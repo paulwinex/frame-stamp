@@ -41,6 +41,7 @@ class TemplateViewer(QMainWindow):
         file_mn.addAction(QAction('Open Current Template', file_mn, triggered=self.open_template))
         file_mn.addSeparator()
         file_mn.addAction(QAction('Set Background', file_mn, triggered=self.browse_image))
+        file_mn.addAction(QAction('Save Image As...', file_mn, triggered=self.save_image))
         file_mn.addSeparator()
         file_mn.addAction(QAction('Reset', file_mn, triggered=self.reset))
         file_mn.addAction(QAction('Exit', file_mn, triggered=self.close))
@@ -251,6 +252,20 @@ class TemplateViewer(QMainWindow):
         path, _ = QFileDialog.getOpenFileName(self, 'Select Template', os.path.expanduser('~'), filter='JSON (*.png)')
         if path:
             self.set_template_file(path)
+
+    def save_image(self):
+        if not self.canvas:
+            self.message('Error: Image not exists')
+            return
+        if not self.canvas.path or not os.path.exists(self.canvas.path):
+            self.message('Error: Image not rendered yet')
+            return
+        path, _ = QFileDialog.getSaveFileName(self, 'Save Image', os.path.expanduser('~'), filter='PNG (*.png)')
+        if path:
+            if not path.endswith('.png'):
+                path = path+'.png'
+            import shutil
+            shutil.copyfile(self.canvas.path, path)
 
     def actual_size(self):
         if self.image:

@@ -227,7 +227,7 @@
       "type": "grid", "id": "colors",
       "rows": 2, "columns": 7,
       "x": "sidebar.right", "y": "bottom_line.top",
-      "width": "=parent.width/2", "height": "bottom_line.height",
+      "width": "=parent.width-sidebar.w", "height": "bottom_line.height",
       "shapes": [
         {
           "type": "rect", "color": "black",
