@@ -1,44 +1,51 @@
 Video Tutorials
 ---------------
 
-## Подготовка
+Подготовка
+==========
 
 .. video:: /video/files/frame_stamp_01.mp4
-   :width: 1000
-   :height: 562
+   :width: 700
+   :height: 393
 
-## Простые формы: rect, label, line, image
-
-.. video:: /video/files/frame_stamp_01.mp4
-   :width: 1000
-   :height: 562
-
-## Составные формы: grid, row, column
+Простые формы: rect, label, line, image
+=======================================
 
 .. video:: /video/files/frame_stamp_01.mp4
-   :width: 1000
-   :height: 562
+   :width: 700
+   :height: 393
 
-## Парентинг
-
-.. video:: /video/files/frame_stamp_01.mp4
-   :width: 1000
-   :height: 562
-
-## Ссылки на параметры и экспрешены
+Составные формы: grid, row, column
+==================================
 
 .. video:: /video/files/frame_stamp_01.mp4
-   :width: 1000
-   :height: 562
+   :width: 700
+   :height: 393
 
-## Переменные из контекста
-
-.. video:: /video/files/frame_stamp_01.mp4
-   :width: 1000
-   :height: 562
-
-## Обзор примеров
+Парентинг
+=========
 
 .. video:: /video/files/frame_stamp_01.mp4
-   :width: 1000
-   :height: 562
+   :width: 700
+   :height: 393
+
+Ссылки на параметры и экспрешены
+================================
+
+.. video:: /video/files/frame_stamp_01.mp4
+   :width: 700
+   :height: 393
+
+Переменные из контекста
+=======================
+
+.. video:: /video/files/frame_stamp_01.mp4
+   :width: 700
+   :height: 393
+
+Обзор примеров
+==============
+
+.. video:: /video/files/frame_stamp_01.mp4
+   :width: 700
+   :height: 393
