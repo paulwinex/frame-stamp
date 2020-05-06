@@ -13,3 +13,5 @@ Frame Stamp
    expressions
    development
    video
+   tricks
+   faq

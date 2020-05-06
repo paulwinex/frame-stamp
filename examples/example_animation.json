@@ -1,0 +1,45 @@
+{
+  "templates": [
+    {
+      "name": "timeline_example",
+      "defaults": {
+        "font_size": "4u",
+        "text_color": "white",
+        "text_spacing": 10
+      },
+      "variables": {
+      	"frame": 30,	// change this parameter to animate time line
+      	"total_frames": 200
+
+      },
+      "shapes": [
+		  {
+			  "type": "label", "text": "Timeline animation example",
+			  "font_size": "6u", "align_h": "center", "y": "20u",
+			  "backdrop": "black"
+		  },
+      	{
+      		"type": "rect", "color": "lightblue",
+      		"x": "=$source_width*0.1", "y": "90u",
+      		"w": "=($source_width*0.8)*($frame/$total_frames)", "h": "8u"
+      	},
+      	{
+      		"type": "line", "thickness": 10, "color": "gray",
+      		"points": [
+      			["=$source_width*0.1", "90u"],
+      			["=$source_width*0.9", "90u"],
+      			["=$source_width*0.9", "98u"],
+      			["=$source_width*0.1", "98u"],
+      			["=$source_width*0.1", "90u"]
+
+      		]
+      	},
+      	{
+      		"type": "label", "text": "`=int(($frame/$total_frames)*100)`%",
+      		"outline": 2, "y": "92.5u", "align_h": "center"
+
+      	}
+      ]
+    }
+  ]
+}

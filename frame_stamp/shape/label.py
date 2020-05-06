@@ -32,7 +32,9 @@ class LabelShape(BaseShape):
         if '$' in text:
             text = string.Template(text).substitute(**self.variables)
         text = self._render_special_characters(text)
-        text = str(self._eval_expression('text', text) or text)
+        for match in re.finditer(r'`(.*?)`', text):
+            res = str(self._eval_expression('text', match.group(1)))
+            text = text.replace(match.group(0), res)
         if self.truncate_path:
             text = self._trunc_path(text, self.truncate_path, 1)
         elif self.ltruncate_path:
