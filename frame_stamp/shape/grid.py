@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from .base_shape import BaseShape, EmptyShape
-from ..utils.exceptions import PresetError
-from ..shape import get_shape_class
+from frame_stamp.utils.exceptions import PresetError
 from PIL import Image
 import cgflogging
 
@@ -32,6 +31,7 @@ class GridShape(BaseShape):
         if not shape_list:
             return
         cells = self.generate_cells(len(shape_list))
+        from frame_stamp.shape import get_shape_class
         for i, shape_config in enumerate(shape_list):
             if not shape_config:
                 continue

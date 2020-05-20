@@ -3,11 +3,29 @@ import os
 import inspect
 from cgf_tools import load_module
 from .base_shape import BaseShape
+# import all shapes
+from .rect import RectShape
+from .line import LineShape
+from .image import ImageShape
+from .label import LabelShape
+from .grid import GridShape
+from .row import RowShape
+from .column import ColumnShape
 
 BASE_DIR = os.path.dirname(__file__)
 
 
 def get_shape_class(name):
+    for _, obj in globals().items():
+        if inspect.isclass(obj) and issubclass(obj, BaseShape):
+            if obj.shape_name == name:
+                return obj
+
+
+def __get_shape_class(name):
+    """
+    Старая версия для импорта по имени файла. не подходит для скомпиленного варианта
+    """
     if not name:
         raise ValueError('Shape name not set')
     if not isinstance(name, str):

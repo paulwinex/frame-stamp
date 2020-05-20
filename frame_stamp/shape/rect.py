@@ -1,6 +1,6 @@
 from .base_shape import BaseShape
 from PIL import ImageDraw
-from ..utils import cached_result
+from frame_stamp.utils import cached_result
 
 
 class RectShape(BaseShape):

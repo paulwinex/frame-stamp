@@ -3,7 +3,7 @@ from PIL import Image, ImageChops, ImageOps
 from .base_shape import BaseShape
 from pathlib import Path
 import string
-from ..utils import cached_result
+from frame_stamp.utils import cached_result
 
 
 class ImageShape(BaseShape):
