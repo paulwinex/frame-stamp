@@ -136,7 +136,7 @@ class LabelShape(BaseShape):
             try:
                 fnt = ImageFont.truetype(self.font_name or self.default_font_name, int(self.font_size))
             except (OSError, AttributeError):
-                logger.debug('Font {} not found, use default'.format(self.font_name))
+                # logger.debug('Font {} not found, use default'.format(self.font_name))
                 fnt = ImageFont.truetype(self.default_font_name, self.font_size)
         else:
             fnt = ImageFont.truetype(self.default_font_name, self.font_size)
