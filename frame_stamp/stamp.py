@@ -138,7 +138,7 @@ class FrameStamp(object):
             # создаём новый пустой слой по размеру исходника
             overlay = shape.render(img_size, **kwargs)
             self._source = Image.alpha_composite(self.source, overlay)
-
+            del overlay
         if save_path:
             # сохраняем отрендеренный файл в формате RGB
             frmt = self._get_output_format(save_path)
