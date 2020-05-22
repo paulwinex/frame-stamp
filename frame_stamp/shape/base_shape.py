@@ -242,7 +242,7 @@ class AbstractShape(object):
         if variable in self.variables:
             return self._eval_parameter_convert(key, self.variables[variable])
         elif variable in self.defaults:
-            return self.defaults[variable]
+            return self._eval_parameter_convert(key, self.defaults[variable])
         else:
             raise KeyError('No key "{}" in variables or defaults'.format(variable))
 
