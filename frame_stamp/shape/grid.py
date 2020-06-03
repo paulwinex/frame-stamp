@@ -91,7 +91,7 @@ class GridShape(BaseShape):
         # общая ширина, занимаемая колонками
         all_h_spacing = self.horizontal_spacing * (columns-1)
         cells_width = self.width - self.padding_left - self.padding_right - all_h_spacing
-        one_cell_width = cells_width // columns
+        one_cell_width = cells_width / columns
         if self.max_column_width:
             one_cell_width = min([one_cell_width, self.max_column_width])
         # общая ширина, занимаемая строками
