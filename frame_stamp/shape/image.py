@@ -33,12 +33,21 @@ class ImageShape(BaseShape):
         if value == '$source':  # исходная картинка кадра, не путать с source самой шейпы
             # возвращаем исходник кадра
             return self.source_image.copy()
+        # рендер шаблона
         while '$' in value:
             value = string.Template(value).substitute({**self.variables, **self.defaults})
         path = Path(value).expanduser().resolve()
-        if not path.exists():
-            raise IOError(f'Path not exists: {path.as_posix()}')
-        return Image.open(path.as_posix())
+        if path.exists():
+            return Image.open(path.as_posix())
+        # поиск по диреткториям с ресурсами
+        search_paths = self.variables.get('local_resource_paths')
+        if search_paths:
+            for path in search_paths:
+                path = Path(path).expanduser().resolve()
+                res = path / value
+                if res.exists():
+                    return Image.open(res.as_posix())
+        raise IOError(f'Path not exists: {path.as_posix()}')
 
     @property
     def source(self):
