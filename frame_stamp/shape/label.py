@@ -205,9 +205,21 @@ class LabelShape(BaseShape):
         -------
         tuple
         """
-        x = max([self.font.getsize(text)[0] for text in self.text.split('\n')])
-        y = sum([self.font.getsize(text)[1] for text in self.text.split('\n')]) + \
-            (self.spacing * (len(self.text.split('\n'))-1))
+        lines = self.text.split('\n')
+        x = max([self.font.getsize(text)[0] for text in lines])
+        y = 0
+        # находим размер самого маленького символа и основываем размер строки на нем.
+        # это сделано чтобы из-за символов, границы которых больше (вроде "_" или "y"),
+        # весь текст не приподнимался
+        smallest_char_size = min([self.draw.textsize(char, font=self.font)[1] for char in [line[0] for line in lines]])
+        for i in range(len(lines)):
+            # если строк несколько, добавляем по spacing кол-ву пикселей на каждую из них
+            # но не добавляем последней строке, чтобы она не приподнималась над нижней линией
+            if len(lines) > 1 and i < len(lines) - 1:
+                y += smallest_char_size + self.spacing
+            # если строка одна или это последняя строка, просто прибавляем размер меньшего символа
+            else:
+                y += smallest_char_size
         return x, y
 
     @property
@@ -221,6 +233,7 @@ class LabelShape(BaseShape):
     def draw_shape(self, size, **kwargs):
         canvas = self._get_canvas(size)
         drw = ImageDraw.Draw(canvas)
+        self.draw = drw
         is_multiline = '\n' in self.text
         printer = drw.multiline_text if is_multiline else drw.text
         text_args = dict(
