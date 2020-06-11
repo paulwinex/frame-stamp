@@ -51,13 +51,15 @@ class LabelShape(BaseShape):
             text = text.title()
         if self.zfill:
             text = text.zfill(self.zfill)
+        if self.zfill_numbers:
+            text = self._zfill_numbers(text, self.zfill_numbers)
         text = self._add_new_lines(text)
         return text
 
     def _trunc_path(self, text, count, from_start=1):
         parts = os.path.normpath(text).split(os.path.sep)
         if from_start:
-            return os.path.sep.join(parts[:count+1])
+            return os.path.sep.join(parts[:count + 1])
         else:
             return os.path.sep.join(parts[-count:])
 
@@ -65,6 +67,15 @@ class LabelShape(BaseShape):
         for char, val in self.special_characters.items():
             text = re.sub(char, val, text)
         return html.unescape(text)
+
+    def _zfill_numbers(self, text, value):
+        result = re.findall(r'(\D+)(\d+)', text)
+        if result:
+            letters, numbers = result[0]
+            text = letters + numbers.zfill(value)
+        else:
+            text = text.zfill(value)
+        return text
 
     def _add_new_lines(self, text):
         """
@@ -76,7 +87,7 @@ class LabelShape(BaseShape):
     @property
     @cached_result
     def font_size(self) -> int:
-        size = self._eval_parameter('font_size')    # type: int
+        size = self._eval_parameter('font_size')  # type: int
         if size == 0:
             raise ValueError('Font size can`t be zero. Shape "{}"'.format(self))
         return int(size)
@@ -125,6 +136,11 @@ class LabelShape(BaseShape):
     @cached_result
     def zfill(self):
         return self._eval_parameter('zfill', default=False)
+
+    @property
+    @cached_result
+    def zfill_numbers(self):
+        return self._eval_parameter('zfill_numbers', default=False)
 
     @property
     @cached_result
@@ -253,6 +269,6 @@ class LabelShape(BaseShape):
             clr = backdrop.get('color', 'black')
             if isinstance(clr, list):
                 clr = tuple(clr)
-            drw.rectangle((self.x-ofs, self.y-ofs, self.right+ofs, self.bottom+ofs), fill=clr)
+            drw.rectangle((self.x - ofs, self.y - ofs, self.right + ofs, self.bottom + ofs), fill=clr)
             canvas = Image.alpha_composite(bd, canvas)
         return canvas
