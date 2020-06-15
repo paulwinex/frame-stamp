@@ -66,21 +66,93 @@ class LabelShape(BaseShape):
             text = re.sub(char, val, text)
         return html.unescape(text)
 
-    def _zfill_numbers(self, text, value):
-        result = re.findall(r'(\D+)(\d+)', text)
-        if result:
-            letters, numbers = result[0]
-            text = letters + numbers.zfill(value)
-        else:
-            text = text.zfill(value)
-        return text
+    def _get_parent_width_in_characters(self):
+        """
+        Получение ширины parent'а в символах
+
+        Returns
+        -------
+        width_characters: int
+        """
+        parent_width_pixels = self.parent.width
+        # используем проверочную строку, чтобы вычислить ширину одного символа в пикселях,
+        # зная ее длину в символах
+        test_str = 'A testing string. The longer it is, the more accurate the results it produces'
+        # делим ширину этой строки на количество символов и получаем соотношение
+        pixel_to_char_ratio = self.font.getsize(test_str)[0] / len(test_str)
+        # сначала округляем значение, тем самым получая более точный int после
+        width_characters = int(round(parent_width_pixels / pixel_to_char_ratio))
+        return width_characters
 
     def _add_new_lines(self, text):
         """
-        Добавление переноса если текст не помещается в размер парента
+        Добавление переноса, если текст не помещается в размер парента
+
+        Parameters
+        ----------
+        text: str
+
+        Returns
+        -------
+        text: str
         """
-        # TODO
+        parent_width_pixels = self.parent.width
+        # находим все строки
+        lines = text.split('\n')
+        # находим самую длинную строку, чтобы по ней вычислить значение максимальной ширины текста
+        longest_line = max(lines, key=len)
+        # находим ширину текста в пикселях
+        width_pixels = self.font.getsize(text)[0]
+        # если она превышает ширину parent'a, начинаем делать wordwrap
+        if width_pixels > parent_width_pixels:
+            # если в тексте есть И сепаратор (слэш, соответствующей текущей ОС) И расширение файла,
+            # считаем его путем к файлу, вызываем соответствующий метод
+            if os.path.sep in text and os.path.splitext(text):
+                return self._add_new_lines_for_path(text)
+            # если строк несколько, вычисляем wordwrap, иначе просто возвращаем текст как есть
+            if len(lines) > 1:
+                # максимальную допустимую ширину находим, сначала посчитав,
+                # сколько символов приходится на один пиксель самой длинной строки
+                char_to_pixel_ratio = len(longest_line) / self.font.getsize(longest_line)[0]
+                # и потом умножив это на количество пикселей parent'a
+                width_characters = int(round(parent_width_pixels * char_to_pixel_ratio))
+                # импортим и создаем Wrapper
+                import textwrap
+                wrapper = textwrap.TextWrapper(width=width_characters,
+                                               replace_whitespace=False)  # ставим это, чтобы не убивались исходные '\n'
+                text = wrapper.fill(text=text)
+            return text
         return text
+
+    def _add_new_lines_for_path(self, path):
+        """
+        Добавление переносов для пути до файла (со слэшами)
+
+        Parameters
+        ----------
+        path: str
+
+        Returns
+        -------
+        newlined_path: str
+        """
+        newlined_path = ''
+        sep = os.path.sep
+        slash_split = path.split(sep)
+        remainder = slash_split
+        parent_width_characters = self._get_parent_width_in_characters()
+
+        while not len([char for char in sep.join(remainder) if char == sep]) < 2:
+            path_variants = [sep.join(remainder[:i + 1]) for i in range(len(remainder)) if sep.join(remainder[:i + 1])]
+            path_variants = [path_variants[i] + sep if i < len(path_variants) - 1 else path_variants[i] for i in
+                             range(len(path_variants))]
+            longest_variant = [path for path in path_variants if len(path) < parent_width_characters][-1]
+            newlined_path += longest_variant + '\n'
+            remainder = sep.join(remainder).replace(longest_variant, '').split(sep)
+
+        remainder = sep.join(remainder)
+        newlined_path = newlined_path + remainder
+        return newlined_path
 
     @property
     @cached_result
@@ -157,7 +229,10 @@ class LabelShape(BaseShape):
         """
         Путь к шрифту или имя шрифта из стандартных директорий
         """
-        return self._eval_parameter('font_name', default=None)
+        f = self._eval_parameter('font_name', default=None)
+        if not os.path.exists(f):
+            f = os.path.join(self.default_fonts_dir, 'fonts', f + '.ttf')
+        return f
 
     @property
     @cached_result
@@ -196,23 +271,26 @@ class LabelShape(BaseShape):
 
         Returns
         -------
-        tuple
+        (x,y): tuple
         """
         lines = self.text.split('\n')
         x = max([self.font.getsize(text)[0] for text in lines])
         y = 0
+        base_line = self.font.font.height - self.font.font.descent
+        line_height = base_line
         # находим размер самого маленького символа и основываем размер строки на нем.
         # это сделано чтобы из-за символов, границы которых больше (вроде "_" или "y"),
         # весь текст не приподнимался
-        smallest_char_size = min([self.draw.textsize(char, font=self.font)[1] for char in [line[0] for line in lines]])
-        for i in range(len(lines)):
+        # smallest_char_size = min([self.draw.textsize(char, font=self.font)[1] for char in [line[0] for line in lines]])
+        # line_height = smallest_char_size
+        for line in lines:
             # если строк несколько, добавляем по spacing кол-ву пикселей на каждую из них
             # но не добавляем последней строке, чтобы она не приподнималась над нижней линией
-            if len(lines) > 1 and i < len(lines) - 1:
-                y += smallest_char_size + self.spacing
+            if len(lines) > 1:
+                y += line_height + self.spacing
             # если строка одна или это последняя строка, просто прибавляем размер меньшего символа
             else:
-                y += smallest_char_size
+                y += line_height
         return x, y
 
     @property
