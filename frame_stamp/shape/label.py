@@ -51,8 +51,6 @@ class LabelShape(BaseShape):
             text = text.title()
         if self.zfill:
             text = text.zfill(self.zfill)
-        if self.zfill_numbers:
-            text = self._zfill_numbers(text, self.zfill_numbers)
         text = self._add_new_lines(text)
         return text
 
@@ -136,11 +134,6 @@ class LabelShape(BaseShape):
     @cached_result
     def zfill(self):
         return self._eval_parameter('zfill', default=False)
-
-    @property
-    @cached_result
-    def zfill_numbers(self):
-        return self._eval_parameter('zfill_numbers', default=False)
 
     @property
     @cached_result
