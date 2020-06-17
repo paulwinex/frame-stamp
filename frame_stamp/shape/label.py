@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from .base_shape import BaseShape
 from PIL import ImageFont, ImageDraw, ImageFilter, Image
 import string, os, html, re
+import textwrap
 from frame_stamp.utils import cached_result
 import cgflogging
 
@@ -17,6 +18,11 @@ class LabelShape(BaseShape):
         text_spacing       : Расстояние между строк в многосточном тексте. По умолчанию 0
         font_size          : Размер шрифта
         font_name          : Используемый шрифт
+        fit_to_parent      : Вписать текст в размер родительского объекта
+        fit_divider        : символ по которому разделять строки.
+                                None - по любому символу
+                                " " - по словам
+                                "/" - по частям пути
     """
     shape_name = 'label'
     special_characters = {
@@ -28,6 +34,9 @@ class LabelShape(BaseShape):
     @property
     @cached_result
     def text(self):
+        """
+        РЕсолвинг текста
+        """
         text = self._data['text']
         if '$' in text:
             text = string.Template(text).substitute(**self.variables)
@@ -51,7 +60,8 @@ class LabelShape(BaseShape):
             text = text.title()
         if self.zfill:
             text = text.zfill(self.zfill)
-        text = self._add_new_lines(text)
+        if self.fit_to_parent:
+            text = self._fir_to_parent_width(text, self.fit_divider)
         return text
 
     def _trunc_path(self, text, count, from_start=1):
@@ -66,25 +76,25 @@ class LabelShape(BaseShape):
             text = re.sub(char, val, text)
         return html.unescape(text)
 
-    def _get_parent_width_in_characters(self):
-        """
-        Получение ширины parent'а в символах
+    # def _get_parent_width_in_characters(self):
+    #     """
+    #     Получение ширины parent'а в символах
+    #
+    #     Returns
+    #     -------
+    #     width_characters: int
+    #     """
+    #     parent_width_pixels = self.parent.width
+    #     # используем проверочную строку, чтобы вычислить ширину одного символа в пикселях,
+    #     # зная ее длину в символах
+    #     test_str = 'A testing string. The longer it is, the more accurate the results it produces'
+    #     # делим ширину этой строки на количество символов и получаем соотношение
+    #     pixel_to_char_ratio = self.font.getsize(test_str)[0] / len(test_str)
+    #     # сначала округляем значение, тем самым получая более точный int после
+    #     width_characters = int(round(parent_width_pixels / pixel_to_char_ratio))
+    #     return width_characters
 
-        Returns
-        -------
-        width_characters: int
-        """
-        parent_width_pixels = self.parent.width
-        # используем проверочную строку, чтобы вычислить ширину одного символа в пикселях,
-        # зная ее длину в символах
-        test_str = 'A testing string. The longer it is, the more accurate the results it produces'
-        # делим ширину этой строки на количество символов и получаем соотношение
-        pixel_to_char_ratio = self.font.getsize(test_str)[0] / len(test_str)
-        # сначала округляем значение, тем самым получая более точный int после
-        width_characters = int(round(parent_width_pixels / pixel_to_char_ratio))
-        return width_characters
-
-    def _add_new_lines(self, text):
+    def _fir_to_parent_width(self, text, divider=None):
         """
         Добавление переноса, если текст не помещается в размер парента
 
@@ -96,63 +106,107 @@ class LabelShape(BaseShape):
         -------
         text: str
         """
-        parent_width_pixels = self.parent.width
-        # находим все строки
-        lines = text.split('\n')
-        # находим самую длинную строку, чтобы по ней вычислить значение максимальной ширины текста
-        longest_line = max(lines, key=len)
-        # находим ширину текста в пикселях
-        width_pixels = self.font.getsize(text)[0]
-        # если она превышает ширину parent'a, начинаем делать wordwrap
-        if width_pixels > parent_width_pixels:
-            # если в тексте есть И сепаратор (слэш, соответствующей текущей ОС) И расширение файла,
-            # считаем его путем к файлу, вызываем соответствующий метод
-            if os.path.sep in text and os.path.splitext(text):
-                return self._add_new_lines_for_path(text)
-            # если строк несколько, вычисляем wordwrap, иначе просто возвращаем текст как есть
-            if len(lines) > 1:
-                # максимальную допустимую ширину находим, сначала посчитав,
-                # сколько символов приходится на один пиксель самой длинной строки
-                char_to_pixel_ratio = len(longest_line) / self.font.getsize(longest_line)[0]
-                # и потом умножив это на количество пикселей parent'a
-                width_characters = int(round(parent_width_pixels * char_to_pixel_ratio))
-                # импортим и создаем Wrapper
-                import textwrap
-                wrapper = textwrap.TextWrapper(width=width_characters,
-                                               replace_whitespace=False)  # ставим это, чтобы не убивались исходные '\n'
-                text = wrapper.fill(text=text)
+        # parent_width_pixels = self.parent.width
+        if self.parent.width >= self.font.getsize(text)[0]:
+            # перенос не требуется
             return text
+        single_char_width = self.font.getsize('a')[0]
+        max_chars_in_line = self.parent.width // single_char_width
+
+        if divider:     # разделяем по указанным символам
+            if not any([x in text for x in divider]):
+                # символы разделителя не найдены в тексте
+                return text
+            lines = self._split_text_by_divider(text, divider)
+            joined_lines = []
+            # соединяем строки пока есть достаточно ширины
+            t = ''
+            while lines:
+                next_peace = lines.pop(0)
+                # если общая длина прошлой и следующей строки меньше максимальной, то склеиваем их
+                if len(t) + len(next_peace.rstrip()) < max_chars_in_line:
+                    t += next_peace
+                else:
+                    # переходим к следующей строке
+                    joined_lines.append(t)
+                    t = next_peace.lstrip()
+                if not lines:
+                    joined_lines.append(t)
+            text = '\n'.join(joined_lines).strip()
+        else:
+            # разделяем просто по словам или символам
+            wrapper = textwrap.TextWrapper(width=max_chars_in_line,
+                                           replace_whitespace=False)  # ставим это, чтобы не убивались исходные '\n'
+            text = wrapper.fill(text=text)
         return text
+        # # # находим все строки
+        # # lines = text.split('\n')
+        # # # находим самую длинную строку, чтобы по ней вычислить значение максимальной ширины текста
+        # # longest_line = max(lines, key=len)
+        #
+        # # если она превышает ширину parent'a, начинаем делать wordwrap
+        #
+        #     # если в тексте есть И сепаратор (слэш, соответствующей текущей ОС) И расширение файла,
+        #     # считаем его путем к файлу, вызываем соответствующий метод
+        #     if os.path.sep in text and os.path.splitext(text):
+        #         return self._add_new_lines_for_path(text)
+        #     # если строк несколько, вычисляем wordwrap, иначе просто возвращаем текст как есть
+        #     if len(lines) > 1:
+        #         # максимальную допустимую ширину находим, сначала посчитав,
+        #         # сколько символов приходится на один пиксель самой длинной строки
+        #         char_to_pixel_ratio = len(longest_line) / self.font.getsize(longest_line)[0]
+        #         # и потом умножив это на количество пикселей parent'a
+        #         width_characters = int(round(parent_width_pixels * char_to_pixel_ratio))
+        #         # импортим и создаем Wrapper
+        #         import textwrap
+        #         wrapper = textwrap.TextWrapper(width=width_characters,
+        #                                        replace_whitespace=False)  # ставим это, чтобы не убивались исходные '\n'
+        #         text = wrapper.fill(text=text)
+        #     return text
+        # return text
 
-    def _add_new_lines_for_path(self, path):
-        """
-        Добавление переносов для пути до файла (со слэшами)
+    # def _add_new_lines_for_path(self, path):
+    #     """
+    #     Добавление переносов для пути до файла (со слэшами)
+    #
+    #     Parameters
+    #     ----------
+    #     path: str
+    #
+    #     Returns
+    #     -------
+    #     newlined_path: str
+    #     """
+    #     newlined_path = ''
+    #     sep = os.path.sep
+    #     slash_split = path.split(sep)
+    #     remainder = slash_split
+    #     parent_width_characters = self._get_parent_width_in_characters()
+    #
+    #     while not len([char for char in sep.join(remainder) if char == sep]) < 2:
+    #         path_variants = [sep.join(remainder[:i + 1]) for i in range(len(remainder)) if sep.join(remainder[:i + 1])]
+    #         path_variants = [path_variants[i] + sep if i < len(path_variants) - 1 else path_variants[i] for i in
+    #                          range(len(path_variants))]
+    #         longest_variant = [path for path in path_variants if len(path) < parent_width_characters][-1]
+    #         newlined_path += longest_variant + '\n'
+    #         remainder = sep.join(remainder).replace(longest_variant, '').split(sep)
+    #
+    #     remainder = sep.join(remainder)
+    #     newlined_path = newlined_path + remainder
+    #     return newlined_path
 
-        Parameters
-        ----------
-        path: str
-
-        Returns
-        -------
-        newlined_path: str
-        """
-        newlined_path = ''
-        sep = os.path.sep
-        slash_split = path.split(sep)
-        remainder = slash_split
-        parent_width_characters = self._get_parent_width_in_characters()
-
-        while not len([char for char in sep.join(remainder) if char == sep]) < 2:
-            path_variants = [sep.join(remainder[:i + 1]) for i in range(len(remainder)) if sep.join(remainder[:i + 1])]
-            path_variants = [path_variants[i] + sep if i < len(path_variants) - 1 else path_variants[i] for i in
-                             range(len(path_variants))]
-            longest_variant = [path for path in path_variants if len(path) < parent_width_characters][-1]
-            newlined_path += longest_variant + '\n'
-            remainder = sep.join(remainder).replace(longest_variant, '').split(sep)
-
-        remainder = sep.join(remainder)
-        newlined_path = newlined_path + remainder
-        return newlined_path
+    def _split_text_by_divider(self, text, divider):
+        parts = []
+        line = ''
+        for char in text:
+            if char in divider:
+                parts.append(line)
+                line = char
+            else:
+                line += char
+        if line:
+            parts.append(line)
+        return parts
 
     @property
     @cached_result
@@ -264,6 +318,16 @@ class LabelShape(BaseShape):
     def backdrop(self):
         return self._eval_parameter('backdrop', default=None)
 
+    @property
+    @cached_result
+    def fit_to_parent(self):
+        return bool(self._eval_parameter('fit_to_parent', default=False))
+
+    @property
+    @cached_result
+    def fit_divider(self):
+        return self._eval_parameter('fit_divider', default=None)
+
     @cached_result
     def get_size(self):
         """
@@ -304,7 +368,7 @@ class LabelShape(BaseShape):
     def draw_shape(self, size, **kwargs):
         canvas = self._get_canvas(size)
         drw = ImageDraw.Draw(canvas)
-        self.draw = drw
+        # self.draw = drw
         is_multiline = '\n' in self.text
         printer = drw.multiline_text if is_multiline else drw.text
         text_args = dict(
