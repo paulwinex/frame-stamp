@@ -6,7 +6,6 @@ from frame_stamp.viewer.watch import TemplateFileWatch
 import os, tempfile, traceback
 from cgf_tools import jsonc, proc
 from frame_stamp.stamp import FrameStamp
-# from py_console import console
 
 
 class TemplateViewer(QMainWindow):
@@ -17,6 +16,8 @@ class TemplateViewer(QMainWindow):
         super(TemplateViewer, self).__init__()
         self.setWindowTitle('Template Viewer')
         self.setAcceptDrops(True)
+
+        # from py_console import console
         # self.c = console.Console(self)
         # self.c.show()
 
@@ -102,7 +103,7 @@ class TemplateViewer(QMainWindow):
         except Exception as e:
             self.set_error(traceback.format_exc())
 
-    def render_template(self):
+    def get_current_template(self):
         if self.template_file:
             templates = jsonc.load(open(self.template_file, encoding='utf-8'))
             try:
@@ -112,6 +113,10 @@ class TemplateViewer(QMainWindow):
                 return
         else:
             template = None
+        return template
+
+    def render_template(self):
+        template = self.get_current_template()
         image = self.image or self.get_dummy_image()
         viewer_variables = dict(
             # todo: custom variables from GUI

@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from .base_shape import BaseShape, EmptyShape
 from frame_stamp.utils.exceptions import PresetError
+from frame_stamp.utils import cached_result
 from PIL import Image
 import cgflogging
 
@@ -20,6 +21,8 @@ class GridShape(BaseShape):
     def __init__(self, *args, **kwargs):
         super(GridShape, self).__init__(*args, **kwargs)
         self._shapes = self._create_shapes_from_data(**kwargs)
+        if self.fit_to_content_height:
+            self._fix_cell_height()
 
     def _create_shapes_from_data(self, **kwargs):
         if self.width == 0:
@@ -51,28 +54,65 @@ class GridShape(BaseShape):
         return shapes
 
     @property
+    @cached_result
     def vertical_spacing(self):
         return self._eval_parameter('vertical_spacing', default=0)
 
     @property
+    @cached_result
     def horizontal_spacing(self):
         return self._eval_parameter('horizontal_spacing', default=0)
 
     @property
+    @cached_result
     def rows(self):
         return self._eval_parameter('rows', default='auto')
 
     @property
+    @cached_result
     def max_row_height(self):
         return self._eval_parameter('max_row_height', default=0)
 
     @property
+    @cached_result
     def max_column_width(self):
         return self._eval_parameter('max_column_width', default=0)
 
     @property
+    @cached_result
     def columns(self):
         return self._eval_parameter('columns', default='auto')
+
+    @property
+    @cached_result
+    def fit_to_content_height(self):
+        return bool(self._eval_parameter('fit_to_content_height', default=True))
+
+    def _fix_cell_height(self):
+        from collections import defaultdict
+        # собираем высоты всех элементов группируя по строкам
+        heights = defaultdict(list)
+        for shape in self._shapes:
+            heights[shape._local_context['row']].append(shape.height)
+        new_row_data = defaultdict(dict)
+        curr_offset = 0
+        for row, sizes in heights.items():
+            max_shape_height = max(sizes)
+            curr_row_height = max([s.parent.height for s in self._shapes if s._local_context['row'] == row])
+            new_row_data[row]['offs'] = curr_offset
+            if max_shape_height > curr_row_height:
+                curr_offset += max_shape_height - curr_row_height
+                new_row_data[row]['height'] = max_shape_height
+            else:
+                new_row_data[row]['height'] = curr_row_height
+        # применяем изменения построчно
+        for row, data in new_row_data.items():
+            for s in self._shapes:
+                if s._local_context['row'] == row:
+                    s.parent._data['y'] += data['offs']
+                    s.parent._data['height'] = s.parent._data['h'] = data['height']
+                    s.parent.__cache__.clear()
+                    s.__cache__.clear()
 
     def generate_cells(self, count, cols=None, rows=None):
         # todo: выравнивание неполных строк и колонок
@@ -85,9 +125,9 @@ class GridShape(BaseShape):
         if columns == 'auto' and rows == 'auto':
             columns = rows = count/2
         elif columns == 'auto':
-            columns = count//rows
+            columns = count//rows or 1
         elif rows == 'auto':
-            rows = count//columns
+            rows = count//columns or 1
         # общая ширина, занимаемая колонками
         all_h_spacing = self.horizontal_spacing * (columns-1)
         cells_width = self.width - self.padding_left - self.padding_right - all_h_spacing
@@ -128,6 +168,8 @@ class GridShape(BaseShape):
         shapes = self.get_cell_shapes()
         if shapes:
             for shape in self.get_cell_shapes():
+                # if shape._local_context['row'] == 1:
+                #     print(shape._data, shape.y, shape.y_draw)
                 overlay = shape.render(size)
                 canvas = Image.alpha_composite(canvas, overlay)
         return canvas
