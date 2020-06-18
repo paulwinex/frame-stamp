@@ -19,10 +19,13 @@ class LabelShape(BaseShape):
         font_size          : Размер шрифта
         font_name          : Используемый шрифт
         fit_to_parent      : Вписать текст в размер родительского объекта
-        fit_divider        : символ по которому разделять строки.
+        line_splitter      : символ по которому разделять строки для авто переноса.
                                 None - по любому символу
                                 " " - по словам
                                 "/" - по частям пути
+        move_splitter_to_next_line: Работает только при включенном fit_to_parent и line_splitter
+                             true - символ разделения строки переносить на следующую строку
+                             false - символ разделения строки оставлять на текущей строке
     """
     shape_name = 'label'
     special_characters = {
@@ -61,8 +64,8 @@ class LabelShape(BaseShape):
         if self.zfill:
             text = text.zfill(self.zfill)
         if self.fit_to_parent:
-            text = self._fir_to_parent_width(text, self.fit_divider)
-        return text
+            text = self._fir_to_parent_width(text, self.line_splitter)
+        return text.strip()
 
     def _trunc_path(self, text, count, from_start=1):
         parts = os.path.normpath(text).split(os.path.sep)
@@ -112,12 +115,11 @@ class LabelShape(BaseShape):
             return text
         single_char_width = self.font.getsize('a')[0]
         max_chars_in_line = self.parent.width // single_char_width
-
         if divider:     # разделяем по указанным символам
             if not any([x in text for x in divider]):
                 # символы разделителя не найдены в тексте
                 return text
-            lines = self._split_text_by_divider(text, divider)
+            lines = self._split_text_by_divider(text, divider, self.move_splitter_to_next_line)
             joined_lines = []
             # соединяем строки пока есть достаточно ширины
             t = ''
@@ -195,13 +197,18 @@ class LabelShape(BaseShape):
     #     newlined_path = newlined_path + remainder
     #     return newlined_path
 
-    def _split_text_by_divider(self, text, divider):
+    def _split_text_by_divider(self, text, divider, move_divider_to_next_line=False):
         parts = []
         line = ''
         for char in text:
             if char in divider:
-                parts.append(line)
-                line = char
+                if move_divider_to_next_line:
+                    parts.append(line)
+                    line = char
+                else:
+                    line += char
+                    parts.append(line)
+                    line = ''
             else:
                 line += char
         if line:
@@ -285,7 +292,9 @@ class LabelShape(BaseShape):
         """
         f = self._eval_parameter('font_name', default=None)
         if not os.path.exists(f):
-            f = os.path.join(self.default_fonts_dir, 'fonts', f + '.ttf')
+            f = os.path.join(self.default_fonts_dir, 'fonts', f)
+            if not f.endswith('ttf'):
+                f += '.ttf'
         return f
 
     @property
@@ -325,8 +334,13 @@ class LabelShape(BaseShape):
 
     @property
     @cached_result
-    def fit_divider(self):
-        return self._eval_parameter('fit_divider', default=None)
+    def line_splitter(self):
+        return self._eval_parameter('line_splitter', default=None)
+
+    @property
+    @cached_result
+    def move_splitter_to_next_line(self):
+        return self._eval_parameter('move_splitter_to_next_line', default=None)
 
     @cached_result
     def get_size(self):

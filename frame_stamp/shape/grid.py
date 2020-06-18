@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from .base_shape import BaseShape, EmptyShape
 from frame_stamp.utils.exceptions import PresetError
+from frame_stamp.utils import cached_result
 from PIL import Image
 import cgflogging
 
@@ -50,26 +51,32 @@ class GridShape(BaseShape):
             self.add_shape(shape)
         return shapes
 
+    @cached_result
     @property
     def vertical_spacing(self):
         return self._eval_parameter('vertical_spacing', default=0)
 
+    @cached_result
     @property
     def horizontal_spacing(self):
         return self._eval_parameter('horizontal_spacing', default=0)
 
+    @cached_result
     @property
     def rows(self):
         return self._eval_parameter('rows', default='auto')
 
+    @cached_result
     @property
     def max_row_height(self):
         return self._eval_parameter('max_row_height', default=0)
 
+    @cached_result
     @property
     def max_column_width(self):
         return self._eval_parameter('max_column_width', default=0)
 
+    @cached_result
     @property
     def columns(self):
         return self._eval_parameter('columns', default='auto')
