@@ -140,18 +140,23 @@ class LabelShape(BaseShape):
                     t = next_peace.lstrip()
                 if not lines:
                     joined_lines.append(t)
-            if self.max_lines_count and len(joined_lines) > self.max_lines_count:
-                joined_lines = joined_lines[:self.max_lines_count]
-                joined_lines[-1] = joined_lines[-1] + '...'
-            elif self.lmax_lines_count and len(joined_lines) > self.lmax_lines_count:
-                joined_lines = joined_lines[-self.lmax_lines_count:]
-                joined_lines[0] = '...'+joined_lines[0]
-            text = '\n'.join(joined_lines).strip()
         else:
             # разделяем просто по словам или символам
             wrapper = textwrap.TextWrapper(width=max_chars_in_line,
                                            replace_whitespace=False)  # ставим это, чтобы не убивались исходные '\n'
-            text = wrapper.fill(text=text)
+            _text = wrapper.fill(text=text)
+            joined_lines = _text.split('\n')
+
+        # обрезка максимального количества строк
+        if self.max_lines_count and len(joined_lines) > self.max_lines_count:
+            joined_lines = joined_lines[:self.max_lines_count]
+            joined_lines[-1] = joined_lines[-1] + '...'
+        elif self.lmax_lines_count and len(joined_lines) > self.lmax_lines_count:
+            joined_lines = joined_lines[-self.lmax_lines_count:]
+            joined_lines[0] = '...' + joined_lines[0]
+
+        text = '\n'.join(joined_lines).strip()
+
         return text
         # # # находим все строки
         # # lines = text.split('\n')
