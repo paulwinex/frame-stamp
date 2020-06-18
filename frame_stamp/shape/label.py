@@ -16,6 +16,7 @@ class LabelShape(BaseShape):
     Allowed parameters:
         text               : Текст. Поддерживается форматирование переменных их конеткста "Project: $project_name"
         text_spacing       : Расстояние между строк в многосточном тексте. По умолчанию 0
+        text_color
         font_size          : Размер шрифта
         font_name          : Используемый шрифт
         fit_to_parent      : Вписать текст в размер родительского объекта
@@ -26,6 +27,21 @@ class LabelShape(BaseShape):
         move_splitter_to_next_line: Работает только при включенном fit_to_parent и line_splitter
                              true - символ разделения строки переносить на следующую строку
                              false - символ разделения строки оставлять на текущей строке
+        max_lines_count
+        lmax_lines_count
+        truncate
+        ltruncate
+        truncate_path
+        ltruncate_path
+        truncate_to_parent
+        ltruncate_to_parent
+        title
+        upper
+        lower
+        zfill
+        outline
+        backdrop
+
     """
     shape_name = 'label'
     special_characters = {
@@ -99,24 +115,6 @@ class LabelShape(BaseShape):
         for char, val in self.special_characters.items():
             text = re.sub(char, val, text)
         return html.unescape(text)
-
-    # def _get_parent_width_in_characters(self):
-    #     """
-    #     Получение ширины parent'а в символах
-    #
-    #     Returns
-    #     -------
-    #     width_characters: int
-    #     """
-    #     parent_width_pixels = self.parent.width
-    #     # используем проверочную строку, чтобы вычислить ширину одного символа в пикселях,
-    #     # зная ее длину в символах
-    #     test_str = 'A testing string. The longer it is, the more accurate the results it produces'
-    #     # делим ширину этой строки на количество символов и получаем соотношение
-    #     pixel_to_char_ratio = self.font.getsize(test_str)[0] / len(test_str)
-    #     # сначала округляем значение, тем самым получая более точный int после
-    #     width_characters = int(round(parent_width_pixels / pixel_to_char_ratio))
-    #     return width_characters
 
     def _fir_to_parent_width(self, text, divider=None):
         """
@@ -198,36 +196,6 @@ class LabelShape(BaseShape):
         #         text = wrapper.fill(text=text)
         #     return text
         # return text
-
-    # def _add_new_lines_for_path(self, path):
-    #     """
-    #     Добавление переносов для пути до файла (со слэшами)
-    #
-    #     Parameters
-    #     ----------
-    #     path: str
-    #
-    #     Returns
-    #     -------
-    #     newlined_path: str
-    #     """
-    #     newlined_path = ''
-    #     sep = os.path.sep
-    #     slash_split = path.split(sep)
-    #     remainder = slash_split
-    #     parent_width_characters = self._get_parent_width_in_characters()
-    #
-    #     while not len([char for char in sep.join(remainder) if char == sep]) < 2:
-    #         path_variants = [sep.join(remainder[:i + 1]) for i in range(len(remainder)) if sep.join(remainder[:i + 1])]
-    #         path_variants = [path_variants[i] + sep if i < len(path_variants) - 1 else path_variants[i] for i in
-    #                          range(len(path_variants))]
-    #         longest_variant = [path for path in path_variants if len(path) < parent_width_characters][-1]
-    #         newlined_path += longest_variant + '\n'
-    #         remainder = sep.join(remainder).replace(longest_variant, '').split(sep)
-    #
-    #     remainder = sep.join(remainder)
-    #     newlined_path = newlined_path + remainder
-    #     return newlined_path
 
     def _split_text_by_divider(self, text, divider, move_divider_to_next_line=False):
         """
