@@ -51,35 +51,40 @@ class GridShape(BaseShape):
             self.add_shape(shape)
         return shapes
 
-    @cached_result
     @property
+    @cached_result
     def vertical_spacing(self):
         return self._eval_parameter('vertical_spacing', default=0)
 
-    @cached_result
     @property
+    @cached_result
     def horizontal_spacing(self):
         return self._eval_parameter('horizontal_spacing', default=0)
 
-    @cached_result
     @property
+    @cached_result
     def rows(self):
         return self._eval_parameter('rows', default='auto')
 
-    @cached_result
     @property
+    @cached_result
     def max_row_height(self):
         return self._eval_parameter('max_row_height', default=0)
 
-    @cached_result
     @property
+    @cached_result
     def max_column_width(self):
         return self._eval_parameter('max_column_width', default=0)
 
-    @cached_result
     @property
+    @cached_result
     def columns(self):
         return self._eval_parameter('columns', default='auto')
+
+    @property
+    @cached_result
+    def fit_to_content_height(self):
+        return bool(self._eval_parameter('fit_to_content_height', default=True))
 
     def generate_cells(self, count, cols=None, rows=None):
         # todo: выравнивание неполных строк и колонок
