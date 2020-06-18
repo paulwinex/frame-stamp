@@ -38,7 +38,7 @@ class LabelShape(BaseShape):
     @cached_result
     def text(self):
         """
-        РЕсолвинг текста
+        Ресолвинг текста
         """
         text = self._data['text']
         if '$' in text:
@@ -68,6 +68,9 @@ class LabelShape(BaseShape):
         return text.strip()
 
     def _trunc_path(self, text, count, from_start=1):
+        """
+        Обрезка пути по максимальному количеству элементов
+        """
         parts = os.path.normpath(text).split(os.path.sep)
         if from_start:
             return os.path.sep.join(parts[:count + 1])
@@ -75,6 +78,9 @@ class LabelShape(BaseShape):
             return os.path.sep.join(parts[-count:])
 
     def _render_special_characters(self, text):
+        """
+        Рендеринг специальных символов HTML
+        """
         for char, val in self.special_characters.items():
             text = re.sub(char, val, text)
         return html.unescape(text)
@@ -134,6 +140,12 @@ class LabelShape(BaseShape):
                     t = next_peace.lstrip()
                 if not lines:
                     joined_lines.append(t)
+            if self.max_lines_count and len(joined_lines) > self.max_lines_count:
+                joined_lines = joined_lines[:self.max_lines_count]
+                joined_lines[-1] = joined_lines[-1] + '...'
+            elif self.lmax_lines_count and len(joined_lines) > self.lmax_lines_count:
+                joined_lines = joined_lines[-self.lmax_lines_count:]
+                joined_lines[0] = '...'+joined_lines[0]
             text = '\n'.join(joined_lines).strip()
         else:
             # разделяем просто по словам или символам
@@ -198,6 +210,13 @@ class LabelShape(BaseShape):
     #     return newlined_path
 
     def _split_text_by_divider(self, text, divider, move_divider_to_next_line=False):
+        """
+        Разделение текста по указанному символу
+
+        Returns
+        -------
+        list
+        """
         parts = []
         line = ''
         for char in text:
@@ -218,6 +237,7 @@ class LabelShape(BaseShape):
     @property
     @cached_result
     def font_size(self) -> int:
+        """Размер шрифта"""
         size = self._eval_parameter('font_size')  # type: int
         if size == 0:
             raise ValueError('Font size can`t be zero. Shape "{}"'.format(self))
@@ -226,46 +246,67 @@ class LabelShape(BaseShape):
     @property
     @cached_result
     def spacing(self):
+        """Расстояние между строками"""
         return self._eval_parameter('text_spacing')
 
     @property
     @cached_result
     def truncate(self):
+        """Обрезка строки по количеству символов"""
         return self._eval_parameter('truncate', default=None)
 
     @property
     @cached_result
     def ltruncate(self):
+        """Обрезка строки по количеству символов слева"""
         return self._eval_parameter('ltruncate', default=None)
 
     @property
     @cached_result
     def truncate_path(self):
+        """Обрезка пути с ограничением количества элементов пути"""
         return self._eval_parameter('truncate_path', default=None)
 
     @property
     @cached_result
     def ltruncate_path(self):
+        """Обрезка пути слева"""
         return self._eval_parameter('ltruncate_path', default=None)
 
     @property
     @cached_result
+    def truncate_to_parent(self):
+        """Обрезка строки чтобы она вписалась в ширину парента"""
+        return self._eval_parameter('truncate_to_parent', default=None)
+
+    @property
+    @cached_result
+    def ltruncate_to_parent(self):
+        """Обрезка строки слева чтобы она вписалась в ширину парента"""
+        return self._eval_parameter('ltruncate_to_parent', default=None)
+
+    @property
+    @cached_result
     def title(self):
+        """Применить функцию title()"""
         return self._eval_parameter('title', default=False)
 
     @property
     @cached_result
     def upper(self):
+        """Применить функцию upper()"""
         return self._eval_parameter('upper', default=False)
 
     @property
     @cached_result
     def lower(self):
+        """Применить функцию lower()"""
         return self._eval_parameter('lower', default=False)
 
     @property
     @cached_result
     def zfill(self):
+        """Применить функцию zfill"""
         return self._eval_parameter('zfill', default=False)
 
     @property
@@ -312,6 +353,7 @@ class LabelShape(BaseShape):
     @property
     @cached_result
     def color(self):
+        """Цвет текста"""
         clr = self._eval_parameter('text_color')
         if isinstance(clr, list):
             clr = tuple(clr)
@@ -320,27 +362,44 @@ class LabelShape(BaseShape):
     @property
     @cached_result
     def outline(self):
+        """Добавить обводку"""
         return self._eval_parameter('outline', default={})
 
     @property
     @cached_result
     def backdrop(self):
+        """Добавить бекдроп (подложка)"""
         return self._eval_parameter('backdrop', default=None)
 
     @property
     @cached_result
     def fit_to_parent(self):
+        """Вписать строку в ширину парента с переносом на новую строку"""
         return bool(self._eval_parameter('fit_to_parent', default=False))
 
     @property
     @cached_result
     def line_splitter(self):
+        """Символ для разделения строки при переносе на новую строку"""
         return self._eval_parameter('line_splitter', default=None)
 
     @property
     @cached_result
     def move_splitter_to_next_line(self):
+        """Определяет где будет оставаться символ-разделитель. но текущей строке или на новой"""
         return self._eval_parameter('move_splitter_to_next_line', default=None)
+
+    @property
+    @cached_result
+    def max_lines_count(self):
+        """Ограничение по количеству переходов на новую строку. После этого строка обрезается"""
+        return self._eval_parameter('max_lines_count', default=None)
+
+    @property
+    @cached_result
+    def lmax_lines_count(self):
+        """Ограничение по уколичеству переходов на новую строку. Строка обрезается с начала"""
+        return self._eval_parameter('lmax_lines_count', default=None)
 
     @cached_result
     def get_size(self):

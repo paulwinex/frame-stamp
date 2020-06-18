@@ -356,6 +356,9 @@ class BaseShape(AbstractShape):
     def y(self):
         val = self._eval_parameter('y', default=0)
         align = self.align_v
+        # if self.id == 'last':
+        #     print(111, self.parent._data)
+        #     print('y =',self.parent.y)
         if align == 'center':
             return int(self.parent.y + val + (self.parent.height/2) - (self.height / 2))
         elif align == 'bottom':

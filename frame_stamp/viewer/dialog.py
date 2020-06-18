@@ -17,9 +17,9 @@ class TemplateViewer(QMainWindow):
         self.setWindowTitle('Template Viewer')
         self.setAcceptDrops(True)
 
-        from py_console import console
-        self.c = console.Console(self)
-        self.c.show()
+        # from py_console import console
+        # self.c = console.Console(self)
+        # self.c.show()
 
         self.template_file = None
         self.template_name = None
