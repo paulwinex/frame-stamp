@@ -65,6 +65,8 @@ class LabelShape(BaseShape):
             text = text.zfill(self.zfill)
         if self.fit_to_parent:
             text = self._fir_to_parent_width(text, self.line_splitter)
+        elif self.truncate_to_parent or self.ltruncate_to_parent:
+            text = self._truncate_to_parent(text, left=self.ltruncate_to_parent)
         return text.strip()
 
     def _trunc_path(self, text, count, from_start=1):
@@ -76,6 +78,19 @@ class LabelShape(BaseShape):
             return os.path.sep.join(parts[:count + 1])
         else:
             return os.path.sep.join(parts[-count:])
+
+    def _truncate_to_parent(self, text, left=False):
+        if self.parent.width >= self.font.getsize(text)[0]:
+            # перенос не требуется
+            return text
+        single_char_width = self.font.getsize('a')[0]
+        max_chars_in_line = self.parent.width // single_char_width
+        if len(text) > max_chars_in_line:
+            if left:
+                text = '...'+text[-max_chars_in_line+3:]
+            else:
+                text = text[:max_chars_in_line-3] + '...'
+        return text
 
     def _render_special_characters(self, text):
         """
