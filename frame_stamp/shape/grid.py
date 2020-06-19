@@ -32,7 +32,7 @@ class GridShape(BaseShape):
         shapes = []
         shape_list = self._data.get('shapes')
         if not shape_list:
-            return
+            return []
         cells = self.generate_cells(len(shape_list))
         from frame_stamp.shape import get_shape_class
         for i, shape_config in enumerate(shape_list):

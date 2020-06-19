@@ -66,7 +66,7 @@ move_splitter_to_next_line
 max_lines_count
     Ограниение по количеству переносов при включенном ``fit_to_parent``. Неуместившиеся строки удаляются
 
-max_lines_count
+lmax_lines_count
     То же что и max_lines_count но удалятся строки. Работает только вместе с ``fit_to_parent``.
 
 outline
