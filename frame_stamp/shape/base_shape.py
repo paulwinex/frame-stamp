@@ -127,7 +127,7 @@ class AbstractShape(object):
             if 'default' in kwargs:
                 return kwargs['default']
             raise KeyError(f'Key "{key}" not found in defaults')
-        resolved = self._eval_parameter_convert(key, val)
+        resolved = self._eval_parameter_convert(key, val, **kwargs)
         return resolved if resolved is not None else val
 
     def _eval_parameter_convert(self, key, val: str, **kwargs):
@@ -146,7 +146,10 @@ class AbstractShape(object):
         elif isinstance(val, (list, tuple)):
             return [self._eval_parameter_convert(key, x) for x in val]
         elif isinstance(val, dict):
-            return {k: self._eval_parameter_convert(key, v) for k, v in val.items()}
+            if not kwargs.get('skip_type_convert'):
+                return {k: self._eval_parameter_convert(key, v, **kwargs) for k, v in val.items()}
+            else:
+                return val
         if not isinstance(val, str):
             raise TypeError('Unsupported type {}'.format(type(val)))
         # остается только строка
@@ -292,23 +295,37 @@ class BaseShape(AbstractShape):
     default_width = 0
     default_height = 0
 
+    @property
+    @cached_result
+    def _debug_parent_offset(self):
+        """Смещение контура парента относительно контура объекта"""
+        return self._eval_parameter('debug_parent_offset', default=1)
+
+    @property
+    @cached_result
+    def _debug_self_offset(self):
+        """Смещение контура парента относительно контура объекта"""
+        return self._eval_parameter('debug_self_offset', default=0)
+
     def _render_debug(self, default_render, size):
         overlay = self._get_canvas(size)
         img = ImageDraw(overlay)
+        self_ofs = self._debug_self_offset
         img.line([
-            (self.left, self.top),
-            (self.right, self.top),
-            (self.right, self.bottom),
-            (self.left, self.bottom),
-            (self.left, self.top)
+            (self.left + self_ofs, self.top + self_ofs),
+            (self.right - self_ofs, self.top + self_ofs),
+            (self.right - self_ofs, self.bottom - self_ofs),
+            (self.left + self_ofs, self.bottom - self_ofs),
+            (self.left + self_ofs, self.top + self_ofs)
         ], 'red', 1)
+        par_offset = self._debug_parent_offset
 
         img.line([
-            (self.parent.left + 1, self.parent.top + 1),
-            (self.parent.right - 1, self.parent.top + 1),
-            (self.parent.right - 1, self.parent.bottom - 1),
-            (self.parent.left + 1, self.parent.bottom - 1),
-            (self.parent.left + 1, self.parent.top + 1)
+            (self.parent.left + par_offset, self.parent.top + par_offset),
+            (self.parent.right - par_offset, self.parent.top + par_offset),
+            (self.parent.right - par_offset, self.parent.bottom - par_offset),
+            (self.parent.left + par_offset, self.parent.bottom - par_offset),
+            (self.parent.left + par_offset, self.parent.top + par_offset)
         ], 'yellow', 1)
         return Image.alpha_composite(default_render, overlay)
 

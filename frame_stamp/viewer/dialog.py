@@ -6,7 +6,6 @@ from frame_stamp.viewer.watch import TemplateFileWatch
 import os, tempfile, traceback
 from cgf_tools import jsonc, proc
 from frame_stamp.stamp import FrameStamp
-# from py_console import console
 
 
 class TemplateViewer(QMainWindow):
@@ -17,6 +16,8 @@ class TemplateViewer(QMainWindow):
         super(TemplateViewer, self).__init__()
         self.setWindowTitle('Template Viewer')
         self.setAcceptDrops(True)
+
+        # from py_console import console
         # self.c = console.Console(self)
         # self.c.show()
 
@@ -36,11 +37,11 @@ class TemplateViewer(QMainWindow):
 
         self.setMenuBar(menubar)
 
-        file_mn.addAction(QAction('New Template', file_mn, triggered=self.new_template))
-        file_mn.addAction(QAction('Set Template', file_mn, triggered=self.browse_template))
+        file_mn.addAction(QAction('New Template...', file_mn, triggered=self.new_template))
+        file_mn.addAction(QAction('Load Template...', file_mn, triggered=self.browse_template))
         file_mn.addAction(QAction('Open Current Template', file_mn, triggered=self.open_template))
         file_mn.addSeparator()
-        file_mn.addAction(QAction('Set Background', file_mn, triggered=self.browse_image))
+        file_mn.addAction(QAction('Load Background...', file_mn, triggered=self.browse_image))
         file_mn.addAction(QAction('Save Image As...', file_mn, triggered=self.save_image))
         file_mn.addSeparator()
         file_mn.addAction(QAction('Reset', file_mn, triggered=self.reset))
@@ -102,7 +103,7 @@ class TemplateViewer(QMainWindow):
         except Exception as e:
             self.set_error(traceback.format_exc())
 
-    def render_template(self):
+    def get_current_template(self):
         if self.template_file:
             templates = jsonc.load(open(self.template_file, encoding='utf-8'))
             try:
@@ -112,6 +113,10 @@ class TemplateViewer(QMainWindow):
                 return
         else:
             template = None
+        return template
+
+    def render_template(self):
+        template = self.get_current_template()
         image = self.image or self.get_dummy_image()
         viewer_variables = dict(
             # todo: custom variables from GUI
@@ -213,6 +218,9 @@ class TemplateViewer(QMainWindow):
             else:
                 event.ignore()
 
+    # def wheelEvent(self, event):
+    #     print(event.delta())
+
     def on_file_dropped(self, path):
         self.set_no_error()
         if os.path.splitext(path)[-1] == '.json':
@@ -249,7 +257,7 @@ class TemplateViewer(QMainWindow):
             self.set_image(path)
 
     def browse_template(self):
-        path, _ = QFileDialog.getOpenFileName(self, 'Select Template', os.path.expanduser('~'), filter='JSON (*.png)')
+        path, _ = QFileDialog.getOpenFileName(self, 'Select Template', os.path.expanduser('~'), filter='JSON (*.json)')
         if path:
             self.set_template_file(path)
 
