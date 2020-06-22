@@ -133,7 +133,7 @@ class LabelShape(BaseShape):
             # перенос не требуется
             return text
         single_char_width = self.font.getsize('a')[0]
-        max_chars_in_line = self.parent.width // single_char_width
+        max_chars_in_line = max([1,self.parent.width // single_char_width])
         if divider:     # разделяем по указанным символам
             if not any([x in text for x in divider]):
                 # символы разделителя не найдены в тексте

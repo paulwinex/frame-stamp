@@ -132,10 +132,23 @@ class GridShape(BaseShape):
         # общая ширина колонок
         full_columns_width = sum(columns.values())
         # заменяем отрицательные индексы на абсолютные
+        _filtered = {}
         for c, val in custom_columns_width.items():
             if c < 0:
-                del custom_columns_width[c]
-                custom_columns_width[len(columns) + c] = val
+                if abs(c) > len(columns):
+                    # слишком большой индекс
+                    # del custom_columns_width[c]
+                    continue
+                # del custom_columns_width[c]
+                # custom_columns_width[len(columns) + c] = val
+                _filtered[len(columns) + c] = val
+            else:
+                if c > len(columns)-1:
+                #     # слишком большой индекс
+                #     del custom_columns_width[c]
+                    continue
+                _filtered[c] = val
+        custom_columns_width = _filtered
         # ширина колонок с неограниченным размером
         free_size_columns = [x for x in range(len(columns)) if
                              x not in custom_columns_width]  # колонки у которых не фиксировали размер
@@ -149,9 +162,9 @@ class GridShape(BaseShape):
         # обнолвяем ширину колонок в списке
         for i in range(len(columns)):
             if i in custom_columns_width:
-                columns[i] = custom_columns_width[i]
+                columns[i] = max([1,custom_columns_width[i]])
             else:
-                columns[i] = free_columns_width
+                columns[i] = max([1, free_columns_width])
         return columns
 
     # def _adjust_columns_width__(self):
