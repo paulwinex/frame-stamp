@@ -127,7 +127,7 @@ class AbstractShape(object):
             if 'default' in kwargs:
                 return kwargs['default']
             raise KeyError(f'Key "{key}" not found in defaults')
-        resolved = self._eval_parameter_convert(key, val)
+        resolved = self._eval_parameter_convert(key, val, **kwargs)
         return resolved if resolved is not None else val
 
     def _eval_parameter_convert(self, key, val: str, **kwargs):
@@ -146,7 +146,10 @@ class AbstractShape(object):
         elif isinstance(val, (list, tuple)):
             return [self._eval_parameter_convert(key, x) for x in val]
         elif isinstance(val, dict):
-            return {k: self._eval_parameter_convert(key, v) for k, v in val.items()}
+            if not kwargs.get('skip_type_convert'):
+                return {k: self._eval_parameter_convert(key, v, **kwargs) for k, v in val.items()}
+            else:
+                return val
         if not isinstance(val, str):
             raise TypeError('Unsupported type {}'.format(type(val)))
         # остается только строка
@@ -356,9 +359,6 @@ class BaseShape(AbstractShape):
     def y(self):
         val = self._eval_parameter('y', default=0)
         align = self.align_v
-        # if self.id == 'last':
-        #     print(111, self.parent._data)
-        #     print('y =',self.parent.y)
         if align == 'center':
             return int(self.parent.y + val + (self.parent.height/2) - (self.height / 2))
         elif align == 'bottom':

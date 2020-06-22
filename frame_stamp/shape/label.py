@@ -320,6 +320,8 @@ class LabelShape(BaseShape):
         Путь к шрифту или имя шрифта из стандартных директорий
         """
         f = self._eval_parameter('font_name', default=None)
+        if not f:
+            f = self.default_font_name
         if not os.path.exists(f):
             f = os.path.join(self.default_fonts_dir, 'fonts', f)
             if not f.endswith('ttf'):
