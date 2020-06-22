@@ -47,7 +47,7 @@ class LabelShape(BaseShape):
     special_characters = {
         '&;': ''
     }
-    default_fonts_dir = os.path.dirname(os.path.dirname(__file__))
+    default_fonts_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'fonts')
     _default_font_name = 'FreeSansBold.ttf' if not os.name == 'nt' else 'arial.ttf'
 
     @property
@@ -303,15 +303,38 @@ class LabelShape(BaseShape):
         """
         Возвращает готовый шрифт для рендера
         """
-        if self.font_name:
-            try:
-                fnt = ImageFont.truetype(self.font_name or self.default_font_name, int(self.font_size))
-            except (OSError, AttributeError):
-                # logger.debug('Font {} not found, use default'.format(self.font_name))
-                fnt = ImageFont.truetype(self.default_font_name, self.font_size)
-        else:
-            fnt = ImageFont.truetype(self.default_font_name, self.font_size)
-        return fnt
+        return ImageFont.truetype(self._resolve_font_name(self.font_name), self.font_size)
+        # if self.font_name:
+        #     try:
+        #         fnt = ImageFont.truetype(self.font_name or self.default_font_name, int(self.font_size))
+        #     except (OSError, AttributeError):
+        #         # logger.debug('Font {} not found, use default'.format(self.font_name))
+        #         fnt = ImageFont.truetype(self.default_font_name, self.font_size)
+        # else:
+        #     fnt = ImageFont.truetype(self.default_font_name, self.font_size)
+        # return fnt
+
+    def _resolve_font_name(self, font_name):
+        if not font_name.endswith('ttf'):
+            font_name += '.ttf'
+        # проверяем указан ли абсолютный путь
+        if os.path.exists(font_name):
+            return font_name
+        # проверяем в кастомных директориях ресурсов
+        search_paths = self.variables.get('local_resource_paths')
+        if search_paths:
+            for path in search_paths:
+                font_1 = os.path.join(path, font_name)
+                if os.path.exists(font_1):
+                    return font_1
+                font_2 = os.path.join(path, 'fonts', font_name)
+                if os.path.exists(font_2):
+                    return font_2
+        # ищем в дефолтных шрифтах
+        font_3 = os.path.join(self.default_fonts_dir, font_name)
+        if os.path.exists(font_3):
+            return font_3
+        raise LookupError('Font {} not found'.format(font_name))
 
     @property
     @cached_result
@@ -320,13 +343,7 @@ class LabelShape(BaseShape):
         Путь к шрифту или имя шрифта из стандартных директорий
         """
         f = self._eval_parameter('font_name', default=None)
-        if not f:
-            f = self.default_font_name
-        if not os.path.exists(f):
-            f = os.path.join(self.default_fonts_dir, 'fonts', f)
-            if not f.endswith('ttf'):
-                f += '.ttf'
-        return f
+        return f or self.default_font_name
 
     @property
     @cached_result
@@ -337,7 +354,7 @@ class LabelShape(BaseShape):
         default_name = self._eval_parameter('default_font_name', default=None) or self._default_font_name
         df = self._eval_parameter('default_font', default=None)
         if not df:
-            df = os.path.join(self.default_fonts_dir, 'fonts', default_name)
+            df = default_name
         return df
 
     @property
