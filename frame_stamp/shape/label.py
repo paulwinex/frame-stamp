@@ -437,55 +437,18 @@ class LabelShape(BaseShape):
     @cached_result
     def get_size(self):
         """
-
-        """
-        # f = self.font
-        # (fm1, font_height), (fm2, top_line) = f.font.getsize('A')
-        # wd, hg = f.getsize(self.text.split('\n')[0])
-        # base_line = f.font.height - f.font.descent  # базовая линия шрифта
-        # bottom_line = f.font.height  # самая нижная линия в пикселях учитывая все выступы. Дл ярасчетё полной высоты
-        # line_height = base_line + self.spacing  # самая нижная линия без учета выступов. Это базовая линия и отсутп
-        # top_line = self._top_offset
-        # line_height = base_line - top_line
-        # text_height = ((line_height+self.spacing) * len(self.text.split('\n'))) - self.spacing
-        # line_height = self._casp_height
-        # line_height = self.get_font_metrics()['font_height']
-        pass
-        # общая высота текста без учета элементов под бейзлойном
-        text_height = ((self.get_font_metrics()['font_height']+self.spacing)
-                       * len(self.text.split('\n'))) - self.spacing
-        # общая ширина текста по самой длинной строке
-        text_width = max([self.font.getsize(text)[0] for text in self.text.split('\n')])
-        return text_width, text_height
-
-    @cached_result
-    def _get_size(self):
-        """
         Размер текста в пикселях
 
         Returns
         -------
         (x,y): tuple
         """
-        lines = self.text.split('\n')
-        x = max([self.font.getsize(text)[0] for text in lines])
-        y = 0
-        base_line = self.font.font.height - self.font.font.descent
-        line_height = base_line
-        # находим размер самого маленького символа и основываем размер строки на нем.
-        # это сделано чтобы из-за символов, границы которых больше (вроде "_" или "y"),
-        # весь текст не приподнимался
-        # smallest_char_size = min([self.draw.textsize(char, font=self.font)[1] for char in [line[0] for line in lines]])
-        # line_height = smallest_char_size
-        for line in lines:
-            # если строк несколько, добавляем по spacing кол-ву пикселей на каждую из них
-            # но не добавляем последней строке, чтобы она не приподнималась над нижней линией
-            if len(lines) > 1:
-                y += line_height + self.spacing
-            # если строка одна или это последняя строка, просто прибавляем размер меньшего символа
-            else:
-                y += line_height
-        return x, y
+        # общая высота текста без учета элементов под бейзлойном
+        text_height = ((self.get_font_metrics()['font_height']+self.spacing)
+                       * len(self.text.split('\n'))) - self.spacing
+        # общая ширина текста по самой длинной строке
+        text_width = max([self.font.getsize(text)[0] for text in self.text.split('\n')])
+        return text_width, text_height
 
     @property
     def width(self):
