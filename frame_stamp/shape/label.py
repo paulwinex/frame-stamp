@@ -42,6 +42,11 @@ class LabelShape(BaseShape):
         outline
         backdrop
 
+    NOTE
+        Класс реализует нестандартный рассчет высоты шрфита. По умолчанию высотой будет максимальная высота в пикселях.
+        Но данный класс рассчитывае высоту по метрическим линиям самого шрифта. Таким образом элементы под базовой линией
+        шрифта и над линией капса в высоту не попадают. Изза этого есть офсеты в различных местах рассчётов.
+
     """
     shape_name = 'label'
     special_characters = {
@@ -315,6 +320,13 @@ class LabelShape(BaseShape):
         # return fnt
 
     def _resolve_font_name(self, font_name):
+        """
+        Поиск шрфита по имени
+
+        Returns
+        -------
+        str
+        """
         if not font_name.endswith('ttf'):
             font_name += '.ttf'
         # проверяем указан ли абсолютный путь
@@ -334,6 +346,13 @@ class LabelShape(BaseShape):
         font_3 = os.path.join(self.default_fonts_dir, font_name)
         if os.path.exists(font_3):
             return font_3
+        # пробуем достать из стандартных шрифтов системы
+        try:
+            ImageFont.truetype(font_name, 10)
+            # шрфит найден
+            return font_name
+        except OSError:
+            pass
         raise LookupError('Font {} not found'.format(font_name))
 
     @property
@@ -408,8 +427,39 @@ class LabelShape(BaseShape):
         """Ограничение по уколичеству переходов на новую строку. Строка обрезается с начала"""
         return self._eval_parameter('lmax_lines_count', default=None)
 
+    def get_font_metrics(self):
+        (_, font_height), (_, offset_y) = self.font.font.getsize('A')
+        return dict(
+            font_height=font_height,
+            offset_y=offset_y
+        )
+
     @cached_result
     def get_size(self):
+        """
+
+        """
+        # f = self.font
+        # (fm1, font_height), (fm2, top_line) = f.font.getsize('A')
+        # wd, hg = f.getsize(self.text.split('\n')[0])
+        # base_line = f.font.height - f.font.descent  # базовая линия шрифта
+        # bottom_line = f.font.height  # самая нижная линия в пикселях учитывая все выступы. Дл ярасчетё полной высоты
+        # line_height = base_line + self.spacing  # самая нижная линия без учета выступов. Это базовая линия и отсутп
+        # top_line = self._top_offset
+        # line_height = base_line - top_line
+        # text_height = ((line_height+self.spacing) * len(self.text.split('\n'))) - self.spacing
+        # line_height = self._casp_height
+        # line_height = self.get_font_metrics()['font_height']
+        pass
+        # общая высота текста без учета элементов под бейзлойном
+        text_height = ((self.get_font_metrics()['font_height']+self.spacing)
+                       * len(self.text.split('\n'))) - self.spacing
+        # общая ширина текста по самой длинной строке
+        text_width = max([self.font.getsize(text)[0] for text in self.text.split('\n')])
+        return text_width, text_height
+
+    @cached_result
+    def _get_size(self):
         """
         Размер текста в пикселях
 
@@ -445,10 +495,13 @@ class LabelShape(BaseShape):
     def height(self):
         return self.get_size()[1]
 
+    @property
+    def y_draw(self):
+        return super(LabelShape, self).y_draw - self.get_font_metrics()['offset_y']     # фикс по высоте, убираем верхнюю часть шрфита до высоты капса
+
     def draw_shape(self, size, **kwargs):
         canvas = self._get_canvas(size)
         drw = ImageDraw.Draw(canvas)
-        # self.draw = drw
         is_multiline = '\n' in self.text
         printer = drw.multiline_text if is_multiline else drw.text
         text_args = dict(
@@ -456,7 +509,7 @@ class LabelShape(BaseShape):
             fill=self.color
         )
         if is_multiline:
-            text_args['spacing'] = self.spacing
+            text_args['spacing'] = self.spacing - self.get_font_metrics()['offset_y']
             if self.align_h:
                 text_args['align'] = self.align_h
         if self.outline:

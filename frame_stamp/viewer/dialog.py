@@ -218,8 +218,8 @@ class TemplateViewer(QMainWindow):
             else:
                 event.ignore()
 
-    def wheelEvent(self, event):
-        print(event.delta())
+    # def wheelEvent(self, event):
+    #     print(event.delta())
 
     def on_file_dropped(self, path):
         self.set_no_error()
