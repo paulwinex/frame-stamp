@@ -37,11 +37,11 @@ class TemplateViewer(QMainWindow):
 
         self.setMenuBar(menubar)
 
-        file_mn.addAction(QAction('New Template', file_mn, triggered=self.new_template))
-        file_mn.addAction(QAction('Set Template', file_mn, triggered=self.browse_template))
+        file_mn.addAction(QAction('New Template...', file_mn, triggered=self.new_template))
+        file_mn.addAction(QAction('Load Template...', file_mn, triggered=self.browse_template))
         file_mn.addAction(QAction('Open Current Template', file_mn, triggered=self.open_template))
         file_mn.addSeparator()
-        file_mn.addAction(QAction('Set Background', file_mn, triggered=self.browse_image))
+        file_mn.addAction(QAction('Load Background...', file_mn, triggered=self.browse_image))
         file_mn.addAction(QAction('Save Image As...', file_mn, triggered=self.save_image))
         file_mn.addSeparator()
         file_mn.addAction(QAction('Reset', file_mn, triggered=self.reset))
@@ -254,7 +254,7 @@ class TemplateViewer(QMainWindow):
             self.set_image(path)
 
     def browse_template(self):
-        path, _ = QFileDialog.getOpenFileName(self, 'Select Template', os.path.expanduser('~'), filter='JSON (*.png)')
+        path, _ = QFileDialog.getOpenFileName(self, 'Select Template', os.path.expanduser('~'), filter='JSON (*.json)')
         if path:
             self.set_template_file(path)
 

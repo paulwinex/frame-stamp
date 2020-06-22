@@ -133,7 +133,7 @@ class LabelShape(BaseShape):
             # перенос не требуется
             return text
         single_char_width = self.font.getsize('a')[0]
-        max_chars_in_line = self.parent.width // single_char_width
+        max_chars_in_line = max([1,self.parent.width // single_char_width])
         if divider:     # разделяем по указанным символам
             if not any([x in text for x in divider]):
                 # символы разделителя не найдены в тексте
@@ -320,6 +320,8 @@ class LabelShape(BaseShape):
         Путь к шрифту или имя шрифта из стандартных директорий
         """
         f = self._eval_parameter('font_name', default=None)
+        if not f:
+            f = self.default_font_name
         if not os.path.exists(f):
             f = os.path.join(self.default_fonts_dir, 'fonts', f)
             if not f.endswith('ttf'):
