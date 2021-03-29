@@ -62,7 +62,7 @@ class LabelShape(BaseShape):
         Ресолвинг текста
         """
         # text = self._data['text']
-        text = self._eval_parameter('text')
+        text = str(self._eval_parameter('text'))
         if '$' in text:
             text = string.Template(text).substitute(**self.variables)
         text = self._render_special_characters(text)
