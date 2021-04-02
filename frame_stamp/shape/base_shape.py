@@ -1,6 +1,9 @@
 import re, os
 from PIL.ImageDraw import ImageDraw, Image
 from frame_stamp.utils import cached_result
+import cgflogging
+
+logger = cgflogging.getLogger(__name__)
 
 
 class AbstractShape(object):
@@ -270,7 +273,11 @@ class AbstractShape(object):
                 val = op
                 # raise ValueError('Expression operand "{}" is nt correct: {}'.format(op, expr))
             expr = expr.replace(op, str(val if not callable(val) else val()))
-        res = eval(expr)
+        try:
+            res = eval(expr)
+        except Exception as e:
+            logger.exception('Evaluate expression error: {}'.format(expr))
+            raise
         return res
 
 
