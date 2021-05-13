@@ -241,11 +241,15 @@ class LabelShape(BaseShape):
         """
         from datetime import datetime
         ctx = {**self.defaults, **self.variables}
-        date = datetime.fromtimestamp(ctx.get('timestamp'))
-        if re.search(r'(\{:.+?\})', text):
-            text = text.format(date)
-        else:
-            logger.warning('No date format pattern in text {}'.format(text))
+        date = datetime.fromtimestamp(ctx.get('timestamp')) or datetime.now()
+        for dt_str in re.findall(r'{:.+?}', text):
+            if not re.findall(r'%\w', dt_str):
+                continue
+            try:
+                formatted = dt_str.format(date)
+            except KeyError:
+                continue
+            text = text.replace(dt_str, formatted)
         return text
 
     @property
