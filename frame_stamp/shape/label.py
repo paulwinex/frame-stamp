@@ -69,6 +69,8 @@ class LabelShape(BaseShape):
         for match in re.finditer(r'`(.*?)`', text):
             res = str(self._eval_expression('text', match.group(1)))
             text = text.replace(match.group(0), res)
+        if self.format_date:
+            text = self._format_date_from_context(text)
         if self.truncate_path:
             text = self._trunc_path(text, self.truncate_path, 1)
         elif self.ltruncate_path:
@@ -139,7 +141,7 @@ class LabelShape(BaseShape):
             # перенос не требуется
             return text
         single_char_width = self.font.getsize('a')[0]
-        max_chars_in_line = max([1,self.parent.width // single_char_width])
+        max_chars_in_line = max([1, self.parent.width // single_char_width])
         if divider:     # разделяем по указанным символам
             if not any([x in text for x in divider]):
                 # символы разделителя не найдены в тексте
@@ -228,6 +230,28 @@ class LabelShape(BaseShape):
             parts.append(line)
         return parts
 
+    def _format_date_from_context(self, text):
+        """
+        Text example:
+        text = "Date: {:%Y.%m.%d %H:%I}"
+
+        Returns
+        -------
+        str
+        """
+        from datetime import datetime
+        ctx = {**self.defaults, **self.variables}
+        date = datetime.fromtimestamp(ctx.get('timestamp')) or datetime.now()
+        for dt_str in re.findall(r'{:.+?}', text):
+            if not re.findall(r'%\w', dt_str):
+                continue
+            try:
+                formatted = dt_str.format(date)
+            except KeyError:
+                continue
+            text = text.replace(dt_str, formatted)
+        return text
+
     @property
     @cached_result
     def font_size(self) -> int:
@@ -310,15 +334,6 @@ class LabelShape(BaseShape):
         Возвращает готовый шрифт для рендера
         """
         return ImageFont.truetype(self._resolve_font_name(self.font_name), self.font_size)
-        # if self.font_name:
-        #     try:
-        #         fnt = ImageFont.truetype(self.font_name or self.default_font_name, int(self.font_size))
-        #     except (OSError, AttributeError):
-        #         # logger.debug('Font {} not found, use default'.format(self.font_name))
-        #         fnt = ImageFont.truetype(self.default_font_name, self.font_size)
-        # else:
-        #     fnt = ImageFont.truetype(self.default_font_name, self.font_size)
-        # return fnt
 
     def _resolve_font_name(self, font_name):
         """
@@ -427,6 +442,11 @@ class LabelShape(BaseShape):
     def lmax_lines_count(self):
         """Ограничение по уколичеству переходов на новую строку. Строка обрезается с начала"""
         return self._eval_parameter('lmax_lines_count', default=None)
+
+    @property
+    @cached_result
+    def format_date(self):
+        return self._eval_parameter('format_date', default=False)
 
     def get_font_metrics(self):
         (_, font_height), (_, offset_y) = self.font.font.getsize('A')
