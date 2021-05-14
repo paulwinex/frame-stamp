@@ -1,5 +1,7 @@
 stages:
   - deploy
+  - distrib_deploy
+
 deploy:
   stage: deploy
   image: deploy:27
@@ -7,3 +9,11 @@ deploy:
     - master
   script:
     - tooldeploy prod
+
+distrib_deploy:
+  stage: distrib_deploy
+  image: deploy:36
+  only:
+    - master
+  script:
+    - distrib_deploy $CI_PROJECT_DIR -u -s
