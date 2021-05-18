@@ -526,6 +526,17 @@ class BaseShape(AbstractShape):
             clr = tuple(clr)
         return clr
 
+    def get_resource_search_dirs(self):
+        d = self.defaults.get('local_resource_paths') or []
+        v = self.variables.get('local_resource_paths') or []
+        return v + d
+
+    def get_resource_file(self, file_name):
+        for search_dir in self.get_resource_search_dirs():
+            path = os.path.join(search_dir, file_name)
+            if os.path.exists(path):
+                return path
+
 
 class EmptyShape(BaseShape):
     shape_name = 'empty'
