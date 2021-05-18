@@ -530,8 +530,8 @@ class BaseShape(AbstractShape):
         return clr
 
     def get_resource_search_dirs(self):
-        paths = self.defaults.get('local_resource_paths') or []
-        paths.extend(self.variables.get('local_resource_paths') or [])
+        paths = self.variables.get('local_resource_paths') or []
+        paths.extend(self.defaults.get('local_resource_paths') or [])
         paths.append(os.path.abspath(os.path.dirname(__file__)+'/../fonts'))
         return paths
 
