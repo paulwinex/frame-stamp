@@ -33,18 +33,15 @@ class FrameStamp(object):
         self._create_shapes_from_template(**kwargs)
 
     def _create_shapes_from_template(self, **kwargs):
-        for shape_config in self.template['shapes']:
+        for i, shape_config in enumerate(self.template['shapes']):
             shape_type = shape_config.get('type')
             if shape_type is None:
                 raise PresetError('Shape type not defined in template element: {}'.format(shape_config))
             shape_cls = get_shape_class(shape_type)
             if not shape_cls:
                 raise TypeError(f'Shape type {shape_type} not found')
-            shape = shape_cls(shape_config, self._shared_context, **kwargs)
-            # if shape.is_enabled():
+            shape = shape_cls(shape_config, self._shared_context, z_index=i, **kwargs)
             self.add_shape(shape)
-            # else:
-            #     del shape
 
     @property
     def variables(self):
@@ -102,7 +99,7 @@ class FrameStamp(object):
         -------
         list
         """
-        return self._shapes
+        return list(sorted(self._shapes, key=lambda s: s.z_index))
 
     @property
     def source(self):

@@ -44,6 +44,7 @@ class AbstractShape(object):
                 self._parent = parent
         else:
             self._parent = RootParent(context, **kwargs)
+        self.z_index = kwargs.get('z_index', 0) + shape_data.get('z_index', 0)
 
     def __repr__(self):
         return '<{} {}>'.format(self.__class__.__name__, self.id or 'no-id')
