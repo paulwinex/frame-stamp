@@ -88,7 +88,7 @@ class LabelShape(BaseShape):
         if self.zfill:
             text = text.zfill(self.zfill)
         if self.fit_to_parent:
-            text = self._fir_to_parent_width(text, self.line_splitter)
+            text = self._fit_to_parent_width(text, self.line_splitter)
         elif self.truncate_to_parent or self.ltruncate_to_parent:
             text = self._truncate_to_parent(text, left=self.ltruncate_to_parent)
         return text.strip()
@@ -124,7 +124,7 @@ class LabelShape(BaseShape):
             text = re.sub(char, val, text)
         return html.unescape(text)
 
-    def _fir_to_parent_width(self, text, divider=None):
+    def _fit_to_parent_width(self, text, divider=None):
         """
         Добавление переноса, если текст не помещается в размер парента
 
