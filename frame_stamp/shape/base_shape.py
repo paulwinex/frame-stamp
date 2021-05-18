@@ -1,4 +1,6 @@
 import re, os
+import string
+
 from PIL.ImageDraw import ImageDraw, Image
 from frame_stamp.utils import cached_result
 import cgflogging
@@ -528,15 +530,25 @@ class BaseShape(AbstractShape):
         return clr
 
     def get_resource_search_dirs(self):
-        d = self.defaults.get('local_resource_paths') or []
-        v = self.variables.get('local_resource_paths') or []
-        return v + d
+        paths = self.defaults.get('local_resource_paths') or []
+        paths.extend(self.variables.get('local_resource_paths') or [])
+        paths.append(os.path.abspath(os.path.dirname(__file__)+'/../fonts'))
+        return paths
 
     def get_resource_file(self, file_name):
-        for search_dir in self.get_resource_search_dirs():
-            path = os.path.join(search_dir, file_name)
-            if os.path.exists(path):
-                return path
+        while '$' in file_name:
+            file_name = string.Template(file_name).substitute({**self.variables, **self.defaults})
+        file_name = os.path.expanduser(file_name)
+        if os.path.isabs(file_name) and os.path.exists(file_name):
+            return file_name
+        else:
+            for search_dir in self.get_resource_search_dirs():
+                path = os.path.join(search_dir, file_name)
+                if os.path.exists(path):
+                    return path
+            func = self.context['variables'].get('get_resource_func')
+            if func:
+                return func(file_name)
 
 
 class EmptyShape(BaseShape):
