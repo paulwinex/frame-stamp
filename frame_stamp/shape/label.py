@@ -53,7 +53,7 @@ class LabelShape(BaseShape):
         '&;': ''
     }
     default_fonts_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'fonts')
-    _default_font_name = 'FreeSansBold.ttf' if not os.name == 'nt' else 'arial.ttf'
+    _default_font_name = 'OpenSansBold.ttf' if not os.name == 'nt' else 'arial.ttf'
 
     @property
     @cached_result
@@ -461,7 +461,11 @@ class LabelShape(BaseShape):
         if os.path.exists(font_name):
             return font_name
         # проверяем в кастомных директориях ресурсов
-        font_file = self.get_resource_file(font_name)
+        font_file = None
+        try:
+            font_file = self.get_resource_file(font_name)
+        except OSError:
+            pass
         if font_file:
             return font_file
         # ищем в дефолтных шрифтах
