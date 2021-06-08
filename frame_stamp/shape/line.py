@@ -44,7 +44,7 @@ class LineShape(BaseShape):
     @property
     @cached_result
     def thickness(self):
-        return self._eval_parameter('thickness', default=self.default_width)
+        return int(self._eval_parameter('thickness', default=self.default_width))
 
     @property
     @cached_result
