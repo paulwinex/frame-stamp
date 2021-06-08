@@ -507,6 +507,8 @@ class LabelShape(BaseShape):
                 raise TypeError('Outline parameter must be type of dict or number')
             # заменяем цвет в аргументах
             outline_text_args['fill'] = outline.get('color', 'black')
+            if isinstance(outline_text_args['fill'], list):
+                outline_text_args['fill'] = tuple(outline_text_args['fill'])
             # рисуем черный текст
             printer((self.x_draw, self.y_draw), self.text, **outline_text_args)
             # размвка
