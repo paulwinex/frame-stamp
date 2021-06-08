@@ -53,7 +53,7 @@ class LabelShape(BaseShape):
         '&;': ''
     }
     default_fonts_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'fonts')
-    _default_font_name = 'FreeSansBold.ttf' if not os.name == 'nt' else 'arial.ttf'
+    _default_font_name = 'OpenSansBold.ttf' if not os.name == 'nt' else 'arial.ttf'
 
     @property
     @cached_result
@@ -88,7 +88,7 @@ class LabelShape(BaseShape):
         if self.zfill:
             text = text.zfill(self.zfill)
         if self.fit_to_parent:
-            text = self._fir_to_parent_width(text, self.line_splitter)
+            text = self._fit_to_parent_width(text, self.line_splitter)
         elif self.truncate_to_parent or self.ltruncate_to_parent:
             text = self._truncate_to_parent(text, left=self.ltruncate_to_parent)
         return text.strip()
@@ -124,7 +124,7 @@ class LabelShape(BaseShape):
             text = re.sub(char, val, text)
         return html.unescape(text)
 
-    def _fir_to_parent_width(self, text, divider=None):
+    def _fit_to_parent_width(self, text, divider=None):
         """
         Добавление переноса, если текст не помещается в размер парента
 
@@ -332,65 +332,36 @@ class LabelShape(BaseShape):
     def font(self):
         """
         Возвращает готовый шрифт для рендера
-        """
-        return ImageFont.truetype(self._resolve_font_name(self.font_name), self.font_size)
-
-    def _resolve_font_name(self, font_name):
-        """
-        Поиск шрфита по имени
 
         Returns
         -------
-        str
+        ImageFont
         """
-        if not font_name.endswith('ttf'):
-            font_name += '.ttf'
-        # проверяем указан ли абсолютный путь
-        if os.path.exists(font_name):
-            return font_name
-        # проверяем в кастомных директориях ресурсов
-        search_paths = self.variables.get('local_resource_paths')
-        if search_paths:
-            for path in search_paths:
-                font_1 = os.path.join(path, font_name)
-                if os.path.exists(font_1):
-                    return font_1
-                font_2 = os.path.join(path, 'fonts', font_name)
-                if os.path.exists(font_2):
-                    return font_2
-        # ищем в дефолтных шрифтах
-        font_3 = os.path.join(self.default_fonts_dir, font_name)
-        if os.path.exists(font_3):
-            return font_3
-        # пробуем достать из стандартных шрифтов системы
-        try:
-            ImageFont.truetype(font_name, 10)
-            # шрфит найден
-            return font_name
-        except OSError:
-            pass
-        raise LookupError('Font {} not found'.format(font_name))
+        return ImageFont.truetype(self._resolve_font_name(self.font_name), self.font_size)
 
     @property
     @cached_result
     def font_name(self):
         """
         Путь к шрифту или имя шрифта из стандартных директорий
-        """
-        f = self._eval_parameter('font_name', default=None)
-        return f or self.default_font_name
 
-    @property
-    @cached_result
-    def default_font_name(self):
+        Returns
+        -------
+        str
         """
-        Путь или имя шрифта по умолчанию
-        """
-        default_name = self._eval_parameter('default_font_name', default=None) or self._default_font_name
-        df = self._eval_parameter('default_font', default=None)
-        if not df:
-            df = default_name
-        return df
+        return self._eval_parameter('font_name', default=None) or self._default_font_name
+
+    # @property
+    # @cached_result
+    # def default_font_name(self):
+    #     """
+    #     Путь или имя шрифта по умолчанию
+    #     """
+    #     default_name = self._eval_parameter('default_font_name', default=None) or self._default_font_name
+    #     df = self._eval_parameter('default_font', default=None)
+    #     if not df:
+    #         df = default_name
+    #     return df
 
     @property
     @cached_result
@@ -448,13 +419,6 @@ class LabelShape(BaseShape):
     def format_date(self):
         return self._eval_parameter('format_date', default=False)
 
-    def get_font_metrics(self):
-        (_, font_height), (_, offset_y) = self.font.font.getsize('A')
-        return dict(
-            font_height=font_height,
-            offset_y=offset_y
-        )
-
     @cached_result
     def get_size(self):
         """
@@ -482,6 +446,47 @@ class LabelShape(BaseShape):
     @property
     def y_draw(self):
         return super(LabelShape, self).y_draw - self.get_font_metrics()['offset_y']     # фикс по высоте, убираем верхнюю часть шрфита до высоты капса
+
+    def _resolve_font_name(self, font_name):
+        """
+        Поиск шрифта по имени
+
+        Returns
+        -------
+        str
+        """
+        if not font_name.endswith('ttf'):
+            font_name += '.ttf'
+        # проверяем указан ли абсолютный путь
+        if os.path.exists(font_name):
+            return font_name
+        # проверяем в кастомных директориях ресурсов
+        font_file = None
+        try:
+            font_file = self.get_resource_file(font_name)
+        except OSError:
+            pass
+        if font_file:
+            return font_file
+        # ищем в дефолтных шрифтах
+        font_file = os.path.join(self.default_fonts_dir, font_name)
+        if os.path.exists(font_file):
+            return font_file
+        # пробуем достать из стандартных шрифтов системы
+        try:
+            ImageFont.truetype(font_name, 10)
+            # шрифт найден
+            return font_name
+        except OSError:
+            pass
+        raise LookupError('Font {} not found'.format(font_name))
+
+    def get_font_metrics(self):
+        (_, font_height), (_, offset_y) = self.font.font.getsize('A')
+        return dict(
+            font_height=font_height,
+            offset_y=offset_y
+        )
 
     def draw_shape(self, size, **kwargs):
         canvas = self._get_canvas(size)

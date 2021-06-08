@@ -1,9 +1,10 @@
 from __future__ import absolute_import
 from PIL import Image, ImageChops, ImageOps
 from .base_shape import BaseShape
-from pathlib import Path
-import string
 from frame_stamp.utils import cached_result
+import cgflogging
+
+logger = cgflogging.getLogger(__name__)
 
 
 class ImageShape(BaseShape):
@@ -30,24 +31,15 @@ class ImageShape(BaseShape):
         -------
         Image.Image
         """
+
         if value == '$source':  # исходная картинка кадра, не путать с source самой шейпы
             # возвращаем исходник кадра
             return self.source_image.copy()
-        # рендер шаблона
-        while '$' in value:
-            value = string.Template(value).substitute({**self.variables, **self.defaults})
-        path = Path(value).expanduser().resolve()
-        if path.exists():
-            return Image.open(path.as_posix())
-        # поиск по диреткториям с ресурсами
-        search_paths = self.variables.get('local_resource_paths')
-        if search_paths:
-            for path in search_paths:
-                path = Path(path).expanduser().resolve()
-                res = path / value
-                if res.exists():
-                    return Image.open(res.as_posix())
-        raise IOError(f'Path not exists: {path.as_posix()}')
+        # поиск файла
+        res = self.get_resource_file(value)
+        if res:
+            return Image.open(str(res))
+        raise IOError(f'Path not exists: {value}')
 
     @property
     def source(self):
@@ -71,8 +63,6 @@ class ImageShape(BaseShape):
         """
         img = self.source
         # ресайз
-        # size = (512, 512)
-        # fit_and_resized_image = ImageOps.fit(original_image, size, Image.ANTIALIAS)
         if self.size != img.size:
             target_size = list(self.size)
             if target_size[0] == 0:
@@ -80,8 +70,6 @@ class ImageShape(BaseShape):
             if target_size[1] == 0:
                 target_size[1] = img.size[1]
             img = ImageOps.fit(img, target_size, Image.ANTIALIAS)
-            # target_size = self._resize_values(img.size, target_size) if self.keep_aspect else target_size
-            # img = img.resize(target_size, Image.ANTIALIAS)
         return img
 
     def _resize_values(self, src_size, trg_size):
