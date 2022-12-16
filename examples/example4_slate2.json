@@ -5,7 +5,7 @@
     "backdrop_color": [40, 40, 40, 255],
     "plate_padding": 10,
     "grid_padding": [5, 5, 5, 5],
-    "logo_img": "~/.mversion/cgf-logo.png",
+    "logo_img": "./images/logo-example.png",
     "title_text_color": "gray",
     "sg_project_name": "KG",
     "sg_fps": 25,

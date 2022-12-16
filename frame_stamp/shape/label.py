@@ -4,9 +4,9 @@ from PIL import ImageFont, ImageDraw, ImageFilter, Image
 import string, os, html, re
 import textwrap
 from frame_stamp.utils import cached_result
-import cgflogging
+import logging
 
-logger = cgflogging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class LabelShape(BaseShape):

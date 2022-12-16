@@ -2,9 +2,9 @@ from __future__ import absolute_import
 from PIL import Image, ImageChops, ImageOps
 from .base_shape import BaseShape
 from frame_stamp.utils import cached_result
-import cgflogging
+import logging
 
-logger = cgflogging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class ImageShape(BaseShape):

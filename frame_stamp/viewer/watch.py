@@ -1,5 +1,5 @@
-from Qt.QtCore import *
-from Qt.QtWidgets import *
+from PySide6.QtCore import *
+from PySide6.QtWidgets import *
 
 
 class TemplateFileWatch(QObject):

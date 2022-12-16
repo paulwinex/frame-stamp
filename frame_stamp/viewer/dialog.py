@@ -1,16 +1,16 @@
-from Qt.QtWidgets import *
-from Qt.QtCore import *
-from Qt.QtGui import *
+from PySide6.QtWidgets import *
+from PySide6.QtCore import *
+from PySide6.QtGui import *
+import os, tempfile, traceback
 from frame_stamp.viewer.canvas import Canvas
 from frame_stamp.viewer.watch import TemplateFileWatch
-import os, tempfile, traceback
-from cgf_tools import jsonc, proc
+from frame_stamp.utils import jsonc, open_file_location
 from frame_stamp.stamp import FrameStamp
 
 
 class TemplateViewer(QMainWindow):
     state_file = os.path.expanduser('~/.template_viewer.json')
-    help_url = 'http://docs.cgfww.com/frame_stamp/'
+    help_url = 'http://TODO'
 
     def __init__(self):
         super(TemplateViewer, self).__init__()
@@ -243,11 +243,11 @@ class TemplateViewer(QMainWindow):
             norm_path = os.path.splitext(path)[0] + '.json'
             jsonc.dump(default_template, open(norm_path, 'w'), indent=2)
             self.set_template_file(norm_path)
-            proc.open_file(norm_path)
+            open_file_location(norm_path)
 
     def open_template(self):
         if os.path.exists(self.template_file):
-            proc.open_file(self.template_file)
+            open_file_location(self.template_file)
         else:
             self.message('Template not set')
 

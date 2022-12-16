@@ -1,6 +1,6 @@
-from Qt.QtWidgets import *
-from Qt.QtCore import *
-from Qt.QtGui import *
+from PySide6.QtWidgets import *
+from PySide6.QtCore import *
+from PySide6.QtGui import *
 
 
 class Canvas(QWidget):

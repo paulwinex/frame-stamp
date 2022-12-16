@@ -3,9 +3,9 @@ from .base_shape import BaseShape, EmptyShape
 from frame_stamp.utils.exceptions import PresetError
 from frame_stamp.utils import cached_result
 from PIL import Image
-import cgflogging
+import logging
 
-logger = cgflogging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class GridShape(BaseShape):

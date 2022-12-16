@@ -5,9 +5,9 @@ from .shape import get_shape_class
 from .utils.exceptions import PresetError
 from .utils import exceptions
 from pathlib import Path
-import cgflogging
+import logging
 
-logger = cgflogging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class FrameStamp(object):

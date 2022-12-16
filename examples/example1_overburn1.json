@@ -44,7 +44,7 @@
 
             "shapes":[
               {
-                "type": "label", "text": "CGF",
+                "type": "label", "text": "StudioName",
                 "align_v": "center", "font_size": "110%"
               },
               {

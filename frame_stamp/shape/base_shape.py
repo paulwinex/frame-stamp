@@ -1,11 +1,12 @@
 import re, os
 import string
 
-from PIL.ImageDraw import ImageDraw, Image
+from PIL.ImageDraw import ImageDraw
+from PIL import Image
 from frame_stamp.utils import cached_result
-import cgflogging
+import logging
 
-logger = cgflogging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class AbstractShape(object):
@@ -351,8 +352,6 @@ class BaseShape(AbstractShape):
         result = self.draw_shape(size, **kwargs)
         if self._debug:
             result = self._render_debug(result, size)
-        # if self.rotate:
-        #     result = result.rotate(self.rotate, expand=False, center=self.rotate_pivot)
         result = self._apply_rotate(result)
         return result
 
