@@ -39,7 +39,7 @@ class FrameStamp(object):
                 raise PresetError('Shape type not defined in template element: {}'.format(shape_config))
             shape_cls = get_shape_class(shape_type)
             if not shape_cls:
-                raise TypeError(f'Shape type {shape_type} not found')
+                raise TypeError(f'Shape type "{shape_type}" not found')
             shape = shape_cls(shape_config, self._shared_context, z_index=i, **kwargs)
             self.add_shape(shape)
 
