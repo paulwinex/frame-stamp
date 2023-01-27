@@ -289,6 +289,20 @@ class AbstractShape(object):
             raise
         return res
 
+    def _render_variables(self, text, context):
+        for pattern, name, _slice in re.findall(r"(\$([\w_]+)(\[[\d:]+])?)", text):
+            val = context[name]
+            if _slice:
+                indexes = _slice.strip('[]').split(':')
+                if not all((x.isdigit() for x in indexes)):
+                    raise Exception(f'Invalid slice: {_slice}')
+                if len(indexes) == 1:
+                    val = val[int(indexes[0])]
+                else:
+                    val = val[slice(*[int(x) for x in indexes])]
+            text = text.replace(pattern, str(val))
+        return text
+
 
 class BaseShape(AbstractShape):
     """
