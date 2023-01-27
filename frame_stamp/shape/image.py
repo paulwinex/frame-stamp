@@ -1,8 +1,10 @@
 from __future__ import absolute_import
+import re
 from PIL import Image, ImageChops, ImageOps
 from .base_shape import BaseShape
 from frame_stamp.utils import cached_result
 import logging
+from functools import cached_property
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +64,7 @@ class ImageShape(BaseShape):
         Image.Image
         """
         img = self.source
-        # ресайз
+        # resize
         if self.size != img.size:
             target_size = list(self.size)
             if target_size[0] == 0:
@@ -79,8 +81,7 @@ class ImageShape(BaseShape):
         result = [int(x * scale) for x in src_size]
         return result
 
-    @property
-    @cached_result
+    @cached_property
     def height(self):
         h = super(ImageShape, self).height
         if h:
@@ -113,6 +114,11 @@ class ImageShape(BaseShape):
     @cached_result
     def size(self):
         return self.width, self.height
+
+    @property
+    @cached_result
+    def source_size(self):
+        return self.source.size
 
     @property
     @cached_result
@@ -162,7 +168,36 @@ class ImageShape(BaseShape):
     def keep_aspect(self):
         return bool(self._eval_parameter('keep_aspect', default=True))
 
+    @property
+    @cached_result
+    def multiply_color(self):
+        clr = self._eval_parameter('multiply_color', default=None)
+        if clr is not None:
+            if isinstance(clr, (list, tuple)):
+                return tuple(clr)
+            elif isinstance(clr, str):
+                m = re.match(r"rgb\(([\d\s,]+)\)$", clr)
+                if m:
+                    return tuple(map(int, m.group(1).split(',')))
+                m = re.match(r"hsv\(([\d\s,]+)\)$", clr)
+                if m:
+                    import colorsys
+                    hsv = tuple(map(int, m.group(1).split(',')))
+                    return tuple(map(lambda x: int(x*255), colorsys.hsv_to_rgb(*map(lambda x: x/255, hsv))))
+                raise ValueError(f'Unknown color format {clr}')
+            else:
+                raise TypeError(f'Invalid color type {clr}: {type(clr)}')
+
+    def _apply_multiply_color(self, img: Image):
+        if self.multiply_color:
+            return ImageChops.multiply(img, Image.new(
+                'RGBA',
+                img.size,
+                color=self.multiply_color).convert('RGBA'))
+        return img
+
     def draw_shape(self, size, **kwargs):
         overlay = self._get_canvas(size)
-        overlay.paste(self.source_resized, (self.x, self.y), self.source_resized)
+        img = self._apply_multiply_color(self.source_resized)
+        overlay.paste(img, (self.x, self.y), img)
         return overlay
