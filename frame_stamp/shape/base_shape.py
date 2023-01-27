@@ -1,6 +1,6 @@
 import re, os
 import string
-
+import random
 from PIL.ImageDraw import ImageDraw
 from PIL import Image
 from frame_stamp.utils import cached_result
@@ -278,7 +278,12 @@ class AbstractShape(object):
                 # raise ValueError('Expression operand "{}" is nt correct: {}'.format(op, expr))
             expr = expr.replace(op, str(val if not callable(val) else val()))
         try:
-            res = eval(expr)
+            res = eval(expr, {**locals(), **dict(
+                random=random.random,
+                uniform=random.uniform,
+                randint=random.randint,
+                random_seed=random.seed
+            )})
         except Exception as e:
             logger.exception('Evaluate expression error: {}'.format(expr))
             raise
