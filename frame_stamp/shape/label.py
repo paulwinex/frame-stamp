@@ -64,7 +64,8 @@ class LabelShape(BaseShape):
         text = self._data['text']
         if '$' in text:
             ctx = {**self.defaults, **self.variables}
-            text = string.Template(text).substitute(ctx)
+            text = self._render_variables(text, ctx)
+            # text = string.Template(text).substitute(ctx)
         text = self._render_special_characters(text)
         for match in re.finditer(r'`(.*?)`', text):
             res = str(self._eval_expression('text', match.group(1)))
