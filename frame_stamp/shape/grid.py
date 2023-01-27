@@ -275,7 +275,7 @@ class GridShape(BaseShape):
         canvas = self._get_canvas(size)
         shapes = self.get_cell_shapes()
         if shapes:
-            for shape in self.get_cell_shapes():
+            for shape in shapes:
                 # if shape._local_context['row'] == 1:
                 #     print(shape._data, shape.y, shape.y_draw)
                 overlay = shape.render(size)
