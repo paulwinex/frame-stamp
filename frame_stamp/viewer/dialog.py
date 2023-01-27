@@ -370,7 +370,7 @@ def main():
     app = QApplication([])
     v = TemplateViewer()
     v.show()
-    app.exec_()
+    app.exec()
 
 
 if __name__ == '__main__':
