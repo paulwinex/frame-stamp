@@ -1,32 +1,32 @@
 # Frame Stamp
 
-Пакет для добавления информации на кадры используя шаблон и контекст с переменными.
+A tool for render technical information over image using template with render context
 
-
-Быстрый пример:
+Quick example:
 
 ```python
 from frame_stamp.stamp import FrameStamp
 
 input_file = '...'
 output_file = '...'
-# Шаблон стампинга
+# template for stamping
 template = {}
-# контекст с переменными
+# render context
 variables = {}
-# инстанс рендерилки
+# frame stamp instance
 fs = FrameStamp(input_file, template, variables)
-# рендерим результат в другой файл
+# render
 fs.render(save_path=output_file)
 ```
 
 ### TODO
 
-- поиск шрфита
-- выравнивание для grid
-- выбор номера кадра или процента сиквенса для слейта
-- разобраться с диапазоном кадров и номерами кадров в прожиге
-- поддержка шаблонов в формате py и yaml
-- выравнивание неполных строк и колонок
-- ограничение ширины колонки по её номеру
-- вписывание ширины колонки по контенту
+- font finding
+- alignment for grid
+- add templates in yaml and py format
+- limit column with
+- fit ceil content
+- Tiling and repeat
+- Triangles
+- Gradient fill
+- random function shortcut
