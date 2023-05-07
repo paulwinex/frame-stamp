@@ -6,10 +6,11 @@ from frame_stamp.viewer.canvas import Canvas
 from frame_stamp.viewer.watch import TemplateFileWatch
 from frame_stamp.utils import jsonc, open_file_location
 from frame_stamp.stamp import FrameStamp
+from pathlib import Path
 
 
 class TemplateViewer(QMainWindow):
-    state_file = os.path.expanduser('~/.template_viewer.json')
+    state_file = Path('~/.template_viewer.json').expanduser()
     help_url = 'http://TODO'
 
     def __init__(self):
@@ -21,10 +22,10 @@ class TemplateViewer(QMainWindow):
         # self.c = console.Console(self)
         # self.c.show()
 
-        self.template_file = None
-        self.template_name = None
+        self.template_file: Path = None
+        self.template_name: str = None
         self.image = None
-        self.tmp_file = None
+        self.tmp_file: str = None
         self.blank_image = None
 
         menubar = QMenuBar(self)
@@ -103,9 +104,9 @@ class TemplateViewer(QMainWindow):
         except Exception as e:
             self.set_error(traceback.format_exc())
 
-    def get_current_template(self):
-        if self.template_file:
-            templates = jsonc.load(open(self.template_file, encoding='utf-8'))
+    def get_current_template(self) -> dict:
+        if self.template_file and self.template_file.exists():
+            templates = jsonc.load(self.template_file.open(encoding='utf-8'))
             try:
                 template = self.get_template_from_data(templates, self.template_name)
             except Exception as e:
@@ -136,7 +137,7 @@ class TemplateViewer(QMainWindow):
         p = QPixmap(1280, 720)
         p.fill(QColor('gray'))
         if not self.blank_image:
-            self.blank_image = os.path.join(tempfile.gettempdir(), 'stamp_blank.png')
+            self.blank_image = Path(tempfile.gettempdir(), 'stamp_blank.png').as_posix()
         p.save(self.blank_image, 'PNG')
         return self.blank_image
 
@@ -146,12 +147,15 @@ class TemplateViewer(QMainWindow):
             self.clear_timer.stop()
         self.clear_timer.start(timeout * 1000)
 
-    def set_template_file(self, path, template_name=None):
+    def set_template_file(self, path: str, template_name: str = None):
+        path = Path(path)
+        if not path.exists():
+            return
         self.template_file = path
-        data = jsonc.load(open(path))       # type: dict
+        data: dict = jsonc.load(path.open())
         template = self.get_template_from_data(data, template_name)
         if not template:
-            raise Exception('template not set')
+            raise Exception('Template not set')
 
         self.template_file = path
         self.template_name = template['name']
@@ -160,7 +164,7 @@ class TemplateViewer(QMainWindow):
         self.watcher.set_file(self.template_file)
         self.update_image()
 
-    def get_template_from_data(self, data, name=None):
+    def get_template_from_data(self, data, name=None) -> dict:
         if 'templates' in data:
             if len(data['templates']) > 1:
                 if name:
@@ -183,8 +187,8 @@ class TemplateViewer(QMainWindow):
         else:
             raise RuntimeError('Wrong template format')
 
-    def set_image(self, path):
-        self.image = path
+    def set_image(self, path: str):
+        self.image = str(path)
         self.message('Set Image: {}'.format(path))
         self.update_image()
         sz = QImage(path).size()
@@ -218,15 +222,12 @@ class TemplateViewer(QMainWindow):
             else:
                 event.ignore()
 
-    # def wheelEvent(self, event):
-    #     print(event.delta())
-
     def on_file_dropped(self, path):
         self.set_no_error()
-        if os.path.splitext(path)[-1] == '.json':
+        if Path(path).suffix == '.json':
             self.set_template_file(path)
             return True
-        elif os.path.splitext(path)[-1] in ['.jpg', '.png']:
+        elif Path(path).suffix in ['.jpg', '.png']:
             self.set_image(path)
             return True
 
@@ -240,13 +241,13 @@ class TemplateViewer(QMainWindow):
         from frame_stamp.viewer.default_template import default_template
         path, _ = QFileDialog.getSaveFileName(self, 'New Template', os.path.expanduser('~'))
         if path:
-            norm_path = os.path.splitext(path)[0] + '.json'
-            jsonc.dump(default_template, open(norm_path, 'w'), indent=2)
+            norm_path = Path(path).with_suffix('.json')
+            jsonc.dump(default_template, norm_path.open('w'), indent=2)
             self.set_template_file(norm_path)
             open_file_location(norm_path)
 
     def open_template(self):
-        if os.path.exists(self.template_file):
+        if self.template_file.exists():
             open_file_location(self.template_file)
         else:
             self.message('Template not set')
@@ -277,7 +278,7 @@ class TemplateViewer(QMainWindow):
 
     def actual_size(self):
         if self.image:
-            size = QPixmap(self.image).size()
+            size = QPixmap(str(self.image)).size()
             self.resize(size+QSize(100, 100))
 
     def set_full_screen(self):
@@ -300,20 +301,20 @@ class TemplateViewer(QMainWindow):
 
     def save_state(self):
         data = {}
-        if os.path.exists(self.state_file):
+        if self.state_file.exists():
             try:
-                data = jsonc.load(open(self.state_file))
+                data = jsonc.load(self.state_file.open())
             except Exception as e:
                 print(e)
-        data['image'] = self.image
-        data['template_file'] = self.template_file
+        data['image'] = str(self.image)
+        data['template_file'] = self.template_file.as_posix()
         data['template_name'] = self.template_name
         data['fullscreen'] = self.isFullScreen()
 
         if not data['fullscreen']:
             data['pos'] = [self.pos().x(), self.pos().y()]
             data['size'] = [self.size().width(), self.size().height()]
-        jsonc.dump(data, open(self.state_file, 'w'), indent=2)
+        jsonc.dump(data, self.state_file.open('w'), indent=2)
 
     def load_state(self):
         if os.path.exists(self.state_file):
@@ -337,7 +338,7 @@ class TemplateViewer(QMainWindow):
     def show_info(self):
         dial = QMessageBox(self)
         dial.setWindowTitle('Viewer info')
-        sz = QImage(self.image).size()
+        sz = QImage(str(self.image)).size()
         dial.setText('<b>Template File:</b><br>  {}<br><br>'
                      '<b>Template Name:</b><br>  {}<br><br>'
                      '<b>Image File:</b><br> {}<br><br>'

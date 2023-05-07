@@ -21,7 +21,6 @@ def process_sequence(src_dir: str, output_dir: str, template: dict, context: dic
     render(files, template, output_dir, context, context_callback=context_callback, **kwargs)
 
 
-
 def _executor_helper(kwargs):
     try:
         render_single_frame(**kwargs)
@@ -42,7 +41,6 @@ def run_single_thread(files, template, output_dir, context, context_callback, **
 
 
 def run_multiprocess(files, template, output_path, context, **kwargs):
-    print(kwargs, flush=True)
     # get cp count
     callback = kwargs.get('context_callback')
     workers = kwargs.get('max_workers') or context.get('max_workers') or multiprocessing.cpu_count()
