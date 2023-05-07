@@ -3,7 +3,6 @@ from pathlib import Path
 import logging
 from .stamp import FrameStamp
 from PIL import Image
-import itertools
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 
@@ -17,8 +16,10 @@ def process_sequence(src_dir: str, output_dir: str, template: dict, context: dic
     files = sorted(src_dir.glob(file_pattern))
     if kwargs.get('limit'):
         files = files[:kwargs['limit']]
-    if multithread:
-        run_multiprocess(files, template, output_dir, context, context_callback=context_callback, **kwargs)
+
+    render = run_multiprocess if multithread else run_single_thread
+    render(files, template, output_dir, context, context_callback=context_callback, **kwargs)
+
 
 
 def _executor_helper(kwargs):
@@ -28,13 +29,26 @@ def _executor_helper(kwargs):
         logging.exception('Render error')
 
 
+def run_single_thread(files, template, output_dir, context, context_callback, **kwargs):
+    for i, file in enumerate(files):
+        render_single_frame(
+            image_path=file,
+            save_path=Path(output_dir, file.name),
+            template=template,
+            context={**context, 'frame': i, 'file': file, 'total_frames': len(files),
+                     **(context_callback(i, file, len(files), **kwargs) if context_callback else {})},
+            **kwargs
+        )
+
+
 def run_multiprocess(files, template, output_path, context, **kwargs):
+    print(kwargs, flush=True)
     # get cp count
-    cpu_count = context.get('render_cpu_count') or multiprocessing.cpu_count()
-    logging.info(f'Use Multiprocess render ({cpu_count} cpu)')
-    # start pool
     callback = kwargs.get('context_callback')
-    with ProcessPoolExecutor() as executor:
+    workers = kwargs.get('max_workers') or context.get('max_workers') or multiprocessing.cpu_count()
+    logging.info(f'Use Multiprocess render ({workers} cpu)')
+    # start pool
+    with ProcessPoolExecutor(max_workers=workers) as executor:
         executor.map(_executor_helper, (dict(
             image_path=file,
             save_path=Path(output_path, file.name),
@@ -44,9 +58,9 @@ def run_multiprocess(files, template, output_path, context, **kwargs):
         ) for i, file in enumerate(files)))
 
 
-def render_single_frame(image_path: str, save_path: str, template: dict, context: dict):
+def render_single_frame(image_path: str, save_path: str, template: dict, context: dict, **kwargs):
     image_path = Path(image_path)
-    # logging.info(f'Process file {image_path.name}')
+    logging.info(f'Process file {image_path.name}')
     save_path = Path(save_path)
     img = Image.open(str(image_path))
     renderer = FrameStamp(img, template, context)
