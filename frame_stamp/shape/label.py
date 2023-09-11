@@ -408,7 +408,7 @@ class LabelShape(BaseShape):
         text_height = ((self.get_font_metrics()['font_height']+self.spacing)
                        * len(self.text.split('\n'))) - self.spacing
         # общая ширина текста по самой длинной строке
-        text_width = max([self.font.getsize(text)[0] for text in self.text.split('\n')])
+        text_width = max([self.font.getbbox(text)[2] for text in self.text.split('\n')])
         return text_width, text_height
 
     @property

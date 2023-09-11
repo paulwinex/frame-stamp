@@ -71,7 +71,7 @@ class ImageShape(BaseShape):
                 target_size[0] = img.size[0]
             if target_size[1] == 0:
                 target_size[1] = img.size[1]
-            img = ImageOps.fit(img, target_size, Image.ANTIALIAS)
+            img = ImageOps.fit(img, target_size, Image.Resampling.LANCZOS)
         return img
 
     def _resize_values(self, src_size, trg_size):
