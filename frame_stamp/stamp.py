@@ -45,8 +45,8 @@ class FrameStamp(object):
 
     @property
     def variables(self):
-        v = self._variables.copy()
-        v.update(self.template.get('variables', {}))
+        v = self.template.get('variables', {}).copy()
+        v.update(self._variables)
         return v
 
     @property
