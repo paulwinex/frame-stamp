@@ -19,6 +19,14 @@ fs = FrameStamp(input_file, template, variables)
 fs.render(save_path=output_file)
 ```
 
+### Open UI
+
+Activate Virtual env and run command.
+
+```shell
+./frame_stamp/bin/open_viewer.sh 
+```
+
 ### TODO
 
 - font finding
