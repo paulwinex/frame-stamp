@@ -11,22 +11,22 @@ logger = logging.getLogger(__name__)
 
 class LabelShape(BaseShape):
     """
-    Текст
+    Text
 
     Allowed parameters:
-        text               : Текст. Поддерживается форматирование переменных их конеткста "Project: $project_name"
-        text_spacing       : Расстояние между строк в многосточном тексте. По умолчанию 0
-        text_color
-        font_size          : Размер шрифта
-        font_name          : Используемый шрифт
-        fit_to_parent      : Вписать текст в размер родительского объекта
-        line_splitter      : символ по которому разделять строки для авто переноса.
-                                None - по любому символу
-                                " " - по словам
-                                "/" - по частям пути
-        move_splitter_to_next_line: Работает только при включенном fit_to_parent и line_splitter
-                             true - символ разделения строки переносить на следующую строку
-                             false - символ разделения строки оставлять на текущей строке
+        text               : Source text. Supported formatting from context. Example: "Project: $project_name"
+        text_spacing       : Spacing between lines in multiline text. Default 0
+        text_color         : Color of text
+        font_size          : Font size
+        font_name          : Font name or path
+        fit_to_parent      : Fit text to parent size
+        line_splitter      : Character to separate multiline text.
+                                None - any character
+                                " " - by words
+                                "/" - by path parts
+        move_splitter_to_next_line: Works only with fit_to_parent и line_splitter
+                             true - separated character moved to next line
+                             false - separated character live on current line
         max_lines_count
         lmax_lines_count
         truncate
@@ -43,9 +43,10 @@ class LabelShape(BaseShape):
         backdrop
 
     NOTE
-        Класс реализует нестандартный рассчет высоты шрфита. По умолчанию высотой будет максимальная высота в пикселях.
-        Но данный класс рассчитывае высоту по метрическим линиям самого шрифта. Таким образом элементы под базовой линией
-        шрифта и над линией капса в высоту не попадают. Изза этого есть офсеты в различных местах рассчётов.
+        This class implements a custom calculation of font height. By default, the height will be the maximum height
+        in pixels. However, this class calculates the height based on the metric lines of the font itself. Thus,
+        elements below the font baseline and above the capital line do not fall within the height. Because of this,
+        there are offsets in various places in the calculations.
 
     """
     shape_name = 'label'
@@ -57,15 +58,14 @@ class LabelShape(BaseShape):
 
     @property
     @cached_result
-    def text(self):
+    def text(self) -> str:
         """
-        Ресолвинг текста
+        Resolve text value
         """
         text = self._data['text']
         if '$' in text:
-            ctx = {**self.defaults, **self.variables}
+            ctx = {**self.variables, **self.defaults}
             text = self._render_variables(text, ctx)
-            # text = string.Template(text).substitute(ctx)
         text = self._render_special_characters(text)
         for match in re.finditer(r'`(.*?)`', text):
             res = str(self._eval_expression('text', match.group(1)))
@@ -96,7 +96,7 @@ class LabelShape(BaseShape):
 
     def _trunc_path(self, text, count, from_start=1):
         """
-        Обрезка пути по максимальному количеству элементов
+        Clip path by max element count
         """
         parts = os.path.normpath(text).split(os.path.sep)
         if from_start:
@@ -117,17 +117,17 @@ class LabelShape(BaseShape):
                 text = text[:max_chars_in_line-3] + '...'
         return text
 
-    def _render_special_characters(self, text):
+    def _render_special_characters(self, text) -> str:
         """
-        Рендеринг специальных символов HTML
+        Render of special HTML elements
         """
         for char, val in self.special_characters.items():
             text = re.sub(char, val, text)
         return html.unescape(text)
 
-    def _fit_to_parent_width(self, text, divider=None):
+    def _fit_to_parent_width(self, text, divider=None) -> str:
         """
-        Добавление переноса, если текст не помещается в размер парента
+        Adding line breaks if the text does not fit the parent size.
 
         Parameters
         ----------
@@ -149,27 +149,27 @@ class LabelShape(BaseShape):
                 return text
             lines = self._split_text_by_divider(text, divider, self.move_splitter_to_next_line)
             joined_lines = []
-            # соединяем строки пока есть достаточно ширины
+            # join lines
             t = ''
             while lines:
                 next_peace = lines.pop(0)
-                # если общая длина прошлой и следующей строки меньше максимальной, то склеиваем их
+                # if full length previous line and next line less then maximum - join them
                 if len(t) + len(next_peace.rstrip()) < max_chars_in_line:
                     t += next_peace
                 else:
-                    # переходим к следующей строке
+                    # to nex tline
                     joined_lines.append(t)
                     t = next_peace.lstrip()
                 if not lines:
                     joined_lines.append(t)
         else:
-            # разделяем просто по словам или символам
+            # separate by word or character
             wrapper = textwrap.TextWrapper(width=max_chars_in_line,
-                                           replace_whitespace=False)  # ставим это, чтобы не убивались исходные '\n'
+                                           replace_whitespace=False)  # to save existing '\n'
             _text = wrapper.fill(text=text)
             joined_lines = _text.split('\n')
 
-        # обрезка максимального количества строк
+        # limit maximum lines count
         if self.max_lines_count and len(joined_lines) > self.max_lines_count:
             joined_lines = joined_lines[:self.max_lines_count]
             joined_lines[-1] = joined_lines[-1] + '...'
@@ -180,39 +180,10 @@ class LabelShape(BaseShape):
         text = '\n'.join(joined_lines).strip()
 
         return text
-        # # # находим все строки
-        # # lines = text.split('\n')
-        # # # находим самую длинную строку, чтобы по ней вычислить значение максимальной ширины текста
-        # # longest_line = max(lines, key=len)
-        #
-        # # если она превышает ширину parent'a, начинаем делать wordwrap
-        #
-        #     # если в тексте есть И сепаратор (слэш, соответствующей текущей ОС) И расширение файла,
-        #     # считаем его путем к файлу, вызываем соответствующий метод
-        #     if os.path.sep in text and os.path.splitext(text):
-        #         return self._add_new_lines_for_path(text)
-        #     # если строк несколько, вычисляем wordwrap, иначе просто возвращаем текст как есть
-        #     if len(lines) > 1:
-        #         # максимальную допустимую ширину находим, сначала посчитав,
-        #         # сколько символов приходится на один пиксель самой длинной строки
-        #         char_to_pixel_ratio = len(longest_line) / self.font.getsize(longest_line)[0]
-        #         # и потом умножив это на количество пикселей parent'a
-        #         width_characters = int(round(parent_width_pixels * char_to_pixel_ratio))
-        #         # импортим и создаем Wrapper
-        #         import textwrap
-        #         wrapper = textwrap.TextWrapper(width=width_characters,
-        #                                        replace_whitespace=False)  # ставим это, чтобы не убивались исходные '\n'
-        #         text = wrapper.fill(text=text)
-        #     return text
-        # return text
 
-    def _split_text_by_divider(self, text, divider, move_divider_to_next_line=False):
+    def _split_text_by_divider(self, text, divider, move_divider_to_next_line=False) -> list:
         """
-        Разделение текста по указанному символу
-
-        Returns
-        -------
-        list
+        Divide text by character
         """
         parts = []
         line = ''
@@ -256,7 +227,7 @@ class LabelShape(BaseShape):
     @property
     @cached_result
     def font_size(self) -> int:
-        """Размер шрифта"""
+        """Font size"""
         size = self._eval_parameter('font_size')  # type: int
         if size == 0:
             raise ValueError('Font size can`t be zero. Shape "{}"'.format(self))
@@ -265,90 +236,82 @@ class LabelShape(BaseShape):
     @property
     @cached_result
     def spacing(self):
-        """Расстояние между строками"""
+        """Distance between lines"""
         return self._eval_parameter('text_spacing')
 
     @property
     @cached_result
-    def truncate(self):
-        """Обрезка строки по количеству символов"""
+    def truncate(self) -> str:
+        """Clip line by character count"""
         return self._eval_parameter('truncate', default=None)
 
     @property
     @cached_result
-    def ltruncate(self):
-        """Обрезка строки по количеству символов слева"""
+    def ltruncate(self) -> str:
+        """Clip line by character count from left"""
         return self._eval_parameter('ltruncate', default=None)
 
     @property
     @cached_result
-    def truncate_path(self):
+    def truncate_path(self) -> str:
         """Обрезка пути с ограничением количества элементов пути"""
         return self._eval_parameter('truncate_path', default=None)
 
     @property
     @cached_result
-    def ltruncate_path(self):
+    def ltruncate_path(self) -> str:
         """Обрезка пути слева"""
         return self._eval_parameter('ltruncate_path', default=None)
 
     @property
     @cached_result
-    def truncate_to_parent(self):
+    def truncate_to_parent(self) -> str:
         """Обрезка строки чтобы она вписалась в ширину парента"""
         return self._eval_parameter('truncate_to_parent', default=None)
 
     @property
     @cached_result
-    def ltruncate_to_parent(self):
+    def ltruncate_to_parent(self) -> str:
         """Обрезка строки слева чтобы она вписалась в ширину парента"""
         return self._eval_parameter('ltruncate_to_parent', default=None)
 
     @property
     @cached_result
-    def title(self):
-        """Применить функцию title()"""
+    def title(self) -> str:
+        """Apply function title()"""
         return self._eval_parameter('title', default=False)
 
     @property
     @cached_result
-    def upper(self):
-        """Применить функцию upper()"""
+    def upper(self) -> str:
+        """Apply function upper()"""
         return self._eval_parameter('upper', default=False)
 
     @property
     @cached_result
-    def lower(self):
-        """Применить функцию lower()"""
+    def lower(self) -> str:
+        """Apply function lower()"""
         return self._eval_parameter('lower', default=False)
 
     @property
     @cached_result
-    def zfill(self):
-        """Применить функцию zfill"""
+    def zfill(self) -> str:
+        """Apply function zfill"""
         return self._eval_parameter('zfill', default=False)
 
     @property
     @cached_result
-    def font(self):
+    def font(self) -> ImageFont:
         """
         Возвращает готовый шрифт для рендера
-
-        Returns
-        -------
-        ImageFont
         """
         return ImageFont.truetype(self._resolve_font_name(self.font_name), self.font_size)
 
     @property
     @cached_result
-    def font_name(self):
+    def font_name(self) -> str:
         """
-        Путь к шрифту или имя шрифта из стандартных директорий
-
-        Returns
-        -------
-        str
+        Path to font or font name
         """
         return self._eval_parameter('font_name', default=None) or self._default_font_name
 
@@ -367,7 +330,9 @@ class LabelShape(BaseShape):
     @property
     @cached_result
     def color(self):
-        """Цвет текста"""
+        """
+        Font color
+        """
         clr = self._eval_parameter('text_color')
         if isinstance(clr, list):
             clr = tuple(clr)
@@ -376,43 +341,57 @@ class LabelShape(BaseShape):
     @property
     @cached_result
     def outline(self):
-        """Добавить обводку"""
+        """
+        Add outline
+        """
         return self._eval_parameter('outline', default={})
 
     @property
     @cached_result
     def backdrop(self):
-        """Добавить бекдроп (подложка)"""
+        """
+        Add backdrop
+        """
         return self._eval_parameter('backdrop', default=None)
 
     @property
     @cached_result
     def fit_to_parent(self):
-        """Вписать строку в ширину парента с переносом на новую строку"""
+        """
+        Fit string to parent's width with line wrap
+        """
         return bool(self._eval_parameter('fit_to_parent', default=False))
 
     @property
     @cached_result
     def line_splitter(self):
-        """Символ для разделения строки при переносе на новую строку"""
+        """
+        Character to split a line when wrapping to a new line
+        """
         return self._eval_parameter('line_splitter', default=None)
 
     @property
     @cached_result
     def move_splitter_to_next_line(self):
-        """Определяет где будет оставаться символ-разделитель. но текущей строке или на новой"""
+        """
+        Determines where the delimiter character will stay. On the current line or on a new
+        """
         return self._eval_parameter('move_splitter_to_next_line', default=None)
 
     @property
     @cached_result
     def max_lines_count(self):
-        """Ограничение по количеству переходов на новую строку. После этого строка обрезается"""
+        """
+        Limit on the number of transitions to a new line. After that the line is cut off
+        """
         return self._eval_parameter('max_lines_count', default=None)
 
     @property
     @cached_result
     def lmax_lines_count(self):
-        """Ограничение по уколичеству переходов на новую строку. Строка обрезается с начала"""
+        """
+        Limit on the number of transitions to a new line. The string is truncated from the beginning
+        """
         return self._eval_parameter('lmax_lines_count', default=None)
 
     @property
@@ -421,13 +400,9 @@ class LabelShape(BaseShape):
         return self._eval_parameter('format_date', default=False)
 
     @cached_result
-    def get_size(self):
+    def get_size(self) -> (int, int):
         """
-        Размер текста в пикселях
-
-        Returns
-        -------
-        (x,y): tuple
+        Font size in pixels
         """
         # общая высота текста без учета элементов под бейзлойном
         text_height = ((self.get_font_metrics()['font_height']+self.spacing)
