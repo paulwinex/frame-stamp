@@ -63,6 +63,14 @@ class LabelShape(BaseShape):
         Resolve text value
         """
         text = self._data['text']
+        l_pad = r_pad = ''
+        left_pad_match = re.match(r"^\s+", text)
+        if left_pad_match:
+            l_pad = left_pad_match.group(0)
+        right_pad_match = re.match(r"\s+$", text)
+        if right_pad_match:
+            r_pad = right_pad_match.group(0)
+        text = text.strip()
         if '$' in text:
             ctx = {**self.variables, **self.defaults}
             text = self._render_variables(text, ctx)
@@ -92,7 +100,7 @@ class LabelShape(BaseShape):
             text = self._fit_to_parent_width(text, self.line_splitter)
         elif self.truncate_to_parent or self.ltruncate_to_parent:
             text = self._truncate_to_parent(text, left=self.ltruncate_to_parent)
-        return text.strip()
+        return l_pad+text.strip()+r_pad
 
     def _trunc_path(self, text, count, from_start=1):
         """
