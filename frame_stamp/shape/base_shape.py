@@ -260,7 +260,7 @@ class AbstractShape(object):
         """
         Выполнение экспрешена. Экспрешен должен бысть строкой, начинающийся со знака "="
 
-            >>> {"width": "=other.x-$padding/2"}
+            >>> {"width": "=$other.x-$padding/2"}
 
         Parameters
         ----------
@@ -269,8 +269,9 @@ class AbstractShape(object):
         default_key: str
         """
         if not expr.startswith('='):
+            logger.debug('No "=" in expression: {}'.format(expr))
             return
-        expr = expr.lstrip('=')
+        expr = expr.lstrip('=').strip('`')
         for op in re.findall(r"[\w\d.%$]+", expr):
             val = self._eval_parameter_convert(key, op)
             if val is None:
