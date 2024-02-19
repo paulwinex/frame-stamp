@@ -11,7 +11,7 @@ from .label import LabelShape
 from .grid import GridShape
 from .row import RowShape
 from .column import ColumnShape
-from .tile import TileShape
+# from .tile import TileShape
 
 BASE_DIR = os.path.dirname(__file__)
 
