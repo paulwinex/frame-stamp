@@ -1,35 +1,38 @@
 from __future__ import absolute_import
 from .shape.base_shape import BaseShape
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFile
 from .shape import get_shape_class
 from .utils.exceptions import PresetError
 from .utils import exceptions
 from pathlib import Path
 import logging
 
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 logger = logging.getLogger(__name__)
 
 
 class FrameStamp(object):
     class FORMAT:
-        # должно совпадать со списокм форматов из Image.SAVE
+        # must be matched with list of formats from Image.SAVE
         JPG = "JPEG"
         PNG = "PNG"
 
     def __init__(self, image, template, variables, **kwargs):
         self._template = template
-        self._variables = variables
+        self._variables = variables or {}
         self._shapes = []
         self._scope = {}
         self._source = None
         self._shared_context = dict(
-            variables=self.variables,           # переменные для рендеринга
-            source_image=self._source,          # исходная картинка. Для получения размера и других данных
-            defaults=self.defaults,             # дефолтные значения из шаблона
-            scope=self._scope,                  # список всех доступных шейп. Нужен для обращения к полям других шейп
-            add_shape=self._add_shape_to_scope  # ссылка на функцию добавления шейпы, это нужно для составных шейп
+            variables=self.variables,           # variables for rendering
+            source_image=self._source,          # source image. For getting original size and other parameters
+            defaults=self.defaults,             # default values from template
+            scope=self._scope,                  # list of all available shapes. Needed for queries from other shapes
+            add_shape=self._add_shape_to_scope  # reference to function to add shapes, needed for combined shapes
         )
         self.set_source(image)
+        if self._source is None:
+            raise PresetError('Source image not set')
         self._create_shapes_from_template(**kwargs)
 
     def _create_shapes_from_template(self, **kwargs):
@@ -58,27 +61,15 @@ class FrameStamp(object):
         return self._scope
 
     @property
-    def template(self):
+    def template(self) -> dict:
         """
-        Текущий шаблон с применёнными оверрайдами
-
-        Returns
-        -------
-        dict
+        Current template with overrides
         """
         return self._template
 
-    def add_shape(self, shape):
+    def add_shape(self, shape: BaseShape):
         """
-        Добавить новый айтем шейпы в набор
-
-        Parameters
-        ----------
-        shape: BaseShape
-
-        Returns
-        -------
-        bool
+        Add a new shape item to a set
         """
         if not isinstance(shape, BaseShape):
             raise TypeError('Shape bus be subclass of {}'.format(BaseShape.__name__))
@@ -91,13 +82,9 @@ class FrameStamp(object):
                 raise exceptions.PresetError('Duplicate shape ID: {}'.format(shape.id))
             self._scope[shape.id] = shape
 
-    def get_shapes(self):
+    def get_shapes(self) -> list:
         """
-        Все имеющиеся шейпы
-
-        Returns
-        -------
-        list
+        All shapes
         """
         return list(sorted(self._shapes, key=lambda s: s.z_index))
 
@@ -108,46 +95,37 @@ class FrameStamp(object):
     def set_source(self, input_image):
         if Image.isImageType(input_image):
             self._source = input_image.convert('RGBA')  # type: Image.Image
-        elif isinstance(input_image, str):
-            self._source = Image.open(input_image).convert('RGBA')  # type: Image.Image
+        elif isinstance(input_image, (str, Path)):
+            self._source = Image.open(input_image).convert('RGB').convert('RGBA')  # type: Image.Image
+        else:
+            raise TypeError('Source image must be string or PIL.Image')
         self._shared_context['source_image'] = self._source
 
-    def render(self, input_image: str=None, save_path: str=None, **kwargs) -> Image.Image:
+    def render(self, input_image: str = None, save_path: str = None, **kwargs) -> Image.Image:
         """
-        Рендер всех шейп на кадре
-
-        Parameters
-        ----------
-        input_image
-        save_path
-        kwargs
-
-        Returns
-        -------
-        Image.Image
+        Render all shapes
         """
         if input_image:
             self.set_source(input_image)
         if not self.source:
             raise RuntimeError('Source image not set')
-        # logger.debug(f'Start stamping with template "{self.template["name"]}"')
-        # формат файла
+        # file format
         img_size = self.source.size
         for shape in self.get_shapes():     # type: BaseShape
-            # создаём новый пустой слой по размеру исходника
+            # create a new blank sheet the size of the original
             overlay = shape.render(img_size, **kwargs)
             self._source = Image.alpha_composite(self.source, overlay)
             del overlay
         if save_path:
-            # сохраняем отрендеренный файл в формате RGB
+            # save rendered file to RGB
             frmt = self._get_output_format(save_path)
             logger.debug('Save format %s to file %s', frmt, save_path)
             self._source.convert("RGB").save(save_path, frmt, quality=100)
         return self._source
 
-    def _get_output_format(self, path):
+    def _get_output_format(self, path: str):
         path = Path(path)
-        if path.suffix.strip('.') == 'jpg':
+        if path.suffix.strip('.').lower() == 'jpg':
             return self.FORMAT.JPG
-        elif path.suffix.strip('.') == 'png':
+        elif path.suffix.strip('.').lower() == 'png':
             return self.FORMAT.PNG
