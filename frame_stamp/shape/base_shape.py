@@ -269,7 +269,6 @@ class AbstractShape(object):
         default_key: str
         """
         if not expr.startswith('='):
-            logger.debug('No "=" in expression: {}'.format(expr))
             return
         expr = expr.lstrip('=').strip('`')
         for op in re.findall(r"[\w\d.%$]+", expr):
