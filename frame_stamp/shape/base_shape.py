@@ -268,9 +268,10 @@ class AbstractShape(object):
         expr: str
         default_key: str
         """
+        expr = expr.strip('`')
         if not expr.startswith('='):
             return
-        expr = expr.lstrip('=').strip('`')
+        expr = expr.lstrip('=')
         for op in re.findall(r"[\w\d.%$]+", expr):
             val = self._eval_parameter_convert(key, op)
             if val is None:

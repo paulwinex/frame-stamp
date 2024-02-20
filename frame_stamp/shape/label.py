@@ -76,7 +76,7 @@ class LabelShape(BaseShape):
             text = self._render_variables(text, ctx)
         text = self._render_special_characters(text)
         for match in re.finditer(r'`(.*?)`', text):
-            res = str(self._eval_expression('text', text))
+            res = str(self._eval_expression('text', match.group(0)))
             text = text.replace(match.group(0), res)
         if self.format_date:
             text = self._format_date_from_context(text)
