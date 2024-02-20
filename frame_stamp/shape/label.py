@@ -72,7 +72,7 @@ class LabelShape(BaseShape):
             r_pad = right_pad_match.group(0)
         text = text.strip()
         if '$' in text:
-            ctx = {**self.variables, **self.defaults}
+            ctx = {**self.defaults, **self.variables}
             text = self._render_variables(text, ctx)
         text = self._render_special_characters(text)
         for match in re.finditer(r'`(.*?)`', text):
@@ -249,37 +249,37 @@ class LabelShape(BaseShape):
 
     @property
     @cached_result
-    def truncate(self) -> str:
+    def truncate(self) -> int:
         """Clip line by character count"""
         return self._eval_parameter('truncate', default=None)
 
     @property
     @cached_result
-    def ltruncate(self) -> str:
+    def ltruncate(self) -> int:
         """Clip line by character count from left"""
         return self._eval_parameter('ltruncate', default=None)
 
     @property
     @cached_result
-    def truncate_path(self) -> str:
+    def truncate_path(self) -> int:
         """Обрезка пути с ограничением количества элементов пути"""
         return self._eval_parameter('truncate_path', default=None)
 
     @property
     @cached_result
-    def ltruncate_path(self) -> str:
+    def ltruncate_path(self) -> int:
         """Обрезка пути слева"""
         return self._eval_parameter('ltruncate_path', default=None)
 
     @property
     @cached_result
-    def truncate_to_parent(self) -> str:
+    def truncate_to_parent(self) -> int:
         """Обрезка строки чтобы она вписалась в ширину парента"""
         return self._eval_parameter('truncate_to_parent', default=None)
 
     @property
     @cached_result
-    def ltruncate_to_parent(self) -> str:
+    def ltruncate_to_parent(self) -> int:
         """Обрезка строки слева чтобы она вписалась в ширину парента"""
         return self._eval_parameter('ltruncate_to_parent', default=None)
 
