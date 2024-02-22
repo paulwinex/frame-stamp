@@ -4,7 +4,6 @@ from PIL import Image, ImageChops, ImageOps
 from .base_shape import BaseShape
 from frame_stamp.utils import cached_result
 import logging
-from functools import cached_property
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +80,8 @@ class ImageShape(BaseShape):
         result = [int(x * scale) for x in src_size]
         return result
 
-    @cached_property
+    @property
+    @cached_result
     def height(self):
         h = super(ImageShape, self).height
         if h:
