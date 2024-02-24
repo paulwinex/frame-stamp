@@ -21,7 +21,13 @@ Template Viewer
 
     python3 -m frame_stamp.viewer.dialog
 
-Откроется окно с дефолтной кратинкой.
+или
+
+.. code-block:: bash
+
+   make run
+
+Откроется окно вьювера.
 
 Загрузить фон
 *************
