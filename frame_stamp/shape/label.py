@@ -145,11 +145,11 @@ class LabelShape(BaseShape):
         -------
         text: str
         """
-        # parent_width_pixels = self.parent.width
-        if self.parent.width >= self.font.getsize(text)[0]:
+        single_char_width = self.font.getlength('a')
+        if self.parent.width <= single_char_width:
             # перенос не требуется
             return text
-        single_char_width = self.font.getsize('a')[0]
+
         max_chars_in_line = max([1, self.parent.width // single_char_width])
         if divider:     # разделяем по указанным символам
             if not any([x in text for x in divider]):
@@ -313,7 +313,7 @@ class LabelShape(BaseShape):
         """
         Возвращает готовый шрифт для рендера
         """
-        return ImageFont.truetype(self._resolve_font_name(self.font_name), self.font_size)
+        return ImageFont.FreeTypeFont(self._resolve_font_name(self.font_name), self.font_size)
 
     @property
     @cached_result
