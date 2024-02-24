@@ -11,5 +11,5 @@ run:
 
 
 docs: install-dev
-	poetry run sphinx-build -b html -c docs/_build docs frame-stamp-docs
+	poetry run sphinx-build -b html -c docs docs frame-stamp-docs
 
