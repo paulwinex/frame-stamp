@@ -112,6 +112,8 @@ class FrameStamp(object):
         # file format
         img_size = self.source.size
         for shape in self.get_shapes():     # type: BaseShape
+            if shape.skip:
+                continue
             # create a new blank sheet the size of the original
             overlay = shape.render(img_size, **kwargs)
             self._source = Image.alpha_composite(self.source, overlay)
