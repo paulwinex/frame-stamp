@@ -145,7 +145,7 @@ class LabelShape(BaseShape):
         -------
         text: str
         """
-        single_char_width = self.font.getlength('a')
+        single_char_width = self.font.getlength('a') if hasattr(self.font, 'getlength') else self.font.getsize('a')[0]
         if self.parent.width <= single_char_width:
             # перенос не требуется
             return text
