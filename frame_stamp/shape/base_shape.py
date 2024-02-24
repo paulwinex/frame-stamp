@@ -72,6 +72,11 @@ class AbstractShape(object):
 
     @property
     @cached_result
+    def skip(self):
+        return self._eval_parameter('skip', default=False)
+
+    @property
+    @cached_result
     def variables(self) -> dict:
         return {
             "source_width": self.source_image.size[0],

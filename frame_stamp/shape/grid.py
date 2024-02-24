@@ -38,6 +38,7 @@ class GridShape(BaseShape):
         cells = self.generate_cells(len(shape_list))
         self.c = cells
         from frame_stamp.shape import get_shape_class
+        offs = 0
         for i, shape_config in enumerate(shape_list):
             if not shape_config:
                 continue
@@ -45,11 +46,14 @@ class GridShape(BaseShape):
             if shape_type is None:
                 raise PresetError('Shape type not defined in template element: {}'.format(shape_config))
             cells[i]['parent'] = self
-            lc = {'index': i, 'row': cells[i]['row'], 'column': cells[i]['column']}
-            shape_config['parent'] = EmptyShape(cells[i], self.context, local_context=lc)
+            lc = {'index': i+offs, 'row': cells[i+offs]['row'], 'column': cells[i+offs]['column']}
+            shape_config['parent'] = EmptyShape(cells[i+offs], self.context, local_context=lc)
             shape_cls = get_shape_class(shape_type)
             kwargs['local_context'] = lc
             shape = shape_cls(shape_config, self.context, **kwargs)
+            if shape.skip:
+                offs -= 1
+                continue
             shapes.append(shape)
             if shape.id is not None:
                 if shape.id in self.scope:

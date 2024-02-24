@@ -161,7 +161,7 @@ class LabelShape(BaseShape):
             t = ''
             while lines:
                 next_peace = lines.pop(0)
-                # if full length previous line and next line less then maximum - join them
+                # if full length previous line and next line less than maximum - join them
                 if len(t) + len(next_peace.rstrip()) < max_chars_in_line:
                     t += next_peace
                 else:
