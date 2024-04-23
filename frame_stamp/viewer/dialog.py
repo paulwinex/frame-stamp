@@ -307,7 +307,7 @@ class TemplateViewer(QMainWindow):
             except Exception as e:
                 print(e)
         data['image'] = str(self.image)
-        data['template_file'] = self.template_file.as_posix()
+        data['template_file'] = self.template_file.as_posix() if self.template_file else None
         data['template_name'] = self.template_name
         data['fullscreen'] = self.isFullScreen()
 
