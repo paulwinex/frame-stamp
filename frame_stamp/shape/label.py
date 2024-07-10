@@ -431,39 +431,32 @@ class LabelShape(BaseShape):
     def y_draw(self):
         return super(LabelShape, self).y_draw - self.get_font_metrics()['offset_y']     # фикс по высоте, убираем верхнюю часть шрфита до высоты капса
 
-    def _resolve_font_name(self, font_name):
+    def _resolve_font_name(self, font_name) -> str:
         """
-        Поиск шрифта по имени
-
-        Returns
-        -------
-        str
+        Looking for font by name
         """
+        # has ext?
         if not font_name.endswith('ttf'):
             font_name += '.ttf'
-        # проверяем указан ли абсолютный путь
+        # is abs?
         if os.path.exists(font_name):
             return font_name
-        # проверяем в кастомных директориях ресурсов
-        font_file = None
+        # in custom resource dirs
         try:
-            font_file = self.get_resource_file(font_name)
+            return self.get_resource_file(font_name)
         except OSError:
             pass
-        if font_file:
-            return font_file
-        # ищем в дефолтных шрифтах
+        # default fonts
         font_file = os.path.join(self.default_fonts_dir, font_name)
         if os.path.exists(font_file):
             return font_file
-        # пробуем достать из стандартных шрифтов системы
+        # from system fonts
         try:
             ImageFont.truetype(font_name, 10)
-            # шрифт найден
             return font_name
         except OSError:
             pass
-        raise LookupError('Font {} not found'.format(font_name))
+        raise LookupError('Font "{}" not found'.format(font_name))
 
     def get_font_metrics(self):
         (_, font_height), (_, offset_y) = self.font.font.getsize('A')
