@@ -33,6 +33,8 @@ class TemplateViewer(QMainWindow):
         menubar.addAction(file_mn.menuAction())
         view_mn = QMenu('View', menubar)
         menubar.addAction(view_mn.menuAction())
+        tools_mn = QMenu('Tools', menubar)
+        menubar.addAction(tools_mn.menuAction())
         help_mn = QMenu('Help', menubar)
         menubar.addAction(help_mn.menuAction())
 
@@ -61,6 +63,8 @@ class TemplateViewer(QMainWindow):
         self.dbg = QAction('Debug Shapes', view_mn, triggered=self.on_template_changed)
         self.dbg.setCheckable(True)
         view_mn.addAction(self.dbg)
+
+        tools_mn.addAction(QAction('File to BASE64...', tools_mn, triggered=self.file_to_base64))
 
         self.wd = QWidget(self)
         self.setCentralWidget(self.wd)
@@ -247,7 +251,7 @@ class TemplateViewer(QMainWindow):
             open_file_location(norm_path)
 
     def open_template(self):
-        if self.template_file.exists():
+        if self.template_file and self.template_file.exists():
             open_file_location(self.template_file)
         else:
             self.message('Template not set')
@@ -335,6 +339,16 @@ class TemplateViewer(QMainWindow):
             if data.get('fullscreen'):
                 self.set_full_screen()
 
+    def file_to_base64(self):
+        file, filters = QFileDialog.getOpenFileName(self, 'Select File', os.path.expanduser('~'))
+        if file:
+            from frame_stamp.utils import b64
+            base64_str = b64.file_to_b64_value(file)
+            w = B64ValueViewer(self)
+            w.set_text(base64_str)
+            w.show()
+
+
     def show_info(self):
         dial = QMessageBox(self)
         dial.setWindowTitle('Viewer info')
@@ -366,6 +380,32 @@ class SelectTemplate(QDialog):
     def on_click(self):
         if self.list.selectedItems():
             self.accept()
+
+
+class B64ValueViewer(QWidget):
+
+    def __init__(self, *args, **kwargs):
+        super(B64ValueViewer, self).__init__(*args, **kwargs)
+        self.setWindowFlags(Qt.Tool)
+        self.resize(600, 300)
+        self.vl = QVBoxLayout(self)
+        self.te = QTextEdit()
+        self.vl.addWidget(self.te)
+        self.te.setReadOnly(True)
+        self.btn = QPushButton('Copy To Clipboard', clicked=self.copy)
+        self.vl.addWidget(self.btn)
+
+    def set_text(self, text):
+        self.te.setPlainText(text)
+
+    def copy(self):
+        """
+        Copy to clipboard
+        """
+        cb = QApplication.clipboard()
+        cb.setText(self.te.toPlainText())
+
+
 
 def main():
     app = QApplication([])

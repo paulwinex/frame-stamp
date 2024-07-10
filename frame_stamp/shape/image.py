@@ -32,23 +32,26 @@ class ImageShape(BaseShape):
         -------
         Image.Image
         """
-
+        from ..utils import b64
         if value == '$source':  # исходная картинка кадра, не путать с source самой шейпы
             # возвращаем исходник кадра
             return self.source_image.copy()
-        # поиск файла
+        elif b64.is_b64(value):
+            return b64.b64_str_to_image(value)
+        # looking for file
         res = self.get_resource_file(value)
         if res:
             return Image.open(str(res))
-        raise IOError(f'Path not exists: {value}')
+        raise IOError(f'Path not exists: ({value}) {res}')
 
     @property
     def source(self):
-        source = self._data.get('source')
+        # source = self._data.get('source')
+        source = self._eval_parameter('source')
         if not source:
             raise RuntimeError('Image source not set')
         img = self._get_image(source)
-        # применение прозрачности и маски
+        # apply mask and transparency
         img = self.apply_mask(img, self.mask, self.transparency)
         return img
 
