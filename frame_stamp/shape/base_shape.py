@@ -557,6 +557,9 @@ class BaseShape(AbstractShape):
         paths = self.variables.get('local_resource_paths') or []
         paths.extend(self.defaults.get('local_resource_paths') or [])
         paths.append(os.path.abspath(os.path.dirname(__file__)+'/../fonts'))
+        search_dirs_from_env = os.getenv('FRAMESTAMP_RESOURCE_DIR')
+        if search_dirs_from_env:
+            paths.extend(search_dirs_from_env.split(os.pathsep))
         return paths
 
     def get_resource_file(self, file_name):

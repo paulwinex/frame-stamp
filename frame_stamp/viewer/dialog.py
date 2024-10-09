@@ -162,7 +162,7 @@ class TemplateViewer(QMainWindow):
             raise Exception('Template not set')
 
         self.template_file = path
-        self.template_name = template['name']
+        self.template_name = template.get('name')
 
         self.message('Set template: {} (Template name: {})'.format(self.template_file, self.template_name))
         self.watcher.set_file(self.template_file)
