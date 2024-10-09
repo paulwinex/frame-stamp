@@ -6,7 +6,7 @@ authors = ["paulwinex <paulwinex@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
+python = ">=3.10,<3.12"
 pyside6 = "^6.6.2"
 pillow = "^10.3.0"
 
