@@ -1,4 +1,7 @@
 from __future__ import absolute_import
+
+from pathlib import Path
+
 from .base_shape import BaseShape
 from PIL import ImageFont, ImageDraw, ImageFilter, Image
 import string, os, html, re
@@ -313,7 +316,8 @@ class LabelShape(BaseShape):
         """
         Возвращает готовый шрифт для рендера
         """
-        return ImageFont.FreeTypeFont(self._resolve_font_name(self.font_name), self.font_size)
+        font = self._resolve_font_name(self.font_name)
+        return ImageFont.FreeTypeFont(font, self.font_size)
 
     @property
     @cached_result
@@ -435,8 +439,12 @@ class LabelShape(BaseShape):
         """
         Looking for font by name
         """
+        from ..utils import b64
+        # is base64
+        if b64.is_b64(font_name):
+            return b64.b64_str_to_file(font_name)
         # has ext?
-        if not font_name.endswith('ttf'):
+        if not font_name.endswith('ttf') and not Path(font_name).suffix:
             font_name += '.ttf'
         # is abs?
         if os.path.exists(font_name):
