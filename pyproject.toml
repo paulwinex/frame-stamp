@@ -8,9 +8,11 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.9"
 pillow = "^10.3.0"
+pyside6 = { version = "^6.6.2", optional = true }
+qtawesome = {optional = true}
 
 [tool.poetry.extras]
-pyside = ["pyside6>=6.6.2", "qtawesome"]
+pyside = ["pyside6", "qtawesome"]
 
 [tool.poetry.group.dev.dependencies]
 sphinx = "^7.2.6"
