@@ -90,20 +90,25 @@ class AbstractShape(object):
     @property
     @cached_result
     def unit(self):
+        # 1% from height
         return round(self.source_image.size[1]*0.01, 3)
+
+    @property
+    @cached_result
+    def point(self):
+        # relative monotonic size for any aspect and size
+        from math import sqrt
+        w, h = self.source_image.size
+        return round(0.01*sqrt(w*h), 3)
 
     @property
     def defaults(self):
         return self.context['defaults']
 
     @property
-    def scope(self):
+    def scope(self) -> dict:
         """
-        Список всех зарегистрированных нод, исключая себя и ноды без ID
-
-        Returns
-        -------
-        dict
+        List of all registered nodes except self and nodes without ID
         """
         return {k: v for k, v in self.context['scope'].items() if k != self.id}
 
@@ -123,14 +128,9 @@ class AbstractShape(object):
 
     # expressions
 
-    def _eval_parameter(self, key: str, default_key=None, **kwargs):
+    def _eval_parameter(self, key: str, default_key: str = None, **kwargs):
         """
-        Получение значения параметра по имени из данных шейпы
-
-        Parameters
-        ----------
-        key: str
-        default_key: str
+        Receive value of parameter by name from shape data
         """
         val = self._data.get(key)
         if val is None:
@@ -172,6 +172,10 @@ class AbstractShape(object):
         # unit
         if re.match(r"-?[\d.]+u", val):
             return float(val.rstrip('u')) * self.unit
+        # point
+        if re.match(r"-?[\d.]+p", val):
+            return float(val.rstrip('p')) * self.point
+
         # определение других вариантов
         for func in [self._eval_percent_of_default,     # процент от значения по умолчанию
                      self._eval_from_scope,             # данные от другой шейпы
