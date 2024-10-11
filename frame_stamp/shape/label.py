@@ -242,7 +242,7 @@ class LabelShape(BaseShape):
         size = self._eval_parameter('font_size')  # type: int
         if size == 0:
             raise ValueError('Font size can`t be zero. Shape "{}"'.format(self))
-        return int(size)
+        return max(1, int(size))
 
     @property
     @cached_result
