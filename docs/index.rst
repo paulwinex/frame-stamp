@@ -43,6 +43,7 @@ Frame Stamp
    viewer
    shapes/index
    expressions
+   environment_variables
    development
    tricks
    faq
