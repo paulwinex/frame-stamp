@@ -27,6 +27,7 @@ class TemplateViewer(QMainWindow):
         self.image = None
         self.tmp_file: str = None
         self.blank_image = None
+        self._update_started = False
 
         menubar = QMenuBar(self)
         file_mn = QMenu('File', menubar)
@@ -97,7 +98,10 @@ class TemplateViewer(QMainWindow):
         self.err.hide()
         self.canvas.show()
 
-    def on_template_changed(self):
+    def on_template_changed(self, *args):
+        if self._update_started:
+            return
+        self._update_started = True
         QTimer.singleShot(100, self.update_image)
 
     def update_image(self, *args):
@@ -107,6 +111,7 @@ class TemplateViewer(QMainWindow):
             self.canvas.set_image(img)
         except Exception as e:
             self.set_error(traceback.format_exc())
+        self._update_started = False
 
     def get_current_template(self) -> dict:
         if self.template_file and self.template_file.exists():
