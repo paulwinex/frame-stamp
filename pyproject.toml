@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "frame-stamp"
-version = "0.1.2"
+version = "0.1.3"
 description = "Adding technical information to images using a template."
 authors = ["paulwinex <paulwinex@gmail.com>"]
 readme = "README.md"

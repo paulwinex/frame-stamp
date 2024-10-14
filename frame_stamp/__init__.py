@@ -4,6 +4,7 @@ import logging
 from .stamp import FrameStamp
 from PIL import Image
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from .__version__ import __version__
 
 
 def process_sequence(src_dir: str, output_dir: str, template: dict, context: dict, file_pattern: str = '*.*',
