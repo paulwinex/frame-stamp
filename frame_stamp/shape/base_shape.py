@@ -55,10 +55,16 @@ class AbstractShape(object):
     def __str__(self):
         return '{} #{}'.format(self.__class__.__name__, self.id or 'none')
 
+    def clear_cache(self):
+        self.__cache__.clear()
+
     @property
     @cached_result
     def parent(self):
         return self._parent
+
+    def set_parent(self, parent):
+        self._parent = parent
 
     @property
     @cached_result
