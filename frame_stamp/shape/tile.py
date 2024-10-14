@@ -29,7 +29,12 @@ class TileShape(BaseShape):
     @property
     @cached_result
     def vertical_spacing(self):
-        return self._eval_parameter('vertical_spacing', default=0)
+        return self._eval_parameter('vertical_spacing', default=None)
+
+    @property
+    @cached_result
+    def horizontal_spacing(self):
+        return self._eval_parameter('horizontal_spacing', default=None)
 
     @property
     @cached_result
@@ -40,11 +45,6 @@ class TileShape(BaseShape):
     @cached_result
     def spacing(self):
         return self._eval_parameter('spacing', default=(0,0))
-
-    @property
-    @cached_result
-    def horizontal_spacing(self):
-        return self._eval_parameter('horizontal_spacing', default=0)
 
     @property
     @cached_result
@@ -103,6 +103,11 @@ class TileShape(BaseShape):
     def draw_shape(self, size, **kwargs):
         canvas: Image.Image = self._get_canvas(size)
         shapes = self.iter_shapes()
+        spacing = self.spacing
+        if self.horizontal_spacing is not None:
+            spacing[0] = self.horizontal_spacing
+        if self.vertical_spacing is not None:
+            spacing[1] = self.vertical_spacing
         coords = self.generate_coords(self.source_image.size, [self.tile_width, self.tile_height],
                                       rotate=self.grid_rotate, pivot_offset=self.pivot, spacing=self.spacing,
                                       rows_offset=self.row_offset,
@@ -114,16 +119,19 @@ class TileShape(BaseShape):
             import random
             random.seed(self.random_seed + len(coords))
             random.shuffle(coords)
+        index = 0
         for i, tile in enumerate(coords):
             parent = EmptyShape({'x': tile[0], 'y': tile[1], 'rotate': -self.grid_rotate, "w": self.tile_width, "h": self.tile_height}, self.context)
             sh: BaseShape = next(shapes)
             sh.clear_cache()
             sh.set_parent(parent)
+            sh.update_local_context(tile_index=index)
             bound = [sh.x0, sh.y0, sh.x1, sh.y1]
             if self.check_intersection(bound, main_rect):
                 overlay = sh.render(size)
                 canvas = Image.alpha_composite(canvas, overlay)
                 drawing += 1
+                index += 1
             else:
                 skipped += 1
         logging.debug(f'Drawing: {drawing}, skipped: {skipped}')
