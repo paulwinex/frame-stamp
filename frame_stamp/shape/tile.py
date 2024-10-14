@@ -16,6 +16,14 @@ class TileShape(BaseShape):
         super().__init__(*args, **kwargs)
         self._shapes = self._init_shapes(**kwargs)
 
+    def _render_debug(self, default_render, size):
+        from PIL import ImageDraw
+
+        img = super()._render_debug(default_render, size)
+        draw = ImageDraw.Draw(img)
+        draw.circle(self.pivot, self.point,'red')
+        return img
+
     @property
     def rotate(self):
         """Tile rotation not supported. use grid_rotate"""
