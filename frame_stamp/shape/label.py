@@ -81,6 +81,12 @@ class LabelShape(BaseShape):
         for match in re.finditer(r'`(.*?)`', text):
             res = str(self._eval_expression('text', match.group(0)))
             text = text.replace(match.group(0), res)
+        if self.zfill:
+            text = text.zfill(self.zfill)
+        if self.prefix:
+            text = self. prefix + text
+        if self.suffix:
+            text = text + self.suffix
         if self.format_date:
             text = self._format_date_from_context(text)
         if self.truncate_path:
@@ -97,8 +103,7 @@ class LabelShape(BaseShape):
             text = text.upper()
         if self.title:
             text = text.title()
-        if self.zfill:
-            text = text.zfill(self.zfill)
+
         if self.fit_to_parent:
             text = self._fit_to_parent_width(text, self.line_splitter)
         elif self.truncate_to_parent or self.ltruncate_to_parent:
@@ -410,6 +415,20 @@ class LabelShape(BaseShape):
     @cached_result
     def format_date(self):
         return self._eval_parameter('format_date', default=False)
+
+    @property
+    @cached_result
+    def suffix(self):
+        return self._eval_parameter('suffix', default=None)
+
+    @property
+    @cached_result
+    def prefix(self):
+        """
+        Example:
+             "text": "$version", zfill=3, prefix="v" -> "v001"
+        """
+        return self._eval_parameter('prefix', default=False)
 
     @cached_result
     def get_size(self) -> (int, int):
