@@ -75,6 +75,3 @@ def rotate_point(point: list, angle, origin: list = None,  precision=3):
     qx = ox + math.cos(rad) * (px - ox) - math.sin(rad) * (py - oy)
     qy = oy + math.sin(rad) * (px - ox) + math.cos(rad) * (py - oy)
     return round(qx, precision), round(qy, precision)
-
-
-# def interpolate_value(val1, val2, pos):

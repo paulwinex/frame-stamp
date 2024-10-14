@@ -1,5 +1,10 @@
 from __future__ import absolute_import
 
+import math
+from email.policy import default
+from itertools import chain
+from os import PRIO_PGRP
+
 from .base_shape import BaseShape, EmptyShape
 from frame_stamp.utils.exceptions import PresetError
 from frame_stamp.utils import cached_result, rotate_point
@@ -32,7 +37,7 @@ class TileShape(BaseShape):
     @property
     @cached_result
     def grid_rotate(self):
-        return self._eval_parameter('grid_rotate', default=0)
+        return self._eval_parameter('grid_rotate', default=3)
 
     @property
     @cached_result
@@ -73,6 +78,16 @@ class TileShape(BaseShape):
     @cached_result
     def column_offset(self):
         return self._eval_parameter('column_offset', default=0)
+
+    @property
+    @cached_result
+    def max_rows(self):
+        return self._eval_parameter('max_rows', default=None)
+
+    @property
+    @cached_result
+    def max_columns(self):
+        return self._eval_parameter('max_columns', default=None)
 
     @property
     @cached_result
@@ -117,7 +132,7 @@ class TileShape(BaseShape):
         if self.vertical_spacing is not None:
             spacing[1] = self.vertical_spacing
         coords = self.generate_coords(self.source_image.size, [self.tile_width, self.tile_height],
-                                      rotate=self.grid_rotate, pivot_offset=self.pivot, spacing=self.spacing,
+                                      rotate=self.grid_rotate, pivot=self.pivot, spacing=self.spacing,
                                       rows_offset=self.row_offset,
                                       columns_offset=self.column_offset,
                                       )
@@ -145,7 +160,9 @@ class TileShape(BaseShape):
         logging.debug(f'Drawing: {drawing}, skipped: {skipped}')
         return canvas
 
-    def generate_coords(self, rect_size, tile_size, rotate=0, pivot_offset=None, spacing=None,
+    def generate_coords(self, rect_size, tile_size,
+                        rotate=0, pivot=None,
+                        spacing=None,
                         rows_offset=0, columns_offset=0):
 
         if spacing is None:
@@ -157,12 +174,12 @@ class TileShape(BaseShape):
         max_w_x = max_w - (max_w % tile_size[0])
         max_w_y = max_w - (max_w % tile_size[1])
 
-        if pivot_offset is None:
-            pivot_offset = [0, 0]
+        if pivot is None:
+            pivot = [0, 0]
 
         start_point = [
-            (pivot_offset[0] % max_w_x) - 2 * max_w_x,
-            (pivot_offset[1] % max_w_y) - 2 * max_w_y
+            (pivot[0] % max_w_x) - 2 * max_w_x,
+            (pivot[1] % max_w_y) - 2 * max_w_y
         ]
 
         end_point = [
@@ -179,19 +196,21 @@ class TileShape(BaseShape):
         while y < end_point[1]:
             row_offset = rows_offset if row_count % 2 == 1 else 0
             x = start_point[0]
+            rows = []
             while x < end_point[0]:
                 column_offset = columns_offset if column_count % 2 == 1 else 0
-                coordinates.append((x + row_offset, y + column_offset))
+                rows.append((x + row_offset, y + column_offset))
                 x += tile_size[0] + spacing[0]
                 column_count += 1
+            coordinates.append(rows)
             y += tile_size[1] + spacing[1]
             row_count += 1
             column_count = 0
 
-        rotated_coord = [rotate_point(coord, rotate, pivot_offset) for coord in coordinates]
-
+        coords = self.remove_excess_elements(coordinates, self.max_rows, self.max_columns, pivot)
+        sorted_coords = tuple(chain(*sorted([sorted(row) for row in coords], key=lambda row: row[0])))
+        rotated_coord = [rotate_point(coord, rotate, pivot) for coord in sorted_coords]
         return rotated_coord
-
 
     def get_rectangle_points(self, rect, angle=0):
         """Returns the coordinates of the corners of a rectangle, taking into account rotation."""
@@ -254,3 +273,48 @@ class TileShape(BaseShape):
             x0_1, y0_1, x1_1, y1_1 = rect1
             x0_2, y0_2, x1_2, y1_2 = rect2
             return not (x1_1 < x0_2 or x1_2 < x0_1 or y1_1 < y0_2 or y1_2 < y0_1)
+
+    def distance(self, point1, point2):
+        """Calculates the Euclidean distance between two points."""
+        return math.sqrt((point1[0] - point2[0]) ** 2 + (point1[1] - point2[1]) ** 2)
+
+    def get_row_distances(self, matrix, deleting_pivot):
+        """Returns a list of distances from each row to the deleting pivot point."""
+        row_distances = []
+        for row in matrix:
+            row_center = [sum(col[0] for col in row) / len(row), sum(col[1] for col in row) / len(row)]
+            row_distances.append(self.distance(row_center, deleting_pivot))
+        return row_distances
+
+    def get_column_distances(self, matrix, deleting_pivot):
+        """Returns a list of distances from each column to the deleting_pivot point."""
+        column_distances = []
+        for col_idx in range(len(matrix[0])):
+            col_center = [sum(row[col_idx][0] for row in matrix) / len(matrix), sum(row[col_idx][1] for row in matrix) / len(matrix)]
+            column_distances.append(self.distance(col_center, deleting_pivot))
+        return column_distances
+
+    def remove_excess_elements(self, matrix, max_rows, max_columns, deleting_pivot):
+        """Removes extra rows and columns from the matrix."""
+        if max_rows == 0 or max_columns == 0:
+            return []
+
+        row_distances = self.get_row_distances(matrix, deleting_pivot)
+        column_distances = self.get_column_distances(matrix, deleting_pivot)
+
+        # Sort row and column indices by distance
+        sorted_row_indices = sorted(range(len(row_distances)), key=lambda i: row_distances[i])
+        sorted_column_indices = sorted(range(len(column_distances)), key=lambda i: column_distances[i])
+
+        # We leave only max_rows and max_columns
+        selected_row_indices = sorted_row_indices[:max_rows] if max_rows is not None else sorted_row_indices
+        selected_column_indices = sorted_column_indices[:max_columns] if max_columns is not None else sorted_column_indices
+
+        # Create a new matrix with the selected rows and columns
+        new_matrix = []
+        for row_idx in selected_row_indices:
+            new_row = [matrix[row_idx][col_idx] for col_idx in selected_column_indices]
+            new_matrix.append(new_row)
+
+        return new_matrix
+
