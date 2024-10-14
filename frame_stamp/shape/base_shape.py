@@ -1,3 +1,4 @@
+import math
 import re, os
 import string
 import random
@@ -11,10 +12,10 @@ logger = logging.getLogger(__name__)
 
 class AbstractShape(object):
     """
-    Абстрактная фигура.
+    Abstract shape.
 
-        - Инициализация данных
-        - Методы ресолвинга параметров
+    - Data initialization
+    - Methods for resolving parameters
 
     Parameters
         id
@@ -105,7 +106,7 @@ class AbstractShape(object):
     @property
     @cached_result
     def point(self):
-        # relative monotonic size for any aspect and size
+        # relative almost monotonic size for any aspect and size
         from math import sqrt
         w, h = self.source_image.size
         return round(0.01*sqrt(w*h), 3)
@@ -153,7 +154,7 @@ class AbstractShape(object):
 
     def _eval_parameter_convert(self, key, val: str, **kwargs):
         """
-        Получение реального значения параметра
+        Getting the real value of a parameter
 
         Parameters
         ----------
@@ -161,7 +162,7 @@ class AbstractShape(object):
         val: str
         default_key: str
         """
-        # определение типа
+        # type definition
         if isinstance(val, (int, float, bool)):
             return val
         elif isinstance(val, (list, tuple)):
@@ -173,7 +174,7 @@ class AbstractShape(object):
                 return val
         if not isinstance(val, str):
             raise TypeError('Unsupported type {}'.format(type(val)))
-        # остается только строка
+        # only the line remains
         if val.isdigit():  # int
             return int(val)
         elif re.match(r"^\d*\.\d*$", val):  # float
@@ -185,11 +186,11 @@ class AbstractShape(object):
         if re.match(r"-?[\d.]+p", val):
             return float(val.rstrip('p')) * self.point
 
-        # определение других вариантов
-        for func in [self._eval_percent_of_default,     # процент от значения по умолчанию
-                     self._eval_from_scope,             # данные от другой шейпы
-                     self._eval_from_variables,         # данные из переменных шаблона или из дефолтов
-                     self._eval_expression]:            # выполнения экспрешена
+        # identifying other options
+        for func in [self._eval_percent_of_default,     # percentage of default value
+                     self._eval_from_scope,             # data from another shape
+                     self._eval_from_variables,         # data from template variables or from defaults
+                     self._eval_expression]:            # execution of express
             res = func(key, val, **kwargs)
             if res is not None:
                 return res
@@ -197,7 +198,7 @@ class AbstractShape(object):
 
     def _eval_percent_of_default(self, key, val, **kwargs):
         """
-        Вычисление процентного отношения от дефолного значения
+        Calculating the percentage of the default value
 
         >>> {"size": "100%"}
 
@@ -226,7 +227,7 @@ class AbstractShape(object):
 
     def _eval_from_scope(self, key: str, val: str, **kwargs):
         """
-        Обращение к значениям параметрам других шейп
+        Accessing parameter values of other shapes
 
             >>> {"x": "other_shape_id.x"}
 
@@ -253,7 +254,7 @@ class AbstractShape(object):
 
     def _eval_from_variables(self, key: str, val: str, **kwargs):
         """
-        Получение значения из глобального контекста переменных
+        Getting a value from the global variable context
 
             >>> {"text_size": "$text_size" }
 
@@ -276,7 +277,7 @@ class AbstractShape(object):
 
     def _eval_expression(self, key: str, expr: str, **kwargs):
         """
-        Выполнение экспрешена. Экспрешен должен бысть строкой, начинающийся со знака "="
+        Executing an expression. The expression must be a string starting with the "=" sign.
 
             >>> {"width": "=$other.x-$padding/2"}
 
@@ -297,16 +298,20 @@ class AbstractShape(object):
                 # raise ValueError('Expression operand "{}" is nt correct: {}'.format(op, expr))
             expr = expr.replace(op, str(val if not callable(val) else val()))
         try:
-            res = eval(expr, {**locals(), **dict(
-                random=random.random,
-                uniform=random.uniform,
-                randint=random.randint,
-                random_seed=random.seed
-            )})
+            res = eval(expr, {**locals(), **self.render_globals()})
         except Exception as e:
             logger.exception('Evaluate expression error: {}'.format(expr))
             raise
         return res
+
+    def render_globals(self):
+        return dict(
+                random=random.random,
+                uniform=random.uniform,
+                randint=random.randint,
+                random_seed=random.seed,
+                math=math
+            )
 
     def _render_variables(self, text, context):
         for pattern, name, _slice in re.findall(r"(\$([\w_]+)(\[[\d:]+])?)", text):
@@ -325,20 +330,19 @@ class AbstractShape(object):
 
 class BaseShape(AbstractShape):
     """
-    Базовая фигура.
-     - Реализация системы координат
-     - Цвет
-     - Дебаг
+    Base Shape.
+    - Coordinate system implementation
+    - Color
+    - Debug
 
     Allowed parameters:
-        x                  : Координата Х
-        y                  : Координата У
-
-        color              : Цвет текста
-        alight_h           : Выравнивание относительно координаты X (left, right, center)
-        alight_v           : Выравнивание относительно координаты X (top, bottom, center)
-        padding            : Выравнивание строк между собой для многострочного текста
-        parent             : Родительский объект
+        x                  : X coordinate
+        y                  : Y coordinate
+        color              : Text color
+        alight_h           : Alignment relative to the X coordinate (left, right, center)
+        alight_v           : Alignment relative to the Y coordinate (top, bottom, center)
+        padding            : Line spacing for multi-line text
+        parent             : Parent object
 
     """
     default_width = 0
@@ -347,13 +351,13 @@ class BaseShape(AbstractShape):
     @property
     @cached_result
     def _debug_parent_offset(self):
-        """Смещение контура парента относительно контура объекта"""
+        """Offset of parent outline relative to object outline"""
         return self._eval_parameter('debug_parent_offset', default=1)
 
     @property
     @cached_result
     def _debug_self_offset(self):
-        """Смещение контура парента относительно контура объекта"""
+        """Offset of parent outline relative to object outline"""
         return self._eval_parameter('debug_self_offset', default=0)
 
     def _render_debug(self, default_render, size):

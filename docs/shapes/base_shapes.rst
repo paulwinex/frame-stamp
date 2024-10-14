@@ -145,3 +145,32 @@ RootParent
     `inherited (BaseShape)`
 
 Обёртка для исходной картинки, чтобы она работала как родительский объект.
+
+
+Глобальный контекст
+-------------------
+
+В процессе ресолва экспрешенов доступны все built-in функции python, а такне несколько объектов импортированных из библиотек.
+
+
+random
+  Функция `random.random`
+
+uniform
+  Функция `random.uniform`
+
+randint
+  Функция `random.randint`
+
+random_seed
+  Функция `random.seed`
+
+math
+  Модуль `math`
+
+Пример
+
+.. code-block:: json
+  {
+    "type": "label", "text": "`=math.sin($frame)`"
+  }
