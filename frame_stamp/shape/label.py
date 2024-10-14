@@ -248,7 +248,7 @@ class LabelShape(BaseShape):
     @cached_result
     def spacing(self):
         """Distance between lines"""
-        return self._eval_parameter('text_spacing')
+        return self._eval_parameter('text_spacing', default=0)
 
     @property
     @cached_result
