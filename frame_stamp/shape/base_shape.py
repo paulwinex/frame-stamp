@@ -58,6 +58,9 @@ class AbstractShape(object):
     def clear_cache(self):
         self.__cache__.clear()
 
+    def update_local_context(self, **kwargs):
+        self._local_context.update(kwargs)
+
     @property
     @cached_result
     def parent(self):
