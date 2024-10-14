@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-import math
-from itertools import cycle
 from .base_shape import BaseShape, EmptyShape
 from frame_stamp.utils.exceptions import PresetError
 from frame_stamp.utils import cached_result, rotate_point
@@ -17,17 +15,16 @@ class TileShape(BaseShape):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._shapes = self._init_shapes(**kwargs)
-        # self._shape_rotate = super().rotate
 
     @property
     def rotate(self):
+        """Tile rotation not supported. use grid_rotate"""
         return 0
 
     @property
     @cached_result
     def grid_rotate(self):
         return self._eval_parameter('grid_rotate', default=0)
-
 
     @property
     @cached_result
@@ -48,7 +45,6 @@ class TileShape(BaseShape):
     @cached_result
     def horizontal_spacing(self):
         return self._eval_parameter('horizontal_spacing', default=0)
-
 
     @property
     @cached_result
@@ -72,90 +68,69 @@ class TileShape(BaseShape):
 
     @property
     @cached_result
-    def tile_count_limit(self):
-        return self._eval_parameter('tile_count_limit', default=1000)
+    def random_order(self):
+        return self._eval_parameter('random_order', default=False)
 
     @property
     @cached_result
-    def limit_count_from_center(self):
-        return self._eval_parameter('limit_count_from_center', default=False)
+    def random_seed(self):
+        return self._eval_parameter('random_seed', default=0)
 
-    def ___init_shapes(self, **kwargs):
+    def _init_shapes(self, **kwargs):
         from frame_stamp.shape import get_shape_class
 
-        shape_list = self._data.get('shapes')
-        if not shape_list:
-            return []
-        # coords = self.generate_coords(shape_list, self.source_image.size)
-
-        coords = self.generate_coords(self.source_image.size,[self.tile_width, self.tile_height],
-                                      rotate=self.grid_rotate, pivot_offset=self.pivot, spacing=self.spacing,
-                                      tile_count_limit=self.tile_count_limit,
-                                      rows_offset=self.row_offset,
-                                      columns_offset=self.column_offset,
-                                      limit_count_from_center=self.limit_count_from_center,
-                                      )
         shapes = []
-        shape_generator = cycle(shape_list)
-        for i, tile in enumerate(coords):
-            shape_config = next(shape_generator)
-            # print('Shape:', shape_config)
-            if not shape_config:
-                continue
+        shape_list = self._data.get('shapes')
+        for shape_config in shape_list:
             shape_type = shape_config.get('type')
             if shape_type is None:
                 raise PresetError('Shape type not defined in template element: {}'.format(shape_config))
-            # parent_shape_config = {**shape_config, **tile}
-            # print(parent_shape_config)
-            tile_parameters = {'x': tile[0], 'y': tile[1]}#, 'rotate': self.rotate}
-            # parent = EmptyShape(tile, self.context)#, local_context=tile)
-            # shape_config['parent'] = parent
             shape_cls = get_shape_class(shape_type)
-            shape: BaseShape = shape_cls({**shape_config, **tile_parameters}, self.context, **kwargs)
-            # w, h = shape.width, shape.height
-            # x = x + w + self.horizontal_spacing
-            # y = y + h
-            # local_context = {}
-            # shape_generator.send()
-            # shape_config['parent'] = EmptyShape(cells[i], self.context, local_context=lc)
-            # kwargs['local_context'] = local_context
-
+            shape: BaseShape = shape_cls(shape_config, self.context, **kwargs)
+            if shape.id:
+                raise PresetError('Shape ID for tiled element is not allowed: {}'.format(shape.id))
             shapes.append(shape)
-            if shape.id is not None:
-                if shape.id in self.scope:
-                    raise PresetError('Duplicate shape ID: {}'.format(shape.id))
-            self.add_shape(shape)
         return shapes
 
-    def ___iter_shape_configs(self):
-        from itertools import repeat
-        shape_list = self._data.get('shapes')
-        if not shape_list:
+    def iter_shapes(self):
+        from itertools import cycle
+
+        if not self._shapes:
             raise StopIteration
-        return repeat(shape_list)
+        return cycle(self._shapes)
 
 
-    # def rotate_point(self, point, pivot, angle):
-    #     """Rotate a point around another point by a given angle in degrees."""
-    #     print('A', angle)
-    #     radians = math.radians(angle)
-    #     translated_x = point[0] - pivot[0]
-    #     translated_y = point[1] - pivot[1]
-    #
-    #     x_rotated = (translated_x * math.cos(radians) - translated_y * math.sin(radians)) + pivot[0]
-    #     y_rotated = (translated_x * math.sin(radians) + translated_y * math.cos(radians)) + pivot[1]
-    #
-    #     return (x_rotated, y_rotated)
-
-    def intersects(self, rect1, rect2):
-        """Check if two rectangles intersect."""
-        return not (rect1[0] > rect2[2] or  # rect1 is to the right of rect2
-                    rect1[2] < rect2[0] or  # rect1 is to the left of rect2
-                    rect1[1] > rect2[3] or  # rect1 is below rect2
-                    rect1[3] < rect2[1])  # rect1 is above rect2
+    def draw_shape(self, size, **kwargs):
+        canvas: Image.Image = self._get_canvas(size)
+        shapes = self.iter_shapes()
+        coords = self.generate_coords(self.source_image.size, [self.tile_width, self.tile_height],
+                                      rotate=self.grid_rotate, pivot_offset=self.pivot, spacing=self.spacing,
+                                      rows_offset=self.row_offset,
+                                      columns_offset=self.column_offset,
+                                      )
+        main_rect = (0, 0, size[0], size[1])
+        drawing = skipped = 0
+        if self.random_order:
+            import random
+            random.seed(self.random_seed + len(coords))
+            random.shuffle(coords)
+        for i, tile in enumerate(coords):
+            parent = EmptyShape({'x': tile[0], 'y': tile[1], 'rotate': -self.grid_rotate, "w": self.tile_width, "h": self.tile_height}, self.context)
+            sh: BaseShape = next(shapes)
+            sh.clear_cache()
+            sh.set_parent(parent)
+            bound = [sh.x0, sh.y0, sh.x1, sh.y1]
+            if self.check_intersection(bound, main_rect):
+                overlay = sh.render(size)
+                canvas = Image.alpha_composite(canvas, overlay)
+                drawing += 1
+            else:
+                skipped += 1
+        logging.debug(f'Drawing: {drawing}, skipped: {skipped}')
+        return canvas
 
     def generate_coords(self, rect_size, tile_size, rotate=0, pivot_offset=None, spacing=None,
-                        tile_count_limit=None, rows_offset=0, columns_offset=0, limit_count_from_center=False):
+                        rows_offset=0, columns_offset=0):
 
         if spacing is None:
             spacing = [0.0, 0.0]
@@ -197,183 +172,69 @@ class TileShape(BaseShape):
             row_count += 1
             column_count = 0
 
-        if tile_count_limit is not None and limit_count_from_center:
-            coordinates.sort(key=lambda c: math.hypot(c[0] - pivot_offset[0], c[1] - pivot_offset[1]))
-            coordinates = coordinates[:tile_count_limit]
+        rotated_coord = [rotate_point(coord, rotate, pivot_offset) for coord in coordinates]
 
-        final_coordinates = []
-
-        for coord in coordinates:
-            rotated_coord = rotate_point(coord, rotate, pivot_offset)
-
-            tile_rect = (
-                rotated_coord[0] - tile_size[0] / 2,
-                rotated_coord[1] - tile_size[1] / 2,
-                rotated_coord[0] + tile_size[0] / 2,
-                rotated_coord[1] + tile_size[1] / 2
-            )
-
-            main_rect_with_buffer = (
-                0 - tile_size[0],
-                0 - tile_size[1],
-                rect_size[0] + tile_size[0],
-                rect_size[1] + tile_size[1]
-            )
-
-            if self.intersects(tile_rect, main_rect_with_buffer):
-                final_coordinates.append(rotated_coord)
-        if tile_count_limit is not None and not limit_count_from_center:
-            final_coordinates = final_coordinates[:tile_count_limit]
-
-        return final_coordinates
+        return rotated_coord
 
 
-    # def _create_positions_grid(self, shape_list, canvas_size, **kwargs):
-    #     """
-    #     [
-    #         {shape_config, index, row, col}
-    #     ]
-    #
-    #     :param shape_list:
-    #     :param canvas_size:
-    #     :param kwargs:
-    #     :return:
-    #     """
-    #     from frame_stamp.shape import get_shape_class
-    #
-    #     tile_overlap = 1
-    #     center_x, center_y = self.x % canvas_size[0], self.y % canvas_size[1]
-    #     print(f"{center_x=}, {center_y=}")
-    #     shapes = []
-    #     for shape_config in shape_list:
-    #         if not shape_config:
-    #             raise ValueError('Shape cannot be empty')
-    #         shape_type = shape_config.get('type')
-    #         shape_cls = get_shape_class(shape_type)
-    #         shape: BaseShape = shape_cls(shape_config, self.context, **kwargs)
-    #         shapes.append(shape)
-    #     # create
-    #     cell_width = max([sh.width for sh in shapes])
-    #     print(f"{cell_width=}")
-    #     cell_height = max([sh.height for sh in shapes])
-    #     print(f"{cell_height=}")
-    #     max_shape_dim = max([cell_height, cell_width])
-    #     print(f"{max_shape_dim=}")
-    #     # max_canvas_dim = max(canvas_size)
-    #     # print(f"{max_canvas_dim=}")
-    #     max_x_value = canvas_size[0] + (max_shape_dim*tile_overlap)
-    #     min_x_value = -(max_shape_dim*tile_overlap)
-    #     max_y_value = canvas_size[1] + (max_shape_dim*tile_overlap)
-    #     min_y_value = -(max_shape_dim*tile_overlap)
-    #     # print(f"{max_coord_value=}")
-    #     offset_x = cell_width+self.horizontal_spacing
-    #     print(f"{offset_x=}")
-    #     offset_y = cell_height+self.vertical_spacing
-    #     print(f"{offset_y=}")
-    #     # start_x = center_x - (offset_x * (canvas_size[0]//offset_x))
-    #     start_x = 0 - (center_x % cell_width) - offset_x
-    #     print(f"{start_x=}")
-    #     # start_y = center_y - (offset_y * (max_coord_value//(offset_y)))
-    #     start_y = 0 - (center_y % cell_height) - offset_y
-    #     print(f"{start_y=}")
-    #     max_rows = self.max_rows or canvas_size[0]//offset_x
-    #     print(f"{max_rows=}")
-    #     max_columns = self.max_columns or canvas_size[1]//offset_y
-    #     print(f"{max_columns=}")
-    #
-    #     x, y = start_x, start_y
-    #     index = 0
-    #     col = 0
-    #     row = 0
-    #     tiles = []
-    #     rot = self._eval_parameter('rotate', default=0)
-    #     rot_pivot = (center_x, center_y)
-    #     while index < self.tile_count_limit:
-    #         index += 1
-    #         if rot:
-    #             _x, _y = rotate_point((x, y), rot, origin=rot_pivot)
-    #             print('COORDS', _x, _y)
-    #         else:
-    #             _x, _y = x, y
-    #         if not any([_x > max_x_value,
-    #                     _x < min_x_value,
-    #                     _y > max_y_value,
-    #                     _y < min_y_value]):
-    #             tiles.append(dict(
-    #                 x=_x,
-    #                 y=_y,
-    #                 rotate=rot,
-    #                 # rotate_pivot=rot_pivot,
-    #                 column=col,
-    #                 row=row,
-    #                 index=index,
-    #                 width=cell_width,
-    #                 height=cell_height
-    #             ))
-    #         x += offset_x
-    #         col += 1
-    #         if x > max_x_value or col+1 > max_columns:
-    #             col = 0
-    #             row += 1
-    #             x = start_x
-    #             y += offset_y
-    #         if y > max_y_value or row > max_rows:
-    #             break
-    #     return tiles
+    def get_rectangle_points(self, rect, angle=0):
+        """Returns the coordinates of the corners of a rectangle, taking into account rotation."""
+        x0, y0, x1, y1 = rect
+        center_x = (x0 + x1) / 2
+        center_y = (y0 + y1) / 2
+        points = [
+            (x0, y0),
+            (x1, y0),
+            (x1, y1),
+            (x0, y1)
+        ]
+        if angle != 0:
+            points = [rotate_point(point, angle, (center_x, center_y)) for point in points]
+        return points
 
-    def get_shapes(self):
-        return self._shapes
+    def separating_axis_theorem(self, rect1, rect2):
+        """Tests the intersection of two convex polygons using the separating axis theorem."""
+        def get_normals(points):
+            """Returns the normals to the sides of a polygon."""
+            normal_list = []
+            for i in range(len(points)):
+                p1 = points[i]
+                p2 = points[(i + 1) % len(points)]
+                edge = (p2[0] - p1[0], p2[1] - p1[1])
+                normal = (-edge[1], edge[0])
+                normal_list.append(normal)
+            return normal_list
 
-    def _draw_shape(self, size, **kwargs):
-        canvas = self._get_canvas(size)
-        shapes = self.get_shapes()
-        if shapes:
-            for shape in shapes:
-                # if shape._local_context['row'] == 1:
-                #     print(shape._data, shape.y, shape.y_draw)
-                overlay = shape.render(size)
-                canvas = Image.alpha_composite(canvas, overlay)
-        return canvas
+        def project(points, axis):
+            """Projects points onto an axis and returns the minimum and maximum values of the projection."""
+            min_proj = max_proj = None
+            for point in points:
+                proj = point[0] * axis[0] + point[1] * axis[1]
+                if min_proj is None or proj < min_proj:
+                    min_proj = proj
+                if max_proj is None or proj > max_proj:
+                    max_proj = proj
+            return min_proj, max_proj
 
-    def _init_shapes(self, **kwargs):
-        from frame_stamp.shape import get_shape_class
+        points1 = self.get_rectangle_points(rect1)
+        points2 = self.get_rectangle_points(rect2)
 
-        shapes = []
-        shape_list = self._data.get('shapes')
-        for shape_config in shape_list:
-            shape_type = shape_config.get('type')
-            if shape_type is None:
-                raise PresetError('Shape type not defined in template element: {}'.format(shape_config))
-            shape_cls = get_shape_class(shape_type)
-            shape: BaseShape = shape_cls(shape_config, self.context, **kwargs)
-            if shape.id:
-                raise PresetError('Shape ID for tiled element is not allowed: {}'.format(shape.id))
-            shapes.append(shape)
-        return shapes
+        for points in [points1, points2]:
+            normals = get_normals(points)
+            for normal in normals:
+                min1, max1 = project(points1, normal)
+                min2, max2 = project(points2, normal)
+                if max1 < min2 or max2 < min1:
+                    return False
+        return True
 
-    def iter_shapes(self):
-        from itertools import cycle
-
-        if not self._shapes:
-            raise StopIteration
-        return cycle(self._shapes)
-
-
-    def draw_shape(self, size, **kwargs):
-        canvas: Image.Image = self._get_canvas(size)
-        shapes = self.iter_shapes()
-        coords = self.generate_coords(self.source_image.size, [self.tile_width, self.tile_height],
-                                      rotate=self.grid_rotate, pivot_offset=self.pivot, spacing=self.spacing,
-                                      tile_count_limit=self.tile_count_limit,
-                                      rows_offset=self.row_offset,
-                                      columns_offset=self.column_offset,
-                                      limit_count_from_center=self.limit_count_from_center,
-                                      )
-        for i, tile in enumerate(coords):
-            parent = EmptyShape({'x': tile[0], 'y': tile[1], 'rotate': -self.grid_rotate, "w": self.tile_width, "h": self.tile_height}, self.context)
-            sh: BaseShape = next(shapes)
-            sh.clear_cache()
-            sh.set_parent(parent)
-            overlay = sh.render(size)
-            canvas = Image.alpha_composite(canvas, overlay)
-        return canvas
+    def check_intersection(self, rect1, rect2, angle1=0, angle2=0):
+        """Checks the intersection of two rectangles, taking into account rotation."""
+        if angle1 != 0 or angle2 != 0:
+            points1 = self.get_rectangle_points(rect1, angle1)
+            points2 = self.get_rectangle_points(rect2, angle2)
+            return self.separating_axis_theorem(points1, points2)
+        else:
+            x0_1, y0_1, x1_1, y1_1 = rect1
+            x0_2, y0_2, x1_2, y1_2 = rect2
+            return not (x1_1 < x0_2 or x1_2 < x0_1 or y1_1 < y0_2 or y1_2 < y0_1)
