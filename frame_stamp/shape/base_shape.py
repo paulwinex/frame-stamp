@@ -364,22 +364,30 @@ class BaseShape(AbstractShape):
         overlay = self._get_canvas(size)
         img = ImageDraw(overlay)
         self_ofs = self._debug_self_offset
+        debug_border_color = self._data.get('debug_border_color', 'red')
+        if isinstance(debug_border_color, list):
+            debug_border_color = tuple(debug_border_color)
+        debug_border_width = self._data.get('debug_border_width', 1)
         img.line([
             (self.left + self_ofs, self.top + self_ofs),
             (self.right - self_ofs, self.top + self_ofs),
             (self.right - self_ofs, self.bottom - self_ofs),
             (self.left + self_ofs, self.bottom - self_ofs),
             (self.left + self_ofs, self.top + self_ofs)
-        ], 'red', 1)
-        par_offset = self._debug_parent_offset
+        ], debug_border_color, debug_border_width)
 
+        par_offset = self._debug_parent_offset
+        debug_parent_border_color = self._data.get('debug_parent_border_color', 'yellow')
+        if isinstance(debug_parent_border_color, list):
+            debug_parent_border_color = tuple(debug_parent_border_color)
+        debug_parent_border_width = self._data.get('debug_parent_border_width', 1)
         img.line([
             (self.parent.left + par_offset, self.parent.top + par_offset),
             (self.parent.right - par_offset, self.parent.top + par_offset),
             (self.parent.right - par_offset, self.parent.bottom - par_offset),
             (self.parent.left + par_offset, self.parent.bottom - par_offset),
             (self.parent.left + par_offset, self.parent.top + par_offset)
-        ], 'yellow', 1)
+        ], debug_parent_border_color, debug_parent_border_width)
         return Image.alpha_composite(default_render, overlay)
 
     def _get_canvas(self, size):
