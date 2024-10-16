@@ -26,7 +26,7 @@ class TileShape(BaseShape):
 
         img = super()._render_debug(default_render, size)
         draw = ImageDraw.Draw(img)
-        draw.circle(self.pivot, self.point,'red')
+        draw.circle(self.pivot, self.point/2,'red')
         return img
 
     @property
@@ -135,6 +135,7 @@ class TileShape(BaseShape):
                                       rotate=self.grid_rotate, pivot=self.pivot, spacing=self.spacing,
                                       rows_offset=self.row_offset,
                                       columns_offset=self.column_offset,
+                                      max_rows=self.max_rows, max_columns=self.max_columns
                                       )
         main_rect = (0, 0, size[0], size[1])
         drawing = skipped = 0
@@ -144,7 +145,13 @@ class TileShape(BaseShape):
             random.shuffle(coords)
         index = 0
         for i, tile in enumerate(coords):
-            parent = EmptyShape({'x': tile[0], 'y': tile[1], 'rotate': -self.grid_rotate, "w": self.tile_width, "h": self.tile_height}, self.context)
+            parent = EmptyShape({'x': tile[0], 'y': tile[1],
+                                 'rotate': -self.grid_rotate,
+                                 'rotate_pivot': tile,
+                                 "pivot": self.pivot,
+                                 "w": self.tile_width, "h": self.tile_height},
+                                self.context)
+
             sh: BaseShape = next(shapes)
             sh.clear_cache()
             sh.set_parent(parent)
@@ -163,7 +170,8 @@ class TileShape(BaseShape):
     def generate_coords(self, rect_size, tile_size,
                         rotate=0, pivot=None,
                         spacing=None,
-                        rows_offset=0, columns_offset=0):
+                        rows_offset=0, columns_offset=0,
+                        max_rows=None, max_columns=None):
 
         if spacing is None:
             spacing = [0.0, 0.0]
@@ -207,7 +215,7 @@ class TileShape(BaseShape):
             row_count += 1
             column_count = 0
 
-        coords = self.remove_excess_elements(coordinates, self.max_rows, self.max_columns, pivot)
+        coords = self.remove_excess_elements(coordinates, max_rows, max_columns, pivot)
         sorted_coords = tuple(chain(*sorted([sorted(row) for row in coords], key=lambda row: row[0])))
         rotated_coord = [rotate_point(coord, rotate, pivot) for coord in sorted_coords]
         return rotated_coord
