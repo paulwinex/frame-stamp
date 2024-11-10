@@ -300,7 +300,7 @@ class AbstractShape(object):
         try:
             res = eval(expr, {**locals(), **self.render_globals()})
         except Exception as e:
-            logger.exception('Evaluate expression error: {}'.format(expr))
+            logger.exception('Evaluate expression error in field {}/{}: {}'.format(self, key, expr))
             raise
         return res
 
@@ -526,9 +526,19 @@ class BaseShape(AbstractShape):
     @property
     def center(self):
         return (
-            (self.x0 + self.x1) // 2,
-            (self.y0 + self.y1) // 2
+            self.center_x,
+            self.center_y
         )
+
+    @property
+    @cached_result
+    def center_x(self):
+        return (self.x0 + self.x1) // 2
+
+    @property
+    @cached_result
+    def center_y(self):
+        return (self.y0 + self.y1) // 2
 
     @property
     @cached_result
