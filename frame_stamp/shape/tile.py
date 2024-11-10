@@ -37,7 +37,7 @@ class TileShape(BaseShape):
     @property
     @cached_result
     def grid_rotate(self):
-        return self._eval_parameter('grid_rotate', default=3)
+        return self._eval_parameter('grid_rotate', default=0)
 
     @property
     @cached_result
