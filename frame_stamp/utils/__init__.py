@@ -20,10 +20,12 @@ def cached_result(func):
                 result = getattr(inst, '__cache__')[func.__name__]
             except AttributeError:  # no cache
                 result = func(*args, **kwargs)
-                inst.__cache__ = {func.__name__: result}
+                if result is not None:
+                    inst.__cache__ = {func.__name__: result}
             except KeyError:    # not saved yet
                 result = func(*args, **kwargs)
-                inst.__cache__[func.__name__] = result
+                if result is not None:
+                    inst.__cache__[func.__name__] = result
         else:
             result = func(*args, **kwargs)
         return result
