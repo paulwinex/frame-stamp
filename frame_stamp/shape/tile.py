@@ -7,9 +7,11 @@ from os import PRIO_PGRP
 
 from .base_shape import BaseShape, EmptyShape
 from frame_stamp.utils.exceptions import PresetError
-from frame_stamp.utils import cached_result, rotate_point
+from frame_stamp.utils import cached_result, rotate_point, geometry_math
 from PIL import Image
 import logging
+
+from ..utils.point import Point
 
 logger = logging.getLogger(__name__)
 
@@ -122,8 +124,7 @@ class TileShape(BaseShape):
             raise StopIteration
         return cycle(self._shapes)
 
-
-    def draw_shape(self, size, **kwargs):
+    def render(self, size, **kwargs):
         canvas: Image.Image = self._get_canvas(size)
         shapes = self.iter_shapes()
         spacing = self.spacing
@@ -131,7 +132,7 @@ class TileShape(BaseShape):
             spacing[0] = self.horizontal_spacing
         if self.vertical_spacing is not None:
             spacing[1] = self.vertical_spacing
-        coords = self.generate_coords(self.source_image.size, [self.tile_width, self.tile_height],
+        coords = self.generate_coords(self.parent.size, [self.tile_width, self.tile_height],
                                       rotate=self.grid_rotate, pivot=self.pivot, spacing=self.spacing,
                                       rows_offset=self.row_offset,
                                       columns_offset=self.column_offset,
@@ -144,6 +145,7 @@ class TileShape(BaseShape):
             random.seed(self.random_seed + len(coords))
             random.shuffle(coords)
         index = 0
+        print(self.grid_rotate)
         for i, tile in enumerate(coords):
             parent = EmptyShape({'x': tile[0], 'y': tile[1],
                                  'rotate': -self.grid_rotate,
@@ -158,14 +160,69 @@ class TileShape(BaseShape):
             sh.update_local_context(tile_index=index)
             bound = [sh.x0, sh.y0, sh.x1, sh.y1]
             if self.check_intersection(bound, main_rect):
-                overlay = sh.render(size)
-                canvas = Image.alpha_composite(canvas, overlay)
+                for shape_canvas, paste_pos in sh.render(size):
+                    rotate_angle, rotate_pivot = sh.rotate, sh.rotate_pivot
+                    if sh.rotate:
+                        pivot = sh.rotate_pivot
+                        rotated_pos = Point(*geometry_math.rotate_point_around_point(
+                            sh.center,
+                            (*pivot,),
+                            -sh.rotate))
+                        # move rotated shape
+                        paste_pos += (rotated_pos - sh.center)
+                    canvas.paste(shape_canvas, paste_pos.tuple, shape_canvas)
+
+                # canvas = Image.alpha_composite(canvas, overlay)
                 drawing += 1
                 index += 1
             else:
                 skipped += 1
         logging.debug(f'Drawing: {drawing}, skipped: {skipped}')
-        return canvas
+        yield canvas, (0, 0)
+
+    # def draw_shape(self, size, **kwargs):
+    #     canvas: Image.Image = self._get_canvas(size)
+    #     shapes = self.iter_shapes()
+    #     spacing = self.spacing
+    #     if self.horizontal_spacing is not None:
+    #         spacing[0] = self.horizontal_spacing
+    #     if self.vertical_spacing is not None:
+    #         spacing[1] = self.vertical_spacing
+    #     coords = self.generate_coords(self.source_image.size, [self.tile_width, self.tile_height],
+    #                                   rotate=self.grid_rotate, pivot=self.pivot, spacing=self.spacing,
+    #                                   rows_offset=self.row_offset,
+    #                                   columns_offset=self.column_offset,
+    #                                   max_rows=self.max_rows, max_columns=self.max_columns
+    #                                   )
+    #     main_rect = (0, 0, size[0], size[1])
+    #     drawing = skipped = 0
+    #     if self.random_order:
+    #         import random
+    #         random.seed(self.random_seed + len(coords))
+    #         random.shuffle(coords)
+    #     index = 0
+    #     for i, tile in enumerate(coords):
+    #         parent = EmptyShape({'x': tile[0], 'y': tile[1],
+    #                              'rotate': -self.grid_rotate,
+    #                              'rotate_pivot': tile,
+    #                              "pivot": self.pivot,
+    #                              "w": self.tile_width, "h": self.tile_height},
+    #                             self.context)
+    #
+    #         sh: BaseShape = next(shapes)
+    #         sh.clear_cache()
+    #         sh.set_parent(parent)
+    #         sh.update_local_context(tile_index=index)
+    #         bound = [sh.x0, sh.y0, sh.x1, sh.y1]
+    #         if self.check_intersection(bound, main_rect):
+    #             overlay = sh.render(size)
+    #             canvas = Image.alpha_composite(canvas, overlay)
+    #             drawing += 1
+    #             index += 1
+    #         else:
+    #             skipped += 1
+    #     logging.debug(f'Drawing: {drawing}, skipped: {skipped}')
+    #     return canvas
 
     def generate_coords(self, rect_size, tile_size,
                         rotate=0, pivot=None,
