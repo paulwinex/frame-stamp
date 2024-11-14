@@ -473,7 +473,7 @@ class BaseShape(AbstractShape):
         # get current shape canvas size including rotation
         shape_canvas, canvas_size, center, zero_point = self._get_render_sized_canvas()
         # draw base shape
-        self.draw_shape(shape_canvas, canvas_size, center, zero_point)
+        shape_canvas = self.draw_shape(shape_canvas, canvas_size, center, zero_point) or shape_canvas
         if self.rotate:
             # rotate around center
             shape_canvas = shape_canvas.rotate(self.rotate, expand=False, center=(*center,), resample=Image.BICUBIC)
