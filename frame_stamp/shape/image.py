@@ -134,7 +134,7 @@ class ImageShape(BaseShape):
 
     def apply_mask(self, img, mask, transparency=0):
         # get source
-        if not Image.isImageType(img):
+        if not isinstance(img, Image.Image):
             img = Image.open(img).convert('RGBA')
         else:
             img = img.convert('RGBA')
