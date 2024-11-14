@@ -86,10 +86,10 @@ class ImageShape(BaseShape):
     @property
     @cached_result
     def height(self):
-        h = super(ImageShape, self).height
+        h = super().height or None
         if h:
             return h
-        w = super(ImageShape, self).width
+        w = super(ImageShape, self).width or None
         if not w:
             return self.source.size[1]
         else:
@@ -101,10 +101,10 @@ class ImageShape(BaseShape):
     @property
     @cached_result
     def width(self):
-        w = super(ImageShape, self).width
+        w = super(ImageShape, self).width or None
         if w:
             return w
-        h = super(ImageShape, self).height
+        h = super(ImageShape, self).height or None
         if not h:
             return self.source.size[0]
         else:
@@ -199,8 +199,6 @@ class ImageShape(BaseShape):
                 color=self.multiply_color).convert('RGBA'))
         return img
 
-    def draw_shape(self, size, **kwargs):
-        overlay = self._get_canvas(size)
+    def draw_shape(self, shape_canvas, canvas_size, center, zero_point, **kwargs):
         img = self._apply_multiply_color(self.source_resized)
-        overlay.paste(img, (self.x, self.y), img)
-        return overlay
+        shape_canvas.paste(img, tuple(zero_point.int()), img)
