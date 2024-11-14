@@ -2,10 +2,13 @@ import math
 import re, os
 import string
 import random
-from PIL.ImageDraw import ImageDraw
-from PIL import Image
-from frame_stamp.utils import cached_result
+import traceback
+
+from PIL import Image, ImageDraw
 import logging
+
+from frame_stamp.utils import cached_result, geometry_math
+from frame_stamp.utils.point import Point
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +57,7 @@ class AbstractShape(object):
         return '<{} {}>'.format(self.__class__.__name__, self.id or 'no-id')
 
     def __str__(self):
-        return '{} #{}'.format(self.__class__.__name__, self.id or 'none')
+        return '{} #{}'.format(self.__class__.__name__, self.id or 'no-id')
 
     def clear_cache(self):
         self.__cache__.clear()
@@ -350,70 +353,152 @@ class BaseShape(AbstractShape):
 
     @property
     @cached_result
-    def _debug_parent_offset(self):
+    def _debug_offset(self):
         """Offset of parent outline relative to object outline"""
-        return self._eval_parameter('debug_parent_offset', default=1)
+        return self._eval_parameter('debug_offset', default=0)
 
     @property
     @cached_result
-    def _debug_self_offset(self):
+    def _debug_color(self):
         """Offset of parent outline relative to object outline"""
-        return self._eval_parameter('debug_self_offset', default=0)
+        return self._eval_parameter('debug_color', default='yellow')
 
-    def _render_debug(self, default_render, size):
-        overlay = self._get_canvas(size)
-        img = ImageDraw(overlay)
-        self_ofs = self._debug_self_offset
-        debug_border_color = self._data.get('debug_border_color', 'red')
-        if isinstance(debug_border_color, list):
-            debug_border_color = tuple(debug_border_color)
-        debug_border_width = self._data.get('debug_border_width', 1)
-        img.line([
-            (self.left + self_ofs, self.top + self_ofs),
-            (self.right - self_ofs, self.top + self_ofs),
-            (self.right - self_ofs, self.bottom - self_ofs),
-            (self.left + self_ofs, self.bottom - self_ofs),
-            (self.left + self_ofs, self.top + self_ofs)
-        ], debug_border_color, debug_border_width)
+    @property
+    @cached_result
+    def _debug_width(self):
+        """Offset of parent outline relative to object outline"""
+        return self._eval_parameter('debug_width', default=1)
 
-        par_offset = self._debug_parent_offset
-        debug_parent_border_color = self._data.get('debug_parent_border_color', 'yellow')
-        if isinstance(debug_parent_border_color, list):
-            debug_parent_border_color = tuple(debug_parent_border_color)
-        debug_parent_border_width = self._data.get('debug_parent_border_width', 1)
+    # @property
+    # @cached_result
+    # def _debug_shape_canvas(self):
+    #     """Offset of parent outline relative to object outline"""
+    #     return self._eval_parameter('debug_shape_canvas', default=False)
+
+    @property
+    @cached_result
+    def _debug_rotate_pivot(self):
+        """Offset of parent outline relative to object outline"""
+        return self._eval_parameter('debug_rotate_pivot', default=False)
+
+    @property
+    @cached_result
+    def _debug_rotate_pivot_color(self):
+        """Offset of parent outline relative to object outline"""
+        return self._eval_parameter('debug_rotate_pivot_color', default='red')
+
+    @property
+    @cached_result
+    def _debug_rotate_pivot_size(self):
+        """Offset of parent outline relative to object outline"""
+        return int(self._eval_parameter('debug_rotate_pivot_size', default=self.point/2))
+
+
+    def _render_debug(self, canvas):
+        img = ImageDraw.Draw(canvas)
+        w, h = canvas.size
         img.line([
-            (self.parent.left + par_offset, self.parent.top + par_offset),
-            (self.parent.right - par_offset, self.parent.top + par_offset),
-            (self.parent.right - par_offset, self.parent.bottom - par_offset),
-            (self.parent.left + par_offset, self.parent.bottom - par_offset),
-            (self.parent.left + par_offset, self.parent.top + par_offset)
-        ], debug_parent_border_color, debug_parent_border_width)
-        return Image.alpha_composite(default_render, overlay)
+            (1+self._debug_offset, 1+self._debug_offset),
+            (w - 1-self._debug_offset, 1+self._debug_offset),
+            (w - 1-self._debug_offset, h - 1-self._debug_offset),
+            (1+self._debug_offset, h - 1-self._debug_offset),
+            (1+self._debug_offset, 1+self._debug_offset)
+        ], self._debug_color, self._debug_width)
+
+    def _render_debug_pivot(self):
+        draw_size = self._debug_rotate_pivot_size
+        pivot_image = Image.new('RGBA', (draw_size, draw_size), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(pivot_image)
+        draw.circle(
+            (draw_size / 2, draw_size / 2), draw_size / 2,
+            fill=self._debug_rotate_pivot_color,
+            outline=None,
+            width=1)
+        return pivot_image
+
+
+    # def ___render_debug(self, default_render, size):
+    #     overlay = self._get_canvas(size)
+    #     img = ImageDraw(overlay)
+    #     self_ofs = self._debug_self_offset
+    #     debug_border_color = self._data.get('debug_border_color', 'red')
+    #     if isinstance(debug_border_color, list):
+    #         debug_border_color = tuple(debug_border_color)
+    #     debug_border_width = self._data.get('debug_border_width', 1)
+    #     img.line([
+    #         (self.left + self_ofs, self.top + self_ofs),
+    #         (self.right - self_ofs, self.top + self_ofs),
+    #         (self.right - self_ofs, self.bottom - self_ofs),
+    #         (self.left + self_ofs, self.bottom - self_ofs),
+    #         (self.left + self_ofs, self.top + self_ofs)
+    #     ], debug_border_color, debug_border_width)
+    #
+    #     par_offset = self._debug_parent_offset
+    #     debug_parent_border_color = self._data.get('debug_parent_border_color', 'yellow')
+    #     if isinstance(debug_parent_border_color, list):
+    #         debug_parent_border_color = tuple(debug_parent_border_color)
+    #     debug_parent_border_width = self._data.get('debug_parent_border_width', 1)
+    #     img.line([
+    #         (self.parent.left + par_offset, self.parent.top + par_offset),
+    #         (self.parent.right - par_offset, self.parent.top + par_offset),
+    #         (self.parent.right - par_offset, self.parent.bottom - par_offset),
+    #         (self.parent.left + par_offset, self.parent.bottom - par_offset),
+    #         (self.parent.left + par_offset, self.parent.top + par_offset)
+    #     ], debug_parent_border_color, debug_parent_border_width)
+    #     return Image.alpha_composite(default_render, overlay)
 
     def _get_canvas(self, size):
         return Image.new('RGBA', size, (0, 0, 0, 0))
 
-    def draw_shape(self, size, **kwargs):
+    def _get_render_sized_canvas(self):
+        side_size = int(self._compute_maximum_distance_from_center() * 2.2) + int(self.shape_canvas_offset()+2)
+        canvas_size = (side_size, side_size)
+        center = Point(side_size/2, side_size/2)
+        zero = Point((side_size-self.width) / 2, (side_size-self.height) / 2)
+        return self._get_canvas(canvas_size), canvas_size, center, zero
+
+    def shape_canvas_offset(self):
+        return 0
+
+    def _compute_maximum_distance_from_center(self):
+        return (self.width ** 2 + self.height ** 2) ** 0.5 / 2
+
+    def draw_shape(self, shape_canvas: Image.Image, canvas_size: tuple, center: Point, zero_point: Point, **kwargs):
         raise NotImplementedError
+
 
     def render(self, size, **kwargs):
         if not self.is_enabled():
             return self._get_canvas(size)
-        result = self.draw_shape(size, **kwargs)
-        if self._debug:
-            result = self._render_debug(result, size)
-        result = self._apply_rotate(result)
-        return result
-
-    def _apply_rotate(self, img):
+        # get current shape canvas size including rotation
+        shape_canvas, canvas_size, center, zero_point = self._get_render_sized_canvas()
+        # draw base shape
+        self.draw_shape(shape_canvas, canvas_size, center, zero_point)
         if self.rotate:
-            img = img.rotate(self.rotate, expand=False, center=self.rotate_pivot, resample=Image.BICUBIC)
-        par = self.parent
-        while par:
-            if par.rotate:
-                img = img.rotate(par.rotate, expand=False, center=par.rotate_pivot, resample=Image.BICUBIC)
-            par = par.parent
-        return img
+            # rotate around center
+            shape_canvas = shape_canvas.rotate(self.rotate, expand=False, center=(*center,), resample=Image.BICUBIC)
+        # compute coords for pasting
+        global_pos = Point(self.x, self.y)
+        paste_pos = global_pos - zero_point
+        # compute transformation offset for rotated shape
+        pivot = (0, 0)
+        if self.rotate:
+            pivot = self.rotate_pivot
+            rotated_pos = Point(*geometry_math.rotate_point_around_point(
+                self.center,
+                (*pivot,),
+                -self.rotate))
+            # move rotated shape
+            paste_pos += (rotated_pos- self.center)
+        # DEBUG DRAW ##############################
+        if self._debug:
+            self._render_debug(shape_canvas)
+        # return main image
+        yield shape_canvas, paste_pos.int()
+
+        if self._debug_rotate_pivot:
+            pivot_image = self._render_debug_pivot()
+            yield pivot_image, (pivot-(pivot_image.size[0]/2)).int()
 
     @property
     @cached_result
@@ -525,7 +610,7 @@ class BaseShape(AbstractShape):
 
     @property
     def center(self):
-        return (
+        return Point(
             self.center_x,
             self.center_y
         )
@@ -548,7 +633,7 @@ class BaseShape(AbstractShape):
     @property
     @cached_result
     def rotate_pivot(self):
-        return self._eval_parameter('rotate_pivot', default=self.center)
+        return Point(*self._eval_parameter('rotate_pivot', default=self.center))
 
     @property
     @cached_result
@@ -617,7 +702,7 @@ class EmptyShape(BaseShape):
     shape_name = 'empty'
 
     def draw_shape(self, size, **kwargs):
-        return self._get_canvas(size)
+        return self._get_canvas(size) # TODO try size 1x1
 
 
 class RootParent(BaseShape):
