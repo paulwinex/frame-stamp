@@ -1,9 +1,7 @@
 from __future__ import absolute_import
 
 import math
-from email.policy import default
 from itertools import chain
-from os import PRIO_PGRP
 
 from .base_shape import BaseShape, EmptyShape
 from frame_stamp.utils.exceptions import PresetError
