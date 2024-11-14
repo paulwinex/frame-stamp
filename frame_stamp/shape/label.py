@@ -366,7 +366,9 @@ class LabelShape(BaseShape):
         """
         Add outline
         """
-        value = self._eval_parameter('outline', default={})
+        value = self._eval_parameter('outline', default=None)
+        if value is None:
+            return
         if isinstance(value, (int, float)):
             value = {'width': value}
         assert isinstance(value, dict), 'Outline parameter must be type of dict or number'
