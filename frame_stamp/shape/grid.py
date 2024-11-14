@@ -275,13 +275,11 @@ class GridShape(BaseShape):
     def get_cell_shapes(self):
         return self._shapes
 
-    def draw_shape(self, size, **kwargs):
-        canvas = self._get_canvas(size)
+    def render(self, size, **kwargs):
         shapes = self.get_cell_shapes()
         if shapes:
             for shape in shapes:
-                # if shape._local_context['row'] == 1:
-                #     print(shape._data, shape.y, shape.y_draw)
-                overlay = shape.render(size)
-                canvas = Image.alpha_composite(canvas, overlay)
-        return canvas
+                yield from shape.render(size, **kwargs)
+        # if self._debug:
+        #     shape_canvas = self._get_canvas((self.width, self.height))
+        #     self._render_debug(shape_canvas)
