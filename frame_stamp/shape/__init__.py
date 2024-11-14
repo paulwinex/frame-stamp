@@ -5,7 +5,6 @@ from ..utils import load_from_dotted
 from .base_shape import BaseShape
 # import all shapes
 from .rect import RectShape
-from .rect2 import RectShape2
 from .line import LineShape
 from .image import ImageShape
 from .label import LabelShape
