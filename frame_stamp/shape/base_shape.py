@@ -466,7 +466,6 @@ class BaseShape(AbstractShape):
     def draw_shape(self, shape_canvas: Image.Image, canvas_size: tuple, center: Point, zero_point: Point, **kwargs):
         raise NotImplementedError
 
-
     def render(self, size, **kwargs):
         if not self.is_enabled():
             return self._get_canvas(size)
@@ -732,6 +731,11 @@ class RootParent(BaseShape):
     @cached_result
     def height(self):
         return self.source_image.size[1]
+
+    @property
+    @cached_result
+    def size(self):
+        return self.width, self.height
 
     @property
     def padding_top(self):
