@@ -44,12 +44,12 @@ class TileShape(BaseShape):
     @property
     @cached_result
     def vertical_spacing(self):
-        return self._eval_parameter('vertical_spacing', default=None)
+        return self._eval_parameter('vertical_spacing', default=None) or self._eval_parameter('v_spacing', default=None)
 
     @property
     @cached_result
     def horizontal_spacing(self):
-        return self._eval_parameter('horizontal_spacing', default=None)
+        return self._eval_parameter('horizontal_spacing', default=None) or self._eval_parameter('h_spacing', default=None)
 
     @property
     @cached_result
@@ -125,15 +125,14 @@ class TileShape(BaseShape):
         return cycle(self._shapes)
 
     def render(self, size, **kwargs):
-        canvas: Image.Image = self._get_canvas(size)
         shapes = self.iter_shapes()
-        spacing = self.spacing
+        spacing = list(self.spacing)
         if self.horizontal_spacing is not None:
             spacing[0] = self.horizontal_spacing
         if self.vertical_spacing is not None:
             spacing[1] = self.vertical_spacing
         coords = self.generate_coords(self.parent.size, [self.tile_width, self.tile_height],
-                                      rotate=self.grid_rotate, pivot=self.pivot, spacing=self.spacing,
+                                      rotate=self.grid_rotate, pivot=self.pivot, spacing=spacing,
                                       rows_offset=self.row_offset,
                                       columns_offset=self.column_offset,
                                       max_rows=self.max_rows, max_columns=self.max_columns
@@ -145,7 +144,6 @@ class TileShape(BaseShape):
             random.seed(self.random_seed + len(coords))
             random.shuffle(coords)
         index = 0
-        print(self.grid_rotate)
         for i, tile in enumerate(coords):
             parent = EmptyShape({'x': tile[0], 'y': tile[1],
                                  'rotate': -self.grid_rotate,
@@ -160,25 +158,12 @@ class TileShape(BaseShape):
             sh.update_local_context(tile_index=index)
             bound = [sh.x0, sh.y0, sh.x1, sh.y1]
             if self.check_intersection(bound, main_rect):
-                for shape_canvas, paste_pos in sh.render(size):
-                    rotate_angle, rotate_pivot = sh.rotate, sh.rotate_pivot
-                    if sh.rotate:
-                        pivot = sh.rotate_pivot
-                        rotated_pos = Point(*geometry_math.rotate_point_around_point(
-                            sh.center,
-                            (*pivot,),
-                            -sh.rotate))
-                        # move rotated shape
-                        paste_pos += (rotated_pos - sh.center)
-                    canvas.paste(shape_canvas, paste_pos.tuple, shape_canvas)
-
-                # canvas = Image.alpha_composite(canvas, overlay)
+                yield from sh.render(size)
                 drawing += 1
                 index += 1
             else:
                 skipped += 1
         logging.debug(f'Drawing: {drawing}, skipped: {skipped}')
-        yield canvas, (0, 0)
 
     # def draw_shape(self, size, **kwargs):
     #     canvas: Image.Image = self._get_canvas(size)

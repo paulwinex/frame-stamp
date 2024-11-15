@@ -627,7 +627,7 @@ class BaseShape(AbstractShape):
     @property
     @cached_result
     def rotate(self):
-        return self._eval_parameter('rotate', default=0)# + (self.parent.rotate if self.parent else 0)
+        return self._eval_parameter('rotate', default=0) + (self.parent.rotate if self.parent else 0)
 
     @property
     @cached_result
