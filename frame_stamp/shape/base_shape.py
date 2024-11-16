@@ -409,8 +409,8 @@ class BaseShape(AbstractShape):
         draw_size = self._debug_rotate_pivot_size
         pivot_image = Image.new('RGBA', (draw_size, draw_size), (0, 0, 0, 0))
         draw = ImageDraw.Draw(pivot_image)
-        draw.circle(
-            (draw_size / 2, draw_size / 2), draw_size / 2,
+        draw.ellipse(
+            (0, 0, draw_size, draw_size),
             fill=self._debug_rotate_pivot_color,
             outline=None,
             width=1)
@@ -588,6 +588,10 @@ class BaseShape(AbstractShape):
     @property
     def h(self):
         return self.height
+
+    @property
+    def pos(self):
+        return Point(self.x, self.y)
 
     @property
     @cached_result
