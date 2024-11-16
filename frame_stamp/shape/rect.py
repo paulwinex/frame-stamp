@@ -20,6 +20,17 @@ class RectShape(BaseShape):
 
     @property
     @cached_result
+    def border(self):
+        value = self._eval_parameter('border', default=None)
+        if value is None:
+            return None
+        assert isinstance(value, dict), 'Border value must be a dict'
+        value.setdefault('width', self.border_width)
+        value.setdefault('color', self.border_color)
+        return value
+
+    @property
+    @cached_result
     def border_width(self):
         return self._eval_parameter('border_width', default=0)
 
@@ -56,9 +67,9 @@ class RectShape(BaseShape):
         img.rectangle((
              (*zero_point,), (*point1,)),
             self.color)
-        border = self.border_width
+        border = self.border
         rect = Rect(zero_point.x, zero_point.y, self.width, self.height)
-        if border:
+        if border and border.get('width'):
             points = [
                 (rect.left, rect.top),
                 (rect.right, rect.top),
@@ -66,6 +77,6 @@ class RectShape(BaseShape):
                 (rect.left, rect.bottom),
                 (rect.left, rect.top)
             ]
-            img.line(points, self.border_color, self.border_width)
+            img.line(points, self.border['color'], self.border['width'])
 
 
