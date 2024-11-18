@@ -58,11 +58,10 @@ class LineShape(BaseShape):
         pts = self.points
         if pts:
             max_x = max([x[0] for x in pts])
-            #min_x = min([x[0] for x in pts])
-            w = max_x #+ min_x
+            w = max_x
         else:
             w = 0
-        return w #- self.x
+        return w
 
     @property
     @cached_result
@@ -70,20 +69,10 @@ class LineShape(BaseShape):
         pts = self.points
         if pts:
             max_y = max([x[1] for x in pts])
-            #min_y = min([x[1] for x in pts])
-            h = max_y #- min_y
+            h = max_y
         else:
             h = 0
-        return h# - self.y
-    @property
-    @cached_result
-    def center_x(self):
-        return self.width // 2
-
-    @property
-    @cached_result
-    def center_y(self):
-        return self.height // 2
+        return h
 
     def draw_shape(self, shape_canvas, canvas_size, center, zero_point: Point, **kwargs):
         pts = self.points
