@@ -68,7 +68,7 @@ class AbstractShape(object):
     @property
     @cached_result
     def parent(self):
-        return self._parent
+        return self._parent or RootParent(self.context)
 
     def set_parent(self, parent):
         self._parent = parent
@@ -473,22 +473,17 @@ class BaseShape(AbstractShape):
         shape_canvas, canvas_size, center, zero_point = self._get_render_sized_canvas()
         # draw base shape
         shape_canvas = self.draw_shape(shape_canvas, canvas_size, center, zero_point) or shape_canvas
-        if self.rotate:
+        if self.global_rotate:
             # rotate around center
-            shape_canvas = shape_canvas.rotate(self.rotate, expand=False, center=(*center,), resample=Image.BICUBIC)
+            shape_canvas = shape_canvas.rotate(self.global_rotate, expand=False, center=(*center,), resample=Image.BICUBIC)
         # compute coords for pasting
         global_pos = Point(self.x, self.y)
         paste_pos = global_pos - zero_point
         # compute transformation offset for rotated shape
-        pivot = (0, 0)
-        if self.rotate:
-            pivot = self.rotate_pivot
-            rotated_pos = Point(*geometry_math.rotate_point_around_point(
-                self.center,
-                (*pivot,),
-                -self.rotate))
-            # move rotated shape
-            paste_pos += (rotated_pos- self.center)
+        pivot = Point(self.rotate_pivot)
+        paste_offset = self.center - self.rotation_transform(self.center)
+        # move rotated shape
+        paste_pos -= paste_offset
         # DEBUG DRAW ##############################
         if self._debug:
             self._render_debug(shape_canvas)
@@ -629,14 +624,25 @@ class BaseShape(AbstractShape):
         return (self.y0 + self.y1) // 2
 
     @property
+    def global_rotate(self):
+        """Rotation including parents rotation"""
+        return self.rotate + (self.parent.global_rotate if self.parent else 0)
+
+    @property
     @cached_result
     def rotate(self):
-        return self._eval_parameter('rotate', default=0) + (self.parent.rotate if self.parent else 0)
+        return self._eval_parameter('rotate', default=0)
 
     @property
     @cached_result
     def rotate_pivot(self):
-        return Point(*self._eval_parameter('rotate_pivot', default=self.center))
+        return Point(*self._eval_parameter('rotate_pivot', default=self.center))# + (self.parent.rotate_pivot if self.parent else 0)
+
+    def rotation_transform(self, point, ind=0):
+        point = Point(geometry_math.rotate_point_around_point(point, self.rotate_pivot, -self.rotate))
+        rotated_by_parents = self.parent.rotation_transform(point, ind+2)
+        return rotated_by_parents
+
 
     @property
     @cached_result
@@ -714,6 +720,7 @@ class RootParent(BaseShape):
         self._data = {}
         self._parent = None
         self._debug_render = False
+        self.__cache__ = {}
 
     def render(self, *args, **kwargs):
         pass
@@ -740,6 +747,17 @@ class RootParent(BaseShape):
     @cached_result
     def size(self):
         return self.width, self.height
+
+    def rotation_transform(self, point, *args, **kwargs):
+        return point
+
+    @property
+    def rotate(self):
+        return 0
+
+    @property
+    def global_rotate(self):
+        return 0
 
     @property
     def padding_top(self):
