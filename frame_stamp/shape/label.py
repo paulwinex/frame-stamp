@@ -528,7 +528,10 @@ class LabelShape(BaseShape):
         ofs = max((self.padding_left, self.padding_top, self.padding_right, self.padding_bottom))*2
         if self.outline:
             ofs += self.outline.get('width', 3)*2
-        return ofs
+        if self.backdrop:
+            offsets = [v*2 for k,v  in self.backdrop.items() if k.startswith('offset')]
+            ofs = max([ofs, max(offsets)])
+        return ofs*1.2
 
     def draw_shape(self, shape_canvas, canvas_size, center, zero_point, **kwargs):
         drw = ImageDraw.Draw(shape_canvas)
