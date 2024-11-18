@@ -3,12 +3,25 @@ import math
 
 
 class Point:
-    def __init__(self, x, y):
+    def __init__(self, x, y=None):
+        if isinstance(x, (list, tuple)):
+            assert len(x) == 2, 'Point must have two coordinates'
+            x, y = x
+        elif isinstance(x, Point):
+            x, y = x.x, x.y
+        elif isinstance(x, (int, float)) and y is None:
+            raise ValueError('Point must have two coordinates')
+        assert isinstance(y, (int, float)), 'Y coordinate must be int or float'
         self._x = x
         self._y = y
 
     def __add__(self, other):
-        return Point(self._x + other.x, self._y + other.y)
+        if isinstance(other, Point):
+            return Point(self._x + other.x, self._y + other.y)
+        elif isinstance(other, (int, float)):
+            return Point(self._x + other, self._y + other)
+        else:
+            raise TypeError(f"Unsupported operand type(s) for +: 'Point' and '{type(other)}'")
 
     def __sub__(self, other):
         if isinstance(other, Point):
@@ -28,10 +41,20 @@ class Point:
         yield self._y
 
     def __mul__(self, value):
-        return Point(self._x * value, self._y * value)
+        if isinstance(value, Point):
+            return Point(self._x * value.x, self._y * value.y)
+        elif isinstance(value, (int, float)):
+            return Point(self._x * value, self._y * value)
+        else:
+            raise TypeError(f"Unsupported operand type(s) for *: 'Point' and '{type(value)}'")
 
     def __divmod__(self, other):
-        return Point(self._x / other, self._y / other)
+        if isinstance(other, Point):
+            return Point(self._x / other.x, self._y / other.y)
+        elif isinstance(other, (int, float)):
+            return Point(self._x / other, self._y / other)
+        else:
+            raise TypeError(f"Unsupported operand type(s) for /: 'Point' and '{type(other)}'")
 
     def __eq__(self, other: 'Point'):
         return self._x == other.x and self._y == other.y
