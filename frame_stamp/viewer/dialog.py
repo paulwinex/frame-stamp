@@ -75,6 +75,11 @@ class TemplateViewer(QMainWindow):
         self.err = QTextBrowser()
         self.ly.addWidget(self.err)
         self.err.hide()
+        self.timeline = QSlider()
+        self.timeline.setOrientation(Qt.Horizontal)
+        self.ly.addWidget(self.timeline)
+        self.timeline.valueChanged.connect(self.update_image)
+        self.timeline.setMaximumWidth(250)
 
         self.watcher = TemplateFileWatch()
         self.watcher.changed.connect(self.on_template_changed)
@@ -133,6 +138,10 @@ class TemplateViewer(QMainWindow):
         )
         if template:
             variables = {**template.get('variables', {}), **viewer_variables}
+            timeline_data = variables.get('_timeline')
+            self.update_timeline(timeline_data)
+            if timeline_data:
+                variables['timeline_value'] = self.timeline.value()
             fs = FrameStamp(image, template, variables,
                             debug_shapes=self.dbg.isChecked())
             if not self.tmp_file:
@@ -141,6 +150,13 @@ class TemplateViewer(QMainWindow):
             return self.tmp_file
         else:
             return image
+
+    def update_timeline(self, value):
+        self.timeline.setVisible(bool(value))
+        if value:
+            self.timeline.blockSignals(True)
+            self.timeline.setRange(value.get('start', 0),  value.get('end', 100))
+            self.timeline.blockSignals(False)
 
     def get_dummy_image(self):
         p = QPixmap(1280, 720)
