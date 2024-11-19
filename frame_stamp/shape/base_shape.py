@@ -9,6 +9,7 @@ import logging
 
 from frame_stamp.utils import cached_result, geometry_math
 from frame_stamp.utils.point import Point
+from frame_stamp.utils.rect import Rect
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,6 @@ class AbstractShape(object):
         self._parent = None
         self._context = context
         self._local_context = kwargs.get('local_context') or {}
-        self._debug = bool(os.environ.get('DEBUG_SHAPES')) or self.variables.get('debug_shapes') or kwargs.get('debug_shapes')
         if 'parent' in shape_data:
             parent_name = shape_data['parent']
             if isinstance(parent_name, BaseShape):
@@ -351,101 +351,85 @@ class BaseShape(AbstractShape):
     default_width = 0
     default_height = 0
 
-    @property
-    @cached_result
-    def _debug_offset(self):
-        """Offset of parent outline relative to object outline"""
-        return self._eval_parameter('debug_offset', default=0)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._debug = bool(os.environ.get('DEBUG_SHAPES')) or kwargs.get('debug')
+        self._debug_variables = {}
 
     @property
     @cached_result
-    def _debug_color(self):
-        """Offset of parent outline relative to object outline"""
-        return self._eval_parameter('debug_color', default='yellow')
+    def debug_options(self):
+        debug_options = self.defaults.get('debug', None)
+        if not isinstance(debug_options, dict):
+            debug_options = {'enabled': bool(debug_options)}
+        variables_debug_options = self._eval_parameter('debug', default=None)
+        if variables_debug_options is not None:
+            assert isinstance(variables_debug_options, dict),  'Debug value must be a dict'
+            debug_options.update(variables_debug_options)
+        self_debug_options =  self._eval_parameter('debug', default=None)
+        if self_debug_options is not None:
+            assert isinstance(self_debug_options, dict),  'Debug value must be a dict'
+            debug_options.update(self_debug_options)
+        debug_options.setdefault('enabled', self._debug)
+        debug_options.setdefault('color', 'yellow')
+        debug_options.setdefault('width', 1)
+        debug_options.setdefault('offset', 0)
+        debug_options.setdefault('parent_border_color', 'red')
+        debug_options.setdefault('parent_border_width', 1)
+        debug_options.setdefault('parent_offset', 0)
+        debug_options.setdefault('rotation_pivot', False)
+        debug_options.setdefault('rotation_pivot_color', 'green')
+        debug_options.setdefault('rotation_pivot_size', self.point/2)
+        debug_options.setdefault('parent', False)
+        debug_options.setdefault('canvas_bound', False)
+        debug_options.setdefault('canvas_bound_color', 'blue')
+        debug_options.setdefault('canvas_bound_width', 1)
+        # print('\n', self, debug_options)
+        return debug_options
 
     @property
-    @cached_result
-    def _debug_width(self):
-        """Offset of parent outline relative to object outline"""
-        return self._eval_parameter('debug_width', default=1)
-
-    # @property
-    # @cached_result
-    # def _debug_shape_canvas(self):
-    #     """Offset of parent outline relative to object outline"""
-    #     return self._eval_parameter('debug_shape_canvas', default=False)
-
-    @property
-    @cached_result
-    def _debug_rotate_pivot(self):
-        """Offset of parent outline relative to object outline"""
-        return self._eval_parameter('debug_rotate_pivot', default=False)
-
-    @property
-    @cached_result
-    def _debug_rotate_pivot_color(self):
-        """Offset of parent outline relative to object outline"""
-        return self._eval_parameter('debug_rotate_pivot_color', default='red')
-
-    @property
-    @cached_result
-    def _debug_rotate_pivot_size(self):
-        """Offset of parent outline relative to object outline"""
-        return int(self._eval_parameter('debug_rotate_pivot_size', default=self.point/2))
-
+    def debug(self):
+        return self.debug_options['enabled']
 
     def _render_debug(self, canvas):
-        img = ImageDraw.Draw(canvas)
+        drw = ImageDraw.Draw(canvas)
         w, h = canvas.size
-        img.line([
-            (1+self._debug_offset, 1+self._debug_offset),
-            (w - 1-self._debug_offset, 1+self._debug_offset),
-            (w - 1-self._debug_offset, h - 1-self._debug_offset),
-            (1+self._debug_offset, h - 1-self._debug_offset),
-            (1+self._debug_offset, 1+self._debug_offset)
-        ], self._debug_color, self._debug_width)
+        zp = self._debug_variables.get('zero_point', Point(0, 0))
+        drw.line((
+            (*zp,),
+            (zp.x + self.width, zp.y),
+            (zp.x + self.width, zp.y + self.height),
+            (zp.x, zp.y + self.height),
+            (*zp,)
+        ), fill=self.debug_options['color'], width=self.debug_options['width'])
+        if self.debug_options.get('canvas_bound'):
+            drw.line([
+                (1+self.debug_options['offset'], 1+self.debug_options['offset']),
+                (w - 1-self.debug_options['offset'], 1+self.debug_options['offset']),
+                (w - 1-self.debug_options['offset'], h - 1-self.debug_options['offset']),
+                (1+self.debug_options['offset'], h - 1-self.debug_options['offset']),
+                (1+self.debug_options['offset'], 1+self.debug_options['offset'])
+            ], self.debug_options['canvas_bound_color'], self.debug_options['canvas_bound_width'])
+        return drw
 
     def _render_debug_pivot(self):
-        draw_size = self._debug_rotate_pivot_size
-        pivot_image = Image.new('RGBA', (draw_size, draw_size), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(pivot_image)
-        draw.ellipse(
-            (0, 0, draw_size, draw_size),
-            fill=self._debug_rotate_pivot_color,
-            outline=None,
-            width=1)
-        return pivot_image
+        draw_size = self.debug_options['rotation_pivot_size']
+        if draw_size:
+            pivot_image = Image.new('RGBA', (draw_size, draw_size), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(pivot_image)
+            draw.ellipse(
+                (0, 0, draw_size, draw_size),
+                fill=self.debug_options['rotation_pivot_color'],
+                outline=None,
+                width=1)
+            return pivot_image
 
-
-    # def ___render_debug(self, default_render, size):
-    #     overlay = self._get_canvas(size)
-    #     img = ImageDraw(overlay)
-    #     self_ofs = self._debug_self_offset
-    #     debug_border_color = self._data.get('debug_border_color', 'red')
-    #     if isinstance(debug_border_color, list):
-    #         debug_border_color = tuple(debug_border_color)
-    #     debug_border_width = self._data.get('debug_border_width', 1)
-    #     img.line([
-    #         (self.left + self_ofs, self.top + self_ofs),
-    #         (self.right - self_ofs, self.top + self_ofs),
-    #         (self.right - self_ofs, self.bottom - self_ofs),
-    #         (self.left + self_ofs, self.bottom - self_ofs),
-    #         (self.left + self_ofs, self.top + self_ofs)
-    #     ], debug_border_color, debug_border_width)
-    #
-    #     par_offset = self._debug_parent_offset
-    #     debug_parent_border_color = self._data.get('debug_parent_border_color', 'yellow')
-    #     if isinstance(debug_parent_border_color, list):
-    #         debug_parent_border_color = tuple(debug_parent_border_color)
-    #     debug_parent_border_width = self._data.get('debug_parent_border_width', 1)
-    #     img.line([
-    #         (self.parent.left + par_offset, self.parent.top + par_offset),
-    #         (self.parent.right - par_offset, self.parent.top + par_offset),
-    #         (self.parent.right - par_offset, self.parent.bottom - par_offset),
-    #         (self.parent.left + par_offset, self.parent.bottom - par_offset),
-    #         (self.parent.left + par_offset, self.parent.top + par_offset)
-    #     ], debug_parent_border_color, debug_parent_border_width)
-    #     return Image.alpha_composite(default_render, overlay)
+    def _render_debug_parent(self, size, shape_canvas, paste_pos, **kwargs):
+        canvas = self._get_canvas(size)
+        drw = ImageDraw.Draw(canvas)
+        rect = Rect(self.parent.x, self.parent.y, self.parent.width-1, self.parent.height-1)
+        drw.line(rect.line(), 'orange', 1)
+        return canvas, (0,0 )
 
     def _get_canvas(self, size):
         return Image.new('RGBA', size, (0, 0, 0, 0))
@@ -471,6 +455,7 @@ class BaseShape(AbstractShape):
             return self._get_canvas(size)
         # get current shape canvas size including rotation
         shape_canvas, canvas_size, center, zero_point = self._get_render_sized_canvas()
+        self._debug_variables['zero_point'] = zero_point
         # draw base shape
         shape_canvas = self.draw_shape(shape_canvas, canvas_size, center, zero_point) or shape_canvas
         if self.global_rotate:
@@ -484,15 +469,24 @@ class BaseShape(AbstractShape):
         paste_offset = self.center - self.rotation_transform(self.center)
         # move rotated shape
         paste_pos -= paste_offset
-        # DEBUG DRAW ##############################
-        if self._debug:
+        # self debug draw ##############################
+        if self.debug:
             self._render_debug(shape_canvas)
-        # return main image
-        yield shape_canvas, paste_pos.int()
 
-        if self._debug_rotate_pivot:
-            pivot_image = self._render_debug_pivot()
-            yield pivot_image, (pivot-(pivot_image.size[0]/2)).int()
+        # return main image ###########################
+        yield shape_canvas, paste_pos.int()
+        # #################
+
+        # external debug draw ##########################
+        if self.debug:
+            if self.debug_options['rotation_pivot']:
+                pivot_image = self._render_debug_pivot()
+                if pivot_image:
+                    yield pivot_image, (pivot-(pivot_image.size[0]/2)).int()
+            if self.debug_options['parent']:
+                parent_image, parent_paste_pos = self._render_debug_parent(size, shape_canvas, paste_pos, **kwargs)
+                if parent_image:
+                    yield parent_image, parent_paste_pos
 
     @property
     @cached_result

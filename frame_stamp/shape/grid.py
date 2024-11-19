@@ -87,6 +87,12 @@ class GridShape(BaseShape):
         return self._eval_parameter('columns', default='auto')
 
     @property
+    def rotate(self):
+        if super().rotate:
+            logger.warning('Grid shape does not support rotation')
+        return 0
+
+    @property
     @cached_result
     def columns_width(self):
         val = self._eval_parameter('columns_width', default=self.width, skip_type_convert=True)

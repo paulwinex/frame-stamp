@@ -337,18 +337,6 @@ class LabelShape(BaseShape):
         """
         return self._eval_parameter('font_name', default=None) or self._default_font_name
 
-    # @property
-    # @cached_result
-    # def default_font_name(self):
-    #     """
-    #     Путь или имя шрифта по умолчанию
-    #     """
-    #     default_name = self._eval_parameter('default_font_name', default=None) or self._default_font_name
-    #     df = self._eval_parameter('default_font', default=None)
-    #     if not df:
-    #         df = default_name
-    #     return df
-
     @property
     @cached_result
     def color(self):
@@ -461,12 +449,9 @@ class LabelShape(BaseShape):
         """
         Font size in pixels
         """
-        # общая высота текста без учета элементов под бейзлойном
         ascent, descent = self.font.getmetrics()
-        # text_height = ((self.get_font_metrics()['font_height']+self.spacing)
         text_height = ((ascent-descent+self.spacing)
                        * len(self.text.split('\n'))) - self.spacing
-        # общая ширина текста по самой длинной строке
         text_width = max([self.font.getbbox(text)[2] for text in self.text.split('\n')])
         return text_width, text_height
 
@@ -543,11 +528,11 @@ class LabelShape(BaseShape):
         )
         font_metrics = self.get_font_metrics()
         render_offset = Point(self.padding_left, -font_metrics['top_line']+self.padding_top)
-
         if is_multiline:
             text_args['spacing'] = self.spacing - self.get_font_metrics()['offset_y']
             if self.align_h:
                 text_args['align'] = self.align_h
+        # OUTLINE
         if self.outline:
             outline_text_args = text_args.copy()
             # update outline args
@@ -566,16 +551,9 @@ class LabelShape(BaseShape):
             drw = ImageDraw.Draw(shape_canvas)
             # recreate paint function
             printer = drw.multiline_text if is_multiline else drw.text
+        # TEXT
         printer((zero_point+render_offset).tuple, self.text, **text_args)
-        if self._debug:
-            drw.line((
-                (*zero_point,),
-                (zero_point.x+self.width, zero_point.y),
-                (zero_point.x+self.width, zero_point.y+self.height),
-                (zero_point.x, zero_point.y+self.height),
-                (*zero_point,)
-            ), fill='red', width=1)
-
+        # BACKDROP
         if self.backdrop:
             # create temporary canvas
             bg = Image.new('RGBA', shape_canvas.size, (0, 0, 0, 0))
