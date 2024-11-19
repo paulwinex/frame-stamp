@@ -1,12 +1,9 @@
 from __future__ import absolute_import
 
 from pathlib import Path
-
-from sphinx.directives import strip_backslash_re
-
 from .base_shape import BaseShape
 from PIL import ImageFont, ImageDraw, ImageFilter, Image
-import string, os, html, re
+import os, html, re
 import textwrap
 from frame_stamp.utils import cached_result
 import logging
