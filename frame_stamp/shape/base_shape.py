@@ -465,7 +465,7 @@ class BaseShape(AbstractShape):
         global_pos = Point(self.x, self.y)
         paste_pos = global_pos - zero_point
         # compute transformation offset for rotated shape
-        pivot = Point(self.rotate_pivot)
+        pivot = Point(self.rotation_pivot)
         paste_offset = self.center - self.rotation_transform(self.center)
         # move rotated shape
         paste_pos -= paste_offset
@@ -629,11 +629,11 @@ class BaseShape(AbstractShape):
 
     @property
     @cached_result
-    def rotate_pivot(self):
-        return Point(*self._eval_parameter('rotate_pivot', default=self.center))# + (self.parent.rotate_pivot if self.parent else 0)
+    def rotation_pivot(self):
+        return Point(*self._eval_parameter('rotation_pivot', default=self.center))# + (self.parent.rotation_pivot if self.parent else 0)
 
     def rotation_transform(self, point, ind=0):
-        point = Point(geometry_math.rotate_point_around_point(point, self.rotate_pivot, -self.rotate))
+        point = Point(geometry_math.rotate_point_around_point(point, self.rotation_pivot, -self.rotate))
         rotated_by_parents = self.parent.rotation_transform(point, ind+2)
         return rotated_by_parents
 
@@ -642,6 +642,8 @@ class BaseShape(AbstractShape):
     @cached_result
     def padding(self):
         param = self._eval_parameter('padding', default=(0, 0, 0, 0))
+        if isinstance(param, (int, float)):
+            param = (param, param, param, param)
         if not isinstance(param, (list, tuple)):
             raise TypeError('Padding parameter must be list or tuple')
         if len(param) != 4:

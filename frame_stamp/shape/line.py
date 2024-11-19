@@ -87,4 +87,4 @@ class LineShape(BaseShape):
                                  (x + self.thickness / 2) - 1, (y + self.thickness / 2) - 1), fill=self.color)
 
             # img.rectangle(((zero_point-PointInt(2,2)).tuple, (zero_point+PointInt(4,4)).tuple), fill=(0,0,255, 255))
-            # img.rectangle(((zero_point+PointInt(*self.rotate_pivot)-PointInt(3,3)).tuple, (zero_point+PointInt(*self.rotate_pivot)+PointInt(6,6)).tuple), fill=(0,255,255, 255))
+            # img.rectangle(((zero_point+PointInt(*self.rotation_pivot)-PointInt(3,3)).tuple, (zero_point+PointInt(*self.rotation_pivot)+PointInt(6,6)).tuple), fill=(0,255,255, 255))

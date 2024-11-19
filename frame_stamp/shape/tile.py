@@ -147,7 +147,7 @@ class TileShape(BaseShape):
         for i, tile in enumerate(coords):
             parent = EmptyShape({'x': tile[0], 'y': tile[1],
                                  'rotate': -self.grid_rotate,
-                                 'rotate_pivot': tile,
+                                 'rotation_pivot': tile,
                                  "pivot": self.pivot,
                                  "w": self.tile_width, "h": self.tile_height},
                                 self.context)
@@ -189,7 +189,7 @@ class TileShape(BaseShape):
     #     for i, tile in enumerate(coords):
     #         parent = EmptyShape({'x': tile[0], 'y': tile[1],
     #                              'rotate': -self.grid_rotate,
-    #                              'rotate_pivot': tile,
+    #                              'rotation_pivot': tile,
     #                              "pivot": self.pivot,
     #                              "w": self.tile_width, "h": self.tile_height},
     #                             self.context)
