@@ -637,7 +637,6 @@ class BaseShape(AbstractShape):
         rotated_by_parents = self.parent.rotation_transform(point, ind+2)
         return rotated_by_parents
 
-
     @property
     @cached_result
     def padding(self):
