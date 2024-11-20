@@ -109,15 +109,13 @@ class FrameStamp(object):
             self.set_source(input_image)
         if not self.source:
             raise RuntimeError('Source image not set')
-        # file format
         img_size = self.source.size
         for shape in self.get_shapes():     # type: BaseShape
             if shape.skip:
                 continue
-            # create a new blank sheet the size of the original
-            overlay = shape.render(img_size, **kwargs)
-            self._source = Image.alpha_composite(self.source, overlay)
-            del overlay
+            for overlay, pos in shape.render(img_size, **kwargs):
+                self._source.paste(overlay, tuple(pos), overlay)
+                del overlay
         if save_path:
             # save rendered file to RGB
             frmt = self._get_output_format(save_path)

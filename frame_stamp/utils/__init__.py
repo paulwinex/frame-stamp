@@ -1,4 +1,5 @@
 import os
+import traceback
 from functools import wraps
 import subprocess
 from pydoc import locate
@@ -16,14 +17,17 @@ def cached_result(func):
     def wrapped(*args, **kwargs):
         if USE_CACHE:
             inst = args[0]
+            cache_key = f'{func.__qualname__}'
             try:
-                result = getattr(inst, '__cache__')[func.__name__]
+                result = getattr(inst, '__cache__')[cache_key]
             except AttributeError:  # no cache
                 result = func(*args, **kwargs)
-                inst.__cache__ = {func.__name__: result}
+                if result is not None:
+                    inst.__cache__ = {cache_key: result}
             except KeyError:    # not saved yet
                 result = func(*args, **kwargs)
-                inst.__cache__[func.__name__] = result
+                if result is not None:
+                    inst.__cache__[cache_key] = result
         else:
             result = func(*args, **kwargs)
         return result

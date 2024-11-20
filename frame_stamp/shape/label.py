@@ -1,13 +1,15 @@
 from __future__ import absolute_import
 
 from pathlib import Path
-
 from .base_shape import BaseShape
 from PIL import ImageFont, ImageDraw, ImageFilter, Image
 import os, html, re
 import textwrap
 from frame_stamp.utils import cached_result
 import logging
+
+from ..utils.point import Point
+from ..utils.rect import Rect
 
 logger = logging.getLogger(__name__)
 
@@ -332,18 +334,6 @@ class LabelShape(BaseShape):
         """
         return self._eval_parameter('font_name', default=None) or self._default_font_name
 
-    # @property
-    # @cached_result
-    # def default_font_name(self):
-    #     """
-    #     Путь или имя шрифта по умолчанию
-    #     """
-    #     default_name = self._eval_parameter('default_font_name', default=None) or self._default_font_name
-    #     df = self._eval_parameter('default_font', default=None)
-    #     if not df:
-    #         df = default_name
-    #     return df
-
     @property
     @cached_result
     def color(self):
@@ -361,7 +351,14 @@ class LabelShape(BaseShape):
         """
         Add outline
         """
-        return self._eval_parameter('outline', default={})
+        value = self._eval_parameter('outline', default=None)
+        if value is None:
+            return
+        if isinstance(value, (int, float)):
+            value = {'width': value}
+        assert isinstance(value, dict), 'Outline parameter must be type of dict or number'
+        value.setdefault('width', 3)
+        return value
 
     @property
     @cached_result
@@ -369,7 +366,21 @@ class LabelShape(BaseShape):
         """
         Add backdrop
         """
-        return self._eval_parameter('backdrop', default=None)
+        backdrop = self._eval_parameter('backdrop', default=None)
+        if backdrop is None:
+            return
+        if isinstance(backdrop, (str, list)):
+            backdrop = {'color': backdrop}
+        elif isinstance(backdrop, int):
+            backdrop = {"offset": backdrop}
+        assert isinstance(backdrop, dict), f'Backdrop parameter must be type of dict or number, not {type(backdrop)}'
+        backdrop.setdefault('color', 'black')
+        backdrop.setdefault("offset", 5)
+        backdrop.setdefault('offset_left', backdrop['offset'])
+        backdrop.setdefault('offset_top', backdrop['offset'])
+        backdrop.setdefault('offset_right', backdrop['offset'])
+        backdrop.setdefault('offset_bottom', backdrop['offset'])
+        return backdrop
 
     @property
     @cached_result
@@ -435,20 +446,19 @@ class LabelShape(BaseShape):
         """
         Font size in pixels
         """
-        # общая высота текста без учета элементов под бейзлойном
-        text_height = ((self.get_font_metrics()['font_height']+self.spacing)
+        ascent, descent = self.font.getmetrics()
+        text_height = ((ascent-descent+self.spacing)
                        * len(self.text.split('\n'))) - self.spacing
-        # общая ширина текста по самой длинной строке
         text_width = max([self.font.getbbox(text)[2] for text in self.text.split('\n')])
         return text_width, text_height
 
     @property
     def width(self):
-        return self.get_size()[0]
+        return self.get_size()[0] + self.padding_left + self.padding_right
 
     @property
     def height(self):
-        return self.get_size()[1]
+        return self.get_size()[1] + self.padding_top + self.padding_bottom
 
     @property
     def y_draw(self):
@@ -485,66 +495,80 @@ class LabelShape(BaseShape):
             pass
         raise LookupError('Font "{}" not found'.format(font_name))
 
+    @cached_result
     def get_font_metrics(self):
         (_, font_height), (_, offset_y) = self.font.font.getsize('A')
+        ascent, descent = self.font.getmetrics()
         return dict(
             font_height=font_height,
-            offset_y=offset_y
+            offset_y=offset_y,
+            top_line=descent,
+            bottom_line=ascent
         )
 
-    def draw_shape(self, size, **kwargs):
-        canvas = self._get_canvas(size)
-        drw = ImageDraw.Draw(canvas)
+    def shape_canvas_offset(self):
+        ofs = max((self.padding_left, self.padding_top, self.padding_right, self.padding_bottom))*2
+        if self.outline:
+            ofs += self.outline.get('width', 3)*2
+        if self.backdrop:
+            offsets = [v*2 for k,v  in self.backdrop.items() if k.startswith('offset')]
+            ofs = max([ofs, max(offsets)])
+        return ofs*1.2
+
+    def draw_shape(self, shape_canvas, canvas_size, center, zero_point, **kwargs):
+        drw = ImageDraw.Draw(shape_canvas)
         is_multiline = '\n' in self.text
         printer = drw.multiline_text if is_multiline else drw.text
         text_args = dict(
             font=self.font,
             fill=self.color
         )
+        font_metrics = self.get_font_metrics()
+        render_offset = Point(self.padding_left, -font_metrics['top_line']+self.padding_top)
         if is_multiline:
             text_args['spacing'] = self.spacing - self.get_font_metrics()['offset_y']
             if self.align_h:
                 text_args['align'] = self.align_h
+        # OUTLINE
         if self.outline:
-            # получаем словарь с параметрами обводки
             outline_text_args = text_args.copy()
-            if isinstance(self.outline, (int, float)):
-                outline = {'width': self.outline}
-            elif isinstance(self.outline, dict):
-                outline = self.outline.copy()
-            else:
-                raise TypeError('Outline parameter must be type of dict or number')
-            # заменяем цвет в аргументах
-            outline_text_args['fill'] = outline.get('color', 'black')
+            # update outline args
+            outline_text_args['fill'] = self.outline.get('color', 'black')
             if isinstance(outline_text_args['fill'], list):
                 outline_text_args['fill'] = tuple(outline_text_args['fill'])
-            # рисуем черный текст
-            printer((self.x_draw, self.y_draw), self.text, **outline_text_args)
-            # размвка
-            canvas = canvas.filter(ImageFilter.GaussianBlur(outline.get('width', 3)))
-            # фильтр жёсткости границ
+            # draw outline text
+            printer((zero_point+render_offset).tuple, self.text, **outline_text_args)
+            # blur
+            shape_canvas = shape_canvas.filter(ImageFilter.GaussianBlur(self.outline.get('width', 3)))
+            # hard edges
             x = 0
-            y = outline.get('hardness', 10)
-            STROKE = type('STROKE', (ImageFilter.BuiltinFilter,),
-                          {'filterargs': ((3, 3), 1, 0, (x, x, x, x, y, x, x, x, x,))})
-            canvas = canvas.filter(STROKE)
-            drw = ImageDraw.Draw(canvas)
-            # пересоздаём паинтер
+            y = self.outline.get('hardness', 10)
+            STROKE = type('STROKE', (ImageFilter.BuiltinFilter,), {'filterargs': ((3, 3), 1, 0, (x, x, x, x, y, x, x, x, x,))})
+            shape_canvas = shape_canvas.filter(STROKE)
+            drw = ImageDraw.Draw(shape_canvas)
+            # recreate paint function
             printer = drw.multiline_text if is_multiline else drw.text
-        printer((self.x_draw, self.y_draw), self.text, **text_args)
+        # TEXT
+        printer((zero_point+render_offset).tuple, self.text, **text_args)
+        # BACKDROP
         if self.backdrop:
-            if isinstance(self.backdrop, str):
-                backdrop = {'color': self.backdrop, "offset": 5}
-            elif isinstance(self.backdrop, dict):
-                backdrop = self.backdrop.copy()
-            else:
-                raise TypeError('Outline parameter must be type of dict or number')
-            bd = self._get_canvas(size)
-            drw = ImageDraw.Draw(bd)
-            ofs = backdrop.get('offset', 5)
-            clr = backdrop.get('color', 'black')
-            if isinstance(clr, list):
-                clr = tuple(clr)
-            drw.rectangle((self.x - ofs, self.y - ofs, self.right + ofs, self.bottom + ofs), fill=clr)
-            canvas = Image.alpha_composite(bd, canvas)
-        return canvas
+            # create temporary canvas
+            bg = Image.new('RGBA', shape_canvas.size, (0, 0, 0, 0))
+            bg_draw = ImageDraw.Draw(bg)
+            # compute rect
+            backdrop_rect = Rect(
+                zero_point.x - (self.backdrop['offset_left']),
+                zero_point.y - self.backdrop['offset_top'],
+                self.width+self.backdrop['offset_left']+self.backdrop['offset_right'],
+                self.height+self.backdrop['offset_top']+self.backdrop['offset_bottom']
+            )
+            # get color
+            color = self.backdrop.get('color', 'black')
+            if isinstance(color, list):
+                color = tuple(color)
+            # draw backdrop
+            bg_draw.rectangle((backdrop_rect.top_left.tuple, backdrop_rect.bottom_right.tuple), fill=color)
+            # merge text and backdrop
+            shape_canvas = Image.alpha_composite(bg, shape_canvas)
+        return shape_canvas
+

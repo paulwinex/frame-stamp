@@ -5,9 +5,11 @@ from itertools import chain
 
 from .base_shape import BaseShape, EmptyShape
 from frame_stamp.utils.exceptions import PresetError
-from frame_stamp.utils import cached_result, rotate_point
+from frame_stamp.utils import cached_result, rotate_point, geometry_math
 from PIL import Image
 import logging
+
+from ..utils.point import Point
 
 logger = logging.getLogger(__name__)
 
@@ -35,17 +37,17 @@ class TileShape(BaseShape):
     @property
     @cached_result
     def grid_rotate(self):
-        return self._eval_parameter('grid_rotate', default=3)
+        return self._eval_parameter('grid_rotate', default=0)
 
     @property
     @cached_result
     def vertical_spacing(self):
-        return self._eval_parameter('vertical_spacing', default=None)
+        return self._eval_parameter('vertical_spacing', default=None) or self._eval_parameter('v_spacing', default=None)
 
     @property
     @cached_result
     def horizontal_spacing(self):
-        return self._eval_parameter('horizontal_spacing', default=None)
+        return self._eval_parameter('horizontal_spacing', default=None) or self._eval_parameter('h_spacing', default=None)
 
     @property
     @cached_result
@@ -120,17 +122,15 @@ class TileShape(BaseShape):
             raise StopIteration
         return cycle(self._shapes)
 
-
-    def draw_shape(self, size, **kwargs):
-        canvas: Image.Image = self._get_canvas(size)
+    def render(self, size, **kwargs):
         shapes = self.iter_shapes()
-        spacing = self.spacing
+        spacing = list(self.spacing)
         if self.horizontal_spacing is not None:
             spacing[0] = self.horizontal_spacing
         if self.vertical_spacing is not None:
             spacing[1] = self.vertical_spacing
-        coords = self.generate_coords(self.source_image.size, [self.tile_width, self.tile_height],
-                                      rotate=self.grid_rotate, pivot=self.pivot, spacing=self.spacing,
+        coords = self.generate_coords(self.parent.size, [self.tile_width, self.tile_height],
+                                      rotate=self.grid_rotate, pivot=self.pivot, spacing=spacing,
                                       rows_offset=self.row_offset,
                                       columns_offset=self.column_offset,
                                       max_rows=self.max_rows, max_columns=self.max_columns
@@ -145,7 +145,7 @@ class TileShape(BaseShape):
         for i, tile in enumerate(coords):
             parent = EmptyShape({'x': tile[0], 'y': tile[1],
                                  'rotate': -self.grid_rotate,
-                                 'rotate_pivot': tile,
+                                 'rotation_pivot': tile,
                                  "pivot": self.pivot,
                                  "w": self.tile_width, "h": self.tile_height},
                                 self.context)
@@ -156,14 +156,56 @@ class TileShape(BaseShape):
             sh.update_local_context(tile_index=index)
             bound = [sh.x0, sh.y0, sh.x1, sh.y1]
             if self.check_intersection(bound, main_rect):
-                overlay = sh.render(size)
-                canvas = Image.alpha_composite(canvas, overlay)
+                yield from sh.render(size)
                 drawing += 1
                 index += 1
             else:
                 skipped += 1
         logging.debug(f'Drawing: {drawing}, skipped: {skipped}')
-        return canvas
+
+    # def draw_shape(self, size, **kwargs):
+    #     canvas: Image.Image = self._get_canvas(size)
+    #     shapes = self.iter_shapes()
+    #     spacing = self.spacing
+    #     if self.horizontal_spacing is not None:
+    #         spacing[0] = self.horizontal_spacing
+    #     if self.vertical_spacing is not None:
+    #         spacing[1] = self.vertical_spacing
+    #     coords = self.generate_coords(self.source_image.size, [self.tile_width, self.tile_height],
+    #                                   rotate=self.grid_rotate, pivot=self.pivot, spacing=self.spacing,
+    #                                   rows_offset=self.row_offset,
+    #                                   columns_offset=self.column_offset,
+    #                                   max_rows=self.max_rows, max_columns=self.max_columns
+    #                                   )
+    #     main_rect = (0, 0, size[0], size[1])
+    #     drawing = skipped = 0
+    #     if self.random_order:
+    #         import random
+    #         random.seed(self.random_seed + len(coords))
+    #         random.shuffle(coords)
+    #     index = 0
+    #     for i, tile in enumerate(coords):
+    #         parent = EmptyShape({'x': tile[0], 'y': tile[1],
+    #                              'rotate': -self.grid_rotate,
+    #                              'rotation_pivot': tile,
+    #                              "pivot": self.pivot,
+    #                              "w": self.tile_width, "h": self.tile_height},
+    #                             self.context)
+    #
+    #         sh: BaseShape = next(shapes)
+    #         sh.clear_cache()
+    #         sh.set_parent(parent)
+    #         sh.update_local_context(tile_index=index)
+    #         bound = [sh.x0, sh.y0, sh.x1, sh.y1]
+    #         if self.check_intersection(bound, main_rect):
+    #             overlay = sh.render(size)
+    #             canvas = Image.alpha_composite(canvas, overlay)
+    #             drawing += 1
+    #             index += 1
+    #         else:
+    #             skipped += 1
+    #     logging.debug(f'Drawing: {drawing}, skipped: {skipped}')
+    #     return canvas
 
     def generate_coords(self, rect_size, tile_size,
                         rotate=0, pivot=None,
