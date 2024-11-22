@@ -450,6 +450,14 @@ class BaseShape(AbstractShape):
     def draw_shape(self, shape_canvas: Image.Image, canvas_size: tuple, center: Point, zero_point: Point, **kwargs):
         raise NotImplementedError
 
+    def _draw_gradient(self, image, gradient: dict):
+        from ..utils.image_tools import get_gradient_renderer, mix_alpha_channels
+
+        render = get_gradient_renderer(gradient['type'])
+        grad_img = render(size=image.size, **gradient)
+        mix_alpha_channels(image, grad_img)
+        image.alpha_composite(grad_img)
+
     def render(self, size, **kwargs):
         if not self.is_enabled():
             return self._get_canvas(size)
@@ -458,6 +466,11 @@ class BaseShape(AbstractShape):
         self._debug_variables['zero_point'] = zero_point
         # draw base shape
         shape_canvas = self.draw_shape(shape_canvas, canvas_size, center, zero_point) or shape_canvas
+        # gradient
+        if self.gradient:
+            for grad in self.gradient:
+                if grad['enabled']:
+                    self._draw_gradient(shape_canvas, grad)
         if self.global_rotate:
             # rotate around center
             shape_canvas = shape_canvas.rotate(self.global_rotate, expand=False, center=(*center,), resample=Image.BICUBIC)
@@ -676,6 +689,36 @@ class BaseShape(AbstractShape):
         if isinstance(clr, list):
             clr = tuple(clr)
         return clr
+
+    @property
+    @cached_result
+    def gradient(self) -> dict:
+        gradient = self._eval_parameter('gradient', default=None)
+        if gradient is None:
+            return None
+        if isinstance(gradient, dict):
+            gradient = [gradient]
+        if not isinstance(gradient, list):
+            raise TypeError('Gradient parameter must be dict, list of dict or None')
+        gradient_list = []
+        for grad in gradient:
+            if not isinstance(grad, dict):
+                raise TypeError('Gradient parameter must be dict, list of dict or None')
+            if grad.get('type') not in ('linear', 'radial'):
+                raise ValueError('Gradient type must be "linear" or "radial"')
+            grad.setdefault('enabled', True)
+            if grad.get('type') == 'linear':
+                grad.setdefault('point1', (0, 0))
+                grad.setdefault('point2', (0, 100))
+                grad.setdefault('color1', (255, 255, 255, 255))
+                grad.setdefault('color2', (0, 0, 0, 255))
+            else:
+                grad.setdefault('center', (50, 50))
+                grad.setdefault('radius', 50)
+                grad.setdefault('color1', (255, 255, 255, 255))
+                grad.setdefault('color2', (0, 0, 0, 255))
+            gradient_list.append(grad)
+        return gradient_list
 
     def get_resource_search_dirs(self):
         paths = self.variables.get('local_resource_paths') or []
