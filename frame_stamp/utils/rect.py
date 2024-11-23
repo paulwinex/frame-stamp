@@ -9,6 +9,14 @@ class Rect:
         self._height = height
 
     @property
+    def x(self):
+        return self._x
+
+    @property
+    def y(self):
+        return self._y
+
+    @property
     def top(self):
         return self._y
 
@@ -87,7 +95,7 @@ class Rect:
         return Point(mapped_x, mapped_y)
 
     def corners(self, as_tuple=True):
-        values = self.top_right.tuple, self.bottom_left.tuple
+        values = self.top_left, self.bottom_right
         if as_tuple:
             return tuple(x.tuple for x in values)
         return values
@@ -111,6 +119,13 @@ class Rect:
             self._width - left - right,
             self._height - top - bottom
         )
+
+    def pos(self):
+        return Point(self._x, self._y)
+
+    @property
+    def size(self):
+        return self._width, self._height
 
 
     def __str__(self):

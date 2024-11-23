@@ -2,8 +2,10 @@ from __future__ import absolute_import
 from .base_shape import BaseShape, EmptyShape
 from frame_stamp.utils.exceptions import PresetError
 from frame_stamp.utils import cached_result
-from PIL import Image
+from PIL import Image, ImageDraw
 import logging
+
+from ..utils.point import Point
 
 logger = logging.getLogger(__name__)
 
@@ -281,11 +283,42 @@ class GridShape(BaseShape):
     def get_cell_shapes(self):
         return self._shapes
 
+    @property
+    @cached_result
+    def border(self):
+        value = self._eval_parameter('border', default=None)
+        if value is None:
+            return {}
+        assert isinstance(value, dict), 'Border value must be a dict'
+        value.setdefault('enabled', True)
+        value.setdefault('width', 1)
+        value.setdefault('color', 'black')
+        if isinstance(value['color'], list):
+            value['color'] = tuple(value['color'])
+        return value
+
+    @property
+    @cached_result
+    def border_width(self):
+        return self._eval_parameter('border_width', default=0)
+
+    @property
+    @cached_result
+    def border_color(self):
+        return self._eval_parameter('border_color', default='black')
+
     def render(self, size, **kwargs):
+        from frame_stamp.utils.rect import Rect
+
         shapes = self.get_cell_shapes()
         if shapes:
             for shape in shapes:
                 yield from shape.render(size, **kwargs)
-        # if self._debug:
-        #     shape_canvas = self._get_canvas((self.width, self.height))
-        #     self._render_debug(shape_canvas)
+        if self.border.get('enabled'):
+            # todo: generate to lines instead parent borders
+            for shape in shapes:
+                border_rect = Rect(0, 0, shape.parent.width, shape.parent.height)
+                canvas = self._get_canvas(border_rect.size)
+                drw = ImageDraw.Draw(canvas)
+                drw.line(border_rect.line(), fill=self.border['color'], width=self.border['width'])
+                yield canvas, shape.pos
