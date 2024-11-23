@@ -70,16 +70,33 @@ def get_gradient_renderer(gradient_type):
 
 
 def mix_alpha_channels(img1, img2):
-    if img1.mode != 'RGBA':
-        img1 = img1.convert('RGBA')
+    """
+    Mix alpha img1 > img2
+    img2 will be changed
+    """
+    if img1.mode == 'L':
+        alpha = img1
+    elif img1.mode == 'RGB':
+        alpha = img1.convert('RGBA').split()[3]
+    elif img1.mode == 'RGBA':
+        alpha = img1.split()[3]
+    else:
+        raise ValueError('Image mode must be "L" or "RGB" or "RGBA"')
+
     if img2.mode != 'RGBA':
         img2 = img2.convert('RGBA')
+
     width, height = img2.size
-    for x in range(width):
-        for y in range(height):
-            pixel1 = img1.getpixel((x, y))
-            pixel2 = img2.getpixel((x, y))
-            alpha1 = pixel1[3] / 255
+    alpha_data = alpha.load()
+    img2_data = img2.load()
+    import time
+    st = time.time()
+    for y in range(height):
+        for x in range(width):
+            pixel1 = alpha_data[x, y]
+            pixel2 = img2_data[x, y]
+            alpha1 = pixel1 / 255
             alpha2 = pixel2[3] / 255
             new_alpha = int(alpha1 * alpha2 * 255)
-            img2.putpixel((x, y), (pixel2[0], pixel2[1], pixel2[2], new_alpha))
+            img2_data[x, y] = (pixel2[0], pixel2[1], pixel2[2], new_alpha)
+    print(time.time() - st)
