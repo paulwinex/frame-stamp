@@ -384,7 +384,6 @@ class BaseShape(AbstractShape):
         debug_options.setdefault('canvas_bound', False)
         debug_options.setdefault('canvas_bound_color', 'blue')
         debug_options.setdefault('canvas_bound_width', 1)
-        # print('\n', self, debug_options)
         return debug_options
 
     @property
