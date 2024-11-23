@@ -452,11 +452,19 @@ class BaseShape(AbstractShape):
 
     def _draw_gradient(self, image, gradient: dict):
         from ..utils.image_tools import get_gradient_renderer, mix_alpha_channels
-
+        # todo: need to optimize!
         render = get_gradient_renderer(gradient['type'])
-        grad_img = render(size=image.size, **gradient)
-        mix_alpha_channels(image, grad_img)
-        image.alpha_composite(grad_img)
+        grad_img = render(size=(self.width, self.height), **gradient)
+        grad_canvas = Image.new('RGBA', image.size)
+        grad_canvas.paste(grad_img, self._debug_variables['zero_point'].int().tuple)
+        if gradient.get('use_gradient_alpha'):
+            # copy alpha
+            grad_alpha = grad_canvas.split()[-1].copy()
+        mix_alpha_channels(image, grad_canvas)
+        if gradient.get('use_gradient_alpha'):
+            # apply copied alpha
+            mix_alpha_channels(grad_alpha, image)
+        image.alpha_composite(grad_canvas)
 
     def render(self, size, **kwargs):
         if not self.is_enabled():
@@ -707,6 +715,7 @@ class BaseShape(AbstractShape):
             if grad.get('type') not in ('linear', 'radial'):
                 raise ValueError('Gradient type must be "linear" or "radial"')
             grad.setdefault('enabled', True)
+            grad.setdefault('use_gradient_alpha', False)
             if grad.get('type') == 'linear':
                 grad.setdefault('point1', (0, 0))
                 grad.setdefault('point2', (0, 100))
