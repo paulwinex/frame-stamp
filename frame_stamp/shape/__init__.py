@@ -7,6 +7,7 @@ from .base_shape import BaseShape
 from .rect import RectShape
 from .circle import CircleShape
 from .line import LineShape
+from .polygon import PolygonShape
 from .image import ImageShape
 from .label import LabelShape
 from .grid import GridShape
