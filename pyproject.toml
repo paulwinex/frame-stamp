@@ -6,9 +6,9 @@ authors = ["paulwinex <paulwinex@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
-pillow = "10.1.0"
+python = ">=3.9,<3.13"
 pyside6 = { version = "^6.6.2", optional = true }
+pillow = "10.1.0"
 
 
 [tool.poetry.extras]
