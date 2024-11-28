@@ -48,6 +48,10 @@ class Rect:
     def bottom_right(self):
         return Point(self._x + self._width, self._y + self._height)
 
+    @property
+    def center(self):
+        return Point(self._x+self._width/2, self._y+self._height/2)
+
     def intersected(self, other: 'Rect'):
         """
         Проверяет, пересекаются ли два прямоугольника.
@@ -100,7 +104,7 @@ class Rect:
             return tuple(x.tuple for x in values)
         return values
 
-    def point(self, as_tuple=True):
+    def points(self, as_tuple=True):
         values = self.top_left, self.top_right, self.bottom_right, self.bottom_left
         if as_tuple:
             return tuple(x.tuple for x in values)
@@ -132,3 +136,9 @@ class Rect:
         return f"Rect({self._x}, {self._y}, {self._width}, {self._height})"
 
     __repr__ = __str__
+
+    def rotate(self, angle: float, pivot: Point):
+        from .geometry_math import rotate_point_around_point
+
+        for pt in self.points():
+            yield rotate_point_around_point(pt, pivot, angle)

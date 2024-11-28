@@ -89,8 +89,6 @@ def mix_alpha_channels(img1, img2):
     width, height = img2.size
     alpha_data = alpha.load()
     img2_data = img2.load()
-    import time
-    st = time.time()
     for y in range(height):
         for x in range(width):
             pixel1 = alpha_data[x, y]
@@ -99,4 +97,3 @@ def mix_alpha_channels(img1, img2):
             alpha2 = pixel2[3] / 255
             new_alpha = int(alpha1 * alpha2 * 255)
             img2_data[x, y] = (pixel2[0], pixel2[1], pixel2[2], new_alpha)
-    print(time.time() - st)

@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 from . import LineShape
-from .base_shape import BaseShape
 from PIL import ImageDraw
 from frame_stamp.utils import cached_result
 from ..utils.point import Point, PointInt

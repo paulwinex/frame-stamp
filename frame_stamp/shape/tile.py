@@ -5,8 +5,7 @@ from itertools import chain
 
 from .base_shape import BaseShape, EmptyShape
 from frame_stamp.utils.exceptions import PresetError
-from frame_stamp.utils import cached_result, rotate_point, geometry_math
-from PIL import Image
+from frame_stamp.utils import cached_result, rotate_point
 import logging
 
 from ..utils.point import Point

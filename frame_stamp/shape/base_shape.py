@@ -2,12 +2,11 @@ import math
 import re, os
 import string
 import random
-import traceback
 
 from PIL import Image, ImageDraw
 import logging
 
-from frame_stamp.utils import cached_result, geometry_math
+from frame_stamp.utils import cached_result, geometry_tools
 from frame_stamp.utils.point import Point
 from frame_stamp.utils.rect import Rect
 
@@ -394,13 +393,16 @@ class BaseShape(AbstractShape):
         drw = ImageDraw.Draw(canvas)
         w, h = canvas.size
         zp = self._debug_variables.get('zero_point', Point(0, 0))
-        drw.line((
-            (*zp,),
-            (zp.x + self.width, zp.y),
-            (zp.x + self.width, zp.y + self.height),
-            (zp.x, zp.y + self.height),
-            (*zp,)
-        ), fill=self.debug_options['color'], width=self.debug_options['width'])
+        debug_rect = Rect(zp.x, zp.y, self.width, self.height)
+        # points = (
+        #     (*zp,),
+        #     (zp.x + self.width, zp.y),
+        #     (zp.x + self.width, zp.y + self.height),
+        #     (zp.x, zp.y + self.height),
+        #     (*zp,)
+        # )
+        points = [geometry_tools.rotate_point_around_point(pt, debug_rect.center, -self.global_rotate) for pt in debug_rect.line(as_tuple=True)]
+        drw.line(points, fill=self.debug_options['color'], width=self.debug_options['width'])
         if self.debug_options.get('canvas_bound'):
             drw.line([
                 (1+self.debug_options['offset'], 1+self.debug_options['offset']),
@@ -432,6 +434,18 @@ class BaseShape(AbstractShape):
 
     def _get_canvas(self, size):
         return Image.new('RGBA', size, (0, 0, 0, 0))
+
+    @property
+    def raw_rect(self):
+        return Rect(self.x,self.y, self.width, self.height)
+
+    @property
+    def raw_bound(self):
+        return self.raw_rect.points()
+
+    @property
+    def rotated_rect(self):
+        return self.raw_rect.rotate(self.global_rotate, self.raw_rect.center)
 
     def _get_render_sized_canvas(self):
         side_size = int(self._compute_maximum_distance_from_center() * 2.2) + int(self.shape_canvas_offset()+2)
@@ -653,7 +667,7 @@ class BaseShape(AbstractShape):
         return Point(*self._eval_parameter('rotation_pivot', default=self.center))# + (self.parent.rotation_pivot if self.parent else 0)
 
     def rotation_transform(self, point, ind=0):
-        point = Point(geometry_math.rotate_point_around_point(point, self.rotation_pivot, -self.rotate))
+        point = Point(geometry_tools.rotate_point_around_point(point, self.rotation_pivot, -self.rotate))
         rotated_by_parents = self.parent.rotation_transform(point, ind+2)
         return rotated_by_parents
 
