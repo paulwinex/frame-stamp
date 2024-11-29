@@ -33,8 +33,8 @@ class ImageShape(BaseShape):
         Image.Image
         """
         from ..utils import b64
-        if value == '$source':  # исходная картинка кадра, не путать с source самой шейпы
-            # возвращаем исходник кадра
+        if value == '$source':  # source image of the frame, not to be confused with the source of the shape itself
+            # return source frame image
             return self.source_image.copy()
         elif b64.is_b64(value):
             return b64.b64_str_to_image(value)
@@ -134,7 +134,7 @@ class ImageShape(BaseShape):
 
     def apply_mask(self, img, mask, transparency=0):
         # get source
-        if not Image.isImageType(img):
+        if not isinstance(img, Image.Image):
             img = Image.open(img).convert('RGBA')
         else:
             img = img.convert('RGBA')

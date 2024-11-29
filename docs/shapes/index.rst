@@ -66,6 +66,7 @@
    label
    image
    line
+   tile
    grid
    row
    column

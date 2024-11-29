@@ -1,15 +1,18 @@
 [tool.poetry]
 name = "frame-stamp"
-version = "0.1.1"
+version = "0.1.5"
 description = "Adding technical information to images using a template."
 authors = ["paulwinex <paulwinex@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
-pyside6 = "^6.6.2"
-pillow = "^10.2.0"
+python = "^3.9"
+pillow = "10.1.0"
+pyside6 = { version = "^6.6.2", optional = true }
 
+
+[tool.poetry.extras]
+pyside = ["pyside6"]
 
 [tool.poetry.group.dev.dependencies]
 sphinx = "^7.2.6"
