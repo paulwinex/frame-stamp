@@ -24,7 +24,7 @@
       		"w": "=($source_width*0.8)*($frame/$total_frames)", "h": "8u"
       	},
       	{
-      		"type": "line", "thickness": 10, "color": "orange",
+      		"type": "line", "thickness": "1p", "color": "orange",
       		"points": [
       			["=$source_width*0.1", "90u"],
       			["=$source_width*0.9", "90u"],
