@@ -46,6 +46,7 @@ class TemplateViewer(QMainWindow):
         file_mn.addAction(QAction('Open Current Template', file_mn, triggered=self.open_template))
         file_mn.addSeparator()
         file_mn.addAction(QAction('Load Background...', file_mn, triggered=self.browse_image))
+        file_mn.addAction(QAction('Create Debug Background...', file_mn, triggered=self.create_grid))
         file_mn.addAction(QAction('Save Image As...', file_mn, triggered=self.save_image))
         file_mn.addSeparator()
         file_mn.addAction(QAction('Reset', file_mn, triggered=self.reset))
@@ -281,6 +282,12 @@ class TemplateViewer(QMainWindow):
         path, _ = QFileDialog.getOpenFileName(self, 'Select Image', os.path.expanduser('~'), filter='Images (*.png *.jpg)')
         if path:
             self.set_image(path)
+
+    def create_grid(self):
+        from frame_stamp.viewer.create_grid_dialog import CreateGridDialog
+        dialog = CreateGridDialog(self)
+        if dialog.exec():
+            self.set_image(dialog.path)
 
     def browse_template(self):
         path, _ = QFileDialog.getOpenFileName(self, 'Select Template', os.path.expanduser('~'), filter='JSON (*.json)')
