@@ -246,7 +246,7 @@ class LabelShape(BaseShape):
     @cached_result
     def font_size(self) -> int:
         """Font size"""
-        size = self._eval_parameter('font_size')  # type: int
+        size = self._eval_parameter('font_size', default=self.point*4)  # type: int
         if size == 0:
             raise ValueError('Font size can`t be zero. Shape "{}"'.format(self))
         return max(1, int(size))
@@ -340,7 +340,7 @@ class LabelShape(BaseShape):
         """
         Font color
         """
-        clr = self._eval_parameter('text_color')
+        clr = self._eval_parameter('text_color', default='white')
         if isinstance(clr, list):
             clr = tuple(clr)
         return clr
