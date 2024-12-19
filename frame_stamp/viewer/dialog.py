@@ -11,7 +11,7 @@ from pathlib import Path
 
 class TemplateViewer(QMainWindow):
     state_file = Path('~/.template_viewer.json').expanduser()
-    help_url = 'http://TODO'
+    help_url = 'https://github.com/paulwinex/frame-stamp'
 
     def __init__(self):
         super(TemplateViewer, self).__init__()
