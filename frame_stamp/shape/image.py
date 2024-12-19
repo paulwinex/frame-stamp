@@ -21,6 +21,7 @@ class ImageShape(BaseShape):
     """
     shape_name = 'image'
 
+    @cached_result
     def _get_image(self, value):
         """
         Чтение файла с диска
@@ -34,16 +35,24 @@ class ImageShape(BaseShape):
         Image.Image
         """
         from ..utils import b64
-        if value == '$source':  # source image of the frame, not to be confused with the source of the shape itself
+        # source image of the frame, not to be confused with the source of the shape itself
+        if value == '$source':
             # return source frame image
             return self.source_image_raw.copy()
+        # is base64
         elif b64.is_b64(value):
-            return b64.b64_str_to_image(value)
+            return b64.b64_to_file(value)
         # looking for file
         res = self.get_resource_file(value)
         if not os.path.exists(res):
             raise IOError(f'Path not exists: ({value}) {res}')
         if res:
+            if res.lower().endswith('.svg'):
+                from ..utils.render_svg import render
+
+                w = super().width or None
+                h = super().height or None
+                return render(res, (w, h))
             return Image.open(str(res))
         raise IOError(f'Path not exists: ({value}) {res}')
 

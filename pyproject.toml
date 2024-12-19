@@ -9,6 +9,7 @@ readme = "README.md"
 python = ">=3.9,<3.13"
 pyside6 = { version = "^6.6.2", optional = true }
 pillow = "10.1.0"
+cairosvg = "^2.7.1"
 
 
 [tool.poetry.extras]
