@@ -26,6 +26,8 @@ class FrameStamp(object):
         self._shared_context = dict(
             variables=self.variables,           # variables for rendering
             source_image=self._source,          # source image. For getting original size and other parameters
+            source_image_raw=self._source,              # source image raw data
+            source_image_path=None,             # source image path
             defaults=self.defaults,             # default values from template
             scope=self._scope,                  # list of all available shapes. Needed for queries from other shapes
             add_shape=self._add_shape_to_scope  # reference to function to add shapes, needed for combined shapes
@@ -95,8 +97,10 @@ class FrameStamp(object):
     def set_source(self, input_image):
         if Image.isImageType(input_image):
             self._source = input_image.convert('RGBA')  # type: Image.Image
+            self._shared_context['source_image_raw'] = input_image.convert('RGBA')
         elif isinstance(input_image, (str, Path)):
             self._source = Image.open(input_image).convert('RGB').convert('RGBA')  # type: Image.Image
+            self._shared_context['source_image_raw'] = Image.open(input_image).convert('RGB').convert('RGBA')
         else:
             raise TypeError('Source image must be string or PIL.Image')
         self._shared_context['source_image'] = self._source

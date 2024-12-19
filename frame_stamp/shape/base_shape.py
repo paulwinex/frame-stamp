@@ -128,6 +128,10 @@ class AbstractShape(object):
     def source_image(self):
         return self.context['source_image']
 
+    @property
+    def source_image_raw(self):
+        return self.context['source_image_raw']
+
     def add_shape(self, shape):
         return self.context['add_shape'](shape)
 
@@ -193,7 +197,10 @@ class AbstractShape(object):
                      self._eval_from_scope,             # data from another shape
                      self._eval_from_variables,         # data from template variables or from defaults
                      self._eval_expression]:            # execution of express
-            res = func(key, val, **kwargs)
+            try:
+                res = func(key, val, **kwargs)
+            except KeyError:
+                continue
             if res is not None:
                 return res
         return val

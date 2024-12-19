@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import os.path
 import re
 from PIL import Image, ImageChops, ImageOps
 from .base_shape import BaseShape
@@ -35,21 +36,23 @@ class ImageShape(BaseShape):
         from ..utils import b64
         if value == '$source':  # source image of the frame, not to be confused with the source of the shape itself
             # return source frame image
-            return self.source_image.copy()
+            return self.source_image_raw.copy()
         elif b64.is_b64(value):
             return b64.b64_str_to_image(value)
         # looking for file
         res = self.get_resource_file(value)
+        if not os.path.exists(res):
+            raise IOError(f'Path not exists: ({value}) {res}')
         if res:
             return Image.open(str(res))
         raise IOError(f'Path not exists: ({value}) {res}')
 
     @property
     def source(self):
-        # source = self._data.get('source')
         source = self._eval_parameter('source')
         if not source:
             raise RuntimeError('Image source not set')
+        source = os.path.expandvars(source)
         img = self._get_image(source)
         # apply mask and transparency
         img = self.apply_mask(img, self.mask, self.transparency)
