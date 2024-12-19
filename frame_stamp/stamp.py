@@ -117,9 +117,13 @@ class FrameStamp(object):
         for shape in self.get_shapes():     # type: BaseShape
             if shape.skip:
                 continue
-            for overlay, pos in shape.render(img_size, **kwargs):
-                self._source.paste(overlay, tuple(pos), overlay)
-                del overlay
+            try:
+                for overlay, pos in shape.render(img_size, **kwargs):
+                    self._source.paste(overlay, tuple(pos), overlay)
+                    del overlay
+            except Exception as e:
+                logger.error('Error rendering shape %s: %s', shape, e)
+                raise
         if save_path:
             # save rendered file to RGB
             frmt = self._get_output_format(save_path)
