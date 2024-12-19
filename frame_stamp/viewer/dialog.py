@@ -18,10 +18,6 @@ class TemplateViewer(QMainWindow):
         self.setWindowTitle('Template Viewer')
         self.setAcceptDrops(True)
 
-        # from py_console import console
-        # self.c = console.Console(self)
-        # self.c.show()
-
         self.template_file: Path = None
         self.template_name: str = None
         self.image = None
@@ -119,9 +115,9 @@ class TemplateViewer(QMainWindow):
             self.set_error(traceback.format_exc())
         self._update_started = False
 
-    def get_current_template(self) -> dict:
+    def get_current_template(self, **kwargs) -> dict:
         if self.template_file and self.template_file.exists():
-            templates = jsonc.load(self.template_file.open(encoding='utf-8'))
+            templates = self.read_template_file(self.template_file, **kwargs)
             try:
                 template = self.get_template_from_data(templates, self.template_name)
             except Exception as e:
@@ -132,8 +128,8 @@ class TemplateViewer(QMainWindow):
         return template
 
     def render_template(self):
-        template = self.get_current_template()
         image = self.image or self.get_dummy_image()
+        template = self.get_current_template()
         viewer_variables = dict(
             # todo: custom variables from GUI
         )
@@ -173,12 +169,29 @@ class TemplateViewer(QMainWindow):
             self.clear_timer.stop()
         self.clear_timer.start(timeout * 1000)
 
+    def read_template_file(self, path: Path, **kwargs):
+        if not path.exists():
+            raise FileNotFoundError(path)
+        if path.suffix == '.json':
+            return jsonc.load(path.open(encoding='utf-8'))
+        elif path.suffix in ('.yml', '.yaml'):
+            try:
+                import yaml
+                return yaml.safe_load(path.open(encoding='utf-8'))
+            except ImportError:
+                raise RuntimeError('PyYAML package not installed')
+        elif path.suffix == '.py':
+            from frame_stamp.utils import pytemplate
+            return pytemplate.import_py_template(path, **kwargs)
+        else:
+            raise RuntimeError('Unknown template file format: {}'.format(path))
+
     def set_template_file(self, path: str, template_name: str = None):
         path = Path(path)
         if not path.exists():
             return
         self.template_file = path
-        data: dict = jsonc.load(path.open())
+        data: dict = self.read_template_file(path)
         template = self.get_template_from_data(data, template_name)
         if not template:
             raise Exception('Template not set')
@@ -250,7 +263,7 @@ class TemplateViewer(QMainWindow):
 
     def on_file_dropped(self, path):
         self.set_no_error()
-        if Path(path).suffix == '.json':
+        if Path(path).suffix in ('.json', '.yml', '.yaml', '.py'):
             self.set_template_file(path)
             return True
         elif Path(path).suffix in ['.jpg', '.png']:
