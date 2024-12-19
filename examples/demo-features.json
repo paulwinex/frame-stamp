@@ -1,0 +1,153 @@
+{"templates":[
+  {
+    "defaults": {
+        "font_size": "2.7u",
+        "logo_img": "base64::MOOOV_logo.png::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",
+        "label_font_size": "2.5p",
+        "panel_color": [0,0,0,0],
+        "label_color": [255,255,255,200],
+        "text_color": [255,255,255,255],
+        "text_spacing": 10,
+        "text_padding": "5u",
+        "backdrop_offset": 3,
+        "backdrop_color": [0,0,0,64],
+
+        "debug": {"enabled": 1, "color":  "yellow", "canvas_bound": 1, "canvas_bound_color": "red",
+        "parent": true}
+      },
+      "variables": {
+        "image": "/home/paul/Desktop/tests/images/download.jpeg",
+        "_timeline": {"start": 0, "end": 180}
+      },
+      "shapes": [
+        {
+          "type": "grid", "w": "parent.w", "h": "=parent.h/6", "columns": 9, 
+          "id": "grid1",
+          "shapes":[
+            {
+              "type": "label", "text": "top",
+              "align_v": "top", "align_h": "center",
+              "font_size": "$label_font_size"
+            },
+            {
+              "type": "label", "text": "left", "font_size": "$label_font_size",
+              "align_v": "center", "align_h": "left"
+            },
+            {
+              "type": "label", "text": "bottom", "font_size": "$label_font_size",
+              "align_v": "bottom", "align_h": "center"
+            },
+            {
+              "type": "label", "text": "right", "font_size": "$label_font_size",
+              "align_v": "center", "align_h": "right"
+            },
+            
+            {
+              "type": "label", "text": "left-top", "font_size": "$label_font_size",
+              "align_v": "top", "align_h": "left"
+            },
+            {
+              "type": "label", "text": "right-top", "font_size": "$label_font_size",
+              "align_v": "top", "align_h": "right"
+            },
+            {
+              "type": "label", "text": "left-bot", "font_size": "$label_font_size",
+              "align_v": "bottom", "align_h": "left"
+            },
+            {
+              "type": "label", "text": "right-bot", "font_size": "$label_font_size",
+              "align_v": "bottom", "align_h": "right"
+            },
+            {
+              "type": "label", "text": "center", "font_size": "$label_font_size",
+              "align_v": "center", "align_h": "center"
+            } 
+          ]
+        },
+        {
+          "type": "rect", "id": "panel",
+          "w": "=parent.w*0.8", "h": "7p",
+          "align_h": "center", "y": "=grid1.h+1p",
+          "color": [0,0,0,100]
+        },
+        {
+          "type": "grid", "columns": 4, "parent": "panel",
+          "w": "parent.w", "h": "parent.h",
+          "shapes": [
+            {
+              "type": "label", "text": "Project:",
+              "align_v": "center", "align_h": "right",
+              "padding_right": "1p"
+            },
+            {
+              "type": "label", "text": "PROJECT NAME",
+              "align_v": "center", "align_h": "left",
+              "padding_left": "1p"
+            },
+            {
+              "type": "label", "text": "Asset:",
+              "align_v": "center", "align_h": "right",
+              "padding_right": "1p"
+            },
+            {
+              "type": "label", "text": "CAT",
+              "align_v": "center", "align_h": "left",
+              "padding_left": "1p"
+            }
+            
+          ]
+        },
+
+        {
+          "type": "label", "text": "DEMOREEL",
+          "font_size": "10p", "align_v": "center", "align_h": "center",
+          "text_color": [0,0,0,0], "outline": {"width": 2, "hardness": 10, "color": [0, 255, 0, 255]},
+          "rotate": "`=math.sin($timeline_value*0.05)*40`", "id": "demo"
+        },
+        {
+          "type": "line", "parent": "demo",
+          "y": "=parent.h*1.1",
+          "points":[
+            [0, 0],
+            ["parent.w",0]
+          ],
+          "color": [0, 255, 0, 255]
+        },
+        {
+          "type": "rect", "w": 50, "h": 10, "parent": "demo", "id": "box2",
+          "y": 100, "color": "red",
+          "x": "`=(math.sin($timeline_value*0.1)*parent.w)/2 + parent.w*0.4 + self.w/2`"
+        },
+      
+        {
+          "type": "rect", "id": "box1", "rotation_pivot": ["=self.x+(self.w/2)", "self.y"],
+          "w": 10, "h": 100, "rotate": "`=math.sin($timeline_value*0.1)*40`",
+          "x": "=parent.w*0.9", "y": 500,
+          "color": "blue"
+        },
+        {
+          "type": "rect", "w": 20, "h": 20, "parent": "box1",
+          "x": -5, "y": "parent.h"
+        },
+   
+        {
+          "type": "circle", "w": 100, "h": 100, "id": "circ",
+          "color": "white", "outline": {"color": "red", "width": 3},
+          "y": "=parent.h-self.h", 
+          "rotate": "`=-math.degrees(($timeline_value*4) / self.radius)`",
+          "x": "=$timeline_value*4"
+        },
+        {
+          "type": "label", "text": "GO>", "text_color": "red", "parent": "circ", "font_size": "4p",
+          "align_v": "center", "align_h": "center"
+        },
+        {
+          "type": "label", "text": ">", "text_color": "orange", "font_size": "8p",
+          "x": "=circ.x+circ.w+self.w/4", "align_v": "bottom"
+          , "y": "=-circ.w/2+(self.w/2)"
+        }
+        
+      ]
+}
+
+]}

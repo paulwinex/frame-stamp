@@ -1,0 +1,56 @@
+{"templates":[
+{
+  "name": "default_slate",
+  "variables": {
+    "backdrop_color": [40, 40, 40, 255],
+    "logo_img": "${PWD}/examples/images/logo-example.png",
+    "cat_img": "${PWD}/examples/images/cat.jpg"
+
+  },
+  "defaults": {
+    "font_size": "3.5u",
+    "text_color": "lightgray",
+    "color": [0, 0, 0, 150]
+  },
+  "shapes": [
+    // simple JPG image
+    {
+      "type": "image",
+      "source": "$cat_img",
+      "id": "cat1",
+      "w": "35p",
+      "x": "50", "y": "50"
+    },
+    {
+      "type": "image",
+      "source": "$cat_img",
+      "parent": "cat1",
+      "w": "10p",
+      "x": "=(self.w-self.h)*-0.5", "y": "=parent.h+(self.w-self.h)/2",
+      "rotate": 90
+    },
+
+    // PNG with transparency
+    {
+      "type": "image",
+      "source": "$logo_img",
+      "w": "20p",
+      "x": "=parent.width-self.width-2p", "y": "2p"
+    },
+    // using source image
+    {
+      "type": "rect",
+      "w": "=parent.w*0.3", "h": "=parent.h*0.3",
+      "align_h": "center", "align_v": "center",
+      "id": "backdrop"
+    },
+    {
+      "type": "image",
+      "parent": "backdrop",
+      "source": "$source",
+      "w": "=parent.w*0.9",
+      "align_h": "center", "align_v": "center"
+    }
+  ]
+}
+]}
