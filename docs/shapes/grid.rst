@@ -38,10 +38,29 @@ columns_width
       }
 	}
 
+border
+    Обводка ячеек таблицы. Параметр должен быть словрём. Все допустимые параметры приведены ниже. Уточняющие параметры офсета оверрайдят общий параметр  `offset`
+
+
+.. code-block:: json
+
+  {
+  "border": {
+      "enabled": true,
+      "color": "blue",
+      "width": 2,
+      "offset":0
+      "offset_top": 10,
+      "offset_bottom": 10,
+      "offset_left": 10,
+      "offset_right": 10,
+  }
+
+
 Поля
 ====
 
-index
+cell_index
     Порядковый номер ячейки
 
 row
