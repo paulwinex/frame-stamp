@@ -315,7 +315,6 @@ class GridShape(BaseShape):
             for shape in shapes:
                 yield from shape.render(size, **kwargs)
         if self.border.get('enabled'):
-            # todo: generate to lines instead parent borders
             offset_top = self.border.get('offset_top', self.border.get('offset', 0))
             offset_bottom = self.border.get('offset_bottom', self.border.get('offset', 0))
             offset_left = self.border.get('offset_left', self.border.get('offset', 0))
