@@ -48,7 +48,7 @@ class GridShape(BaseShape):
             if shape_type is None:
                 raise PresetError('Shape type not defined in template element: {}'.format(shape_config))
             cells[i]['parent'] = self
-            lc = {'index': i+offs, 'row': cells[i+offs]['row'], 'column': cells[i+offs]['column']}
+            lc = {'cell_index': i+offs, 'row': cells[i+offs]['row'], 'column': cells[i+offs]['column']}
             shape_config['parent'] = EmptyShape(cells[i+offs], self.context, local_context=lc)
             shape_cls = get_shape_class(shape_type)
             kwargs['local_context'] = lc
@@ -316,9 +316,17 @@ class GridShape(BaseShape):
                 yield from shape.render(size, **kwargs)
         if self.border.get('enabled'):
             # todo: generate to lines instead parent borders
-            for shape in shapes:
-                border_rect = Rect(0, 0, shape.parent.width, shape.parent.height)
-                canvas = self._get_canvas(border_rect.size)
+            offset_top = self.border.get('offset_top', self.border.get('offset', 0))
+            offset_bottom = self.border.get('offset_bottom', self.border.get('offset', 0))
+            offset_left = self.border.get('offset_left', self.border.get('offset', 0))
+            offset_right = self.border.get('offset_right', self.border.get('offset', 0))
+            max_offset = max((abs(offset_top), abs(offset_bottom), abs(offset_left), abs(offset_right)))+(self.border['width']*2)
+            for i, shape in enumerate(shapes):
+                border_rect = Rect(max_offset, max_offset,
+                                   shape.parent.width, shape.parent.height)
+                canvas = self._get_canvas((border_rect.width + (max_offset*2), border_rect.height + (max_offset*2)))
+                border_rect = border_rect.adjusted(offset_left, offset_top, offset_right, offset_bottom)
                 drw = ImageDraw.Draw(canvas)
                 drw.line(border_rect.line(), fill=self.border['color'], width=self.border['width'])
-                yield canvas, shape.pos
+                offset_pt = Point(max_offset, max_offset)
+                yield canvas, shape.parent.pos - offset_pt
