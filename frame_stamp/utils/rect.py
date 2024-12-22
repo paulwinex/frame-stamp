@@ -17,6 +17,14 @@ class Rect:
         return self._y
 
     @property
+    def width(self):
+        return self._width
+
+    @property
+    def height(self):
+        return self._height
+
+    @property
     def top(self):
         return self._y
 
@@ -116,7 +124,7 @@ class Rect:
             return tuple(x.tuple for x in values)
         return values
 
-    def adjusted(self, left, top, right, bottom):
+    def adjusted(self, left: int, top: int, right: int, bottom: int) -> "Rect":
         return Rect(
             self._x + left,
             self._y + top,
