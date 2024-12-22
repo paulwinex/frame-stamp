@@ -146,7 +146,7 @@ class Rect:
     __repr__ = __str__
 
     def rotate(self, angle: float, pivot: Point):
-        from .geometry_math import rotate_point_around_point
+        from .geometry_tools import rotate_point_around_point
 
         for pt in self.points():
             yield rotate_point_around_point(pt, pivot, angle)
