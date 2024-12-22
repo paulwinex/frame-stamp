@@ -4,10 +4,9 @@
       "name": "new",
       "defaults": {
         "font_size": "3.5u",
-        "text_color": "lightgray"        
+        "text_color": "lightgray"
       },
       "variables": {
-
       },
       "shapes": [
         {
