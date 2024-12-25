@@ -359,24 +359,22 @@ class BaseShape(AbstractShape):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._debug = bool(os.environ.get('DEBUG_SHAPES')) or kwargs.get('debug')
+        self._debug_enabled = bool(os.environ.get('DEBUG_SHAPES'))
         self._debug_variables = {}
 
     @property
     @cached_result
     def debug_options(self):
-        debug_options = self.defaults.get('debug', None)
-        if not isinstance(debug_options, dict):
-            debug_options = {'enabled': bool(debug_options)}
-        variables_debug_options = self._eval_parameter('debug', default=None)
+        debug_options = {}
+        variables_debug_options = self.variables.get('debug')
         if variables_debug_options is not None:
             assert isinstance(variables_debug_options, dict),  'Debug value must be a dict'
             debug_options.update(variables_debug_options)
-        self_debug_options =  self._eval_parameter('debug', default=None)
+        self_debug_options = self._eval_parameter('debug', default=None)
         if self_debug_options is not None:
             assert isinstance(self_debug_options, dict),  'Debug value must be a dict'
             debug_options.update(self_debug_options)
-        debug_options.setdefault('enabled', self._debug)
+        debug_options.setdefault('enabled', bool(self._debug_enabled))
         debug_options.setdefault('color', 'yellow')
         debug_options.setdefault('width', 1)
         debug_options.setdefault('offset', 0)
@@ -401,13 +399,6 @@ class BaseShape(AbstractShape):
         w, h = canvas.size
         zp = self._debug_variables.get('zero_point', Point(0, 0))
         debug_rect = Rect(zp.x, zp.y, self.width, self.height)
-        # points = (
-        #     (*zp,),
-        #     (zp.x + self.width, zp.y),
-        #     (zp.x + self.width, zp.y + self.height),
-        #     (zp.x, zp.y + self.height),
-        #     (*zp,)
-        # )
         points = [geometry_tools.rotate_point_around_point(pt, debug_rect.center, -self.global_rotate) for pt in debug_rect.line(as_tuple=True)]
         drw.line(points, fill=self.debug_options['color'], width=self.debug_options['width'])
         if self.debug_options.get('canvas_bound'):

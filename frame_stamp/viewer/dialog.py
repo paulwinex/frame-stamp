@@ -139,8 +139,9 @@ class TemplateViewer(QMainWindow):
             self.update_timeline(timeline_data)
             if timeline_data:
                 variables['timeline_value'] = self.timeline.value()
-            fs = FrameStamp(image, template, variables,
-                            debug_shapes=self.dbg.isChecked())
+            if self.dbg.isChecked():
+                variables['debug'] = {**variables.get('debug', {}), **{'enabled': True}}
+            fs = FrameStamp(image, template, variables)
             if not self.tmp_file:
                 self.tmp_file = tempfile.mktemp(suffix='.png')
             fs.render(save_path=self.tmp_file)
