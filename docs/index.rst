@@ -1,7 +1,7 @@
 Frame Stamp
 -----------
 
-Пакет для добавления информации на кадры используя шаблон и контекст с переменными.
+Библиотека для добавления информации на кадры используя шаблон и контекст с переменными.
 
 Установка
 =========
@@ -10,7 +10,7 @@ Frame Stamp
 
 .. code-block:: bash
 
-   poetry add https://github.com/paulwinex/frame-stamp.git
+   poetry add https://github.com/paulwinex/frame-stamp.git#version
 
 Локальная разработка и запуск
 
@@ -45,5 +45,6 @@ Frame Stamp
    expressions
    environment_variables
    development
+   debug
    tricks
    faq
