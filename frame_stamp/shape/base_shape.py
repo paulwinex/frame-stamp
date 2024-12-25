@@ -94,7 +94,8 @@ class AbstractShape(object):
             "source_width": self.source_image.size[0],
             "source_height": self.source_image.size[1],
             "source_aspect": self.source_image.size[1]/self.source_image.size[0],
-            "unit": self.unit,
+            "unt": self.unit,
+            "pnt": self.point,
             **self.context['variables'],
             **self._local_context
             }
