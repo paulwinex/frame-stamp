@@ -10,7 +10,7 @@ Debug Mode
 
 В этом режиме каждая форма будет отрисовывать свой `bounding box` цветной рамкой.
 
-.. image:: images/dialog2.jpg
+.. image:: images/dialog2.png
    :alt: debugmode
 
 .. note:: `Bounding Box` формы ``label`` может быть весьма странной. Это связанно с особенностью рендера текста. Не волнуйтесь, с ней всё ОК.

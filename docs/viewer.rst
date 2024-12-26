@@ -6,7 +6,7 @@ Template Viewer
 Во время создания шаблона удобно использовать диалог ``TemplateViewer``, в котором шаблон будет отображаться
 и интерактивно обновляться при каждом сохранении файла.
 
-.. image:: images/dialog1.jpg
+.. image:: images/dialog1.png
    :alt: templateviewer
 
 Как использовать?
@@ -56,7 +56,7 @@ Template Viewer
 
 После определения шаблона он будет отрендерен на имеющейся картинке. При каждом сохранении файла рендер будет пересчитан.
 
-.. image:: images/dialog3.jpg
+.. image:: images/dialog3.png
    :alt: rendertemplate
 
 
