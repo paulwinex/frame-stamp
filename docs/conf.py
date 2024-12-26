@@ -7,10 +7,9 @@ sys.path.append(CWD)
 
 # add Qt names as mock
 autodoc_mock_imports = [
-    'sip', 'PyQt5', 'PyQt5.QtCore', 'PyQt5.QtGui', 'PyQt5.QtWidgets',
-    'PyQt4', 'PyQt4.QtCore', 'PyQt4.QtGui',
-    'shiboken2', 'PySide2', 'PySide2.QtCore', 'PySide2.QtGui', 'PySide2.QtWidgets',
-    'shiboken', 'PySide', 'PySide.QtCore', 'PySide.QtGui',
+    'sip', 'PyQt6', 'PyQt6.QtCore', 'PyQt6.QtGui', 'PyQt6.QtWidgets',
+    'PyQt5', 'PyQt5.QtCore', 'PyQt5.QtGui',
+    'shiboken6', 'PySide6', 'PySide6.QtCore', 'PySide6.QtGui', 'PySide6.QtWidgets',
     'Qt', 'Qt.QtCore', 'Qt.QtGui', 'Qt.QtWidgets']
 
 # MOCK_MODULES = []
@@ -52,7 +51,7 @@ html_theme = "sphinx_rtd_theme"
 
 html_theme_path = ["_themes", ]
 # html_theme_options = {}
-html_static_path = ['_static']
+# html_static_path = ['_static']
 # html_sidebars = {}
 htmlhelp_basename = 'FrameStampDocs'
 
