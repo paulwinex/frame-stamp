@@ -12,11 +12,11 @@ logger = logging.getLogger(__name__)
 
 class GridShape(BaseShape):
     """
-    Составная фигура в виде Таблицы.
+    Combined shape - grid
 
     Allowed parameters:
-        rows           : Количество строк
-        columns        : Количество колонок
+        rows           : Row count
+        columns        : Columns count
     """
     shape_name = 'grid'
 
@@ -25,8 +25,6 @@ class GridShape(BaseShape):
         self._shapes = self._create_shapes_from_data(**kwargs)
         if self.fit_to_content_height:
             self._fix_cell_height()
-        # if self.columns_width:
-        #     self._adjust_columns_width()
 
     def _create_shapes_from_data(self, **kwargs):
         if self.width == 0:
@@ -75,6 +73,38 @@ class GridShape(BaseShape):
 
     @property
     @cached_result
+    def padding(self):
+        param = self._eval_parameter('padding', default=(0, 0, 0, 0))
+        if isinstance(param, (int, float)):
+            param = (param, param, param, param)
+        if not isinstance(param, (list, tuple)):
+            raise TypeError('Padding parameter must be list or tuple')
+        if len(param) != 4:
+            raise ValueError('Padding parameter must be size = 4')
+        return tuple(map(int, param))
+
+    @property
+    @cached_result
+    def padding_top(self):
+        return int(self._eval_parameter('padding_top', default=None) or self.padding[0])
+
+    @property
+    @cached_result
+    def padding_right(self):
+        return int(self._eval_parameter('padding_right', default=None) or self.padding[1])
+
+    @property
+    @cached_result
+    def padding_bottom(self):
+        return int(self._eval_parameter('padding_bottom', default=None) or self.padding[2])
+
+    @property
+    @cached_result
+    def padding_left(self):
+        return int(self._eval_parameter('padding_left', default=None) or self.padding[3])
+
+    @property
+    @cached_result
     def rows(self):
         return self._eval_parameter('rows', default='auto')
 
@@ -99,10 +129,10 @@ class GridShape(BaseShape):
     def columns_width(self):
         val = self._eval_parameter('columns_width', default=self.width, skip_type_convert=True)
         if isinstance(val, dict):
-            # здесь хитрый способ распарсить словарь
-            # - данный парамтер может быть только словарём
-            # - ключ это число в виде строки, индекс колонки. можно указывать отрицательное значение (индекс с конца)
-            # - значение это любой экспрешн но его результат должен быть числом
+            # here is a tricky way to parse a dictionary
+            # - this parameter can only be a dictionary
+            # - the key is a number in the form of a string, the column index. you can specify a negative value (index from the end)
+            # - the value is any expression but its result must be a number
             return {int(k): int(self._eval_parameter_convert('', v, default=self.width)) for k, v in val.items()}
         return None
 
@@ -113,7 +143,7 @@ class GridShape(BaseShape):
 
     def _fix_cell_height(self):
         from collections import defaultdict
-        # собираем высоты всех элементов группируя по строкам
+        # collect the heights of all elements by grouping them by rows
         heights = defaultdict(list)
         for shape in self._shapes:
             heights[shape._local_context['row']].append(shape.height)
@@ -128,7 +158,7 @@ class GridShape(BaseShape):
                 new_row_data[row]['height'] = max_shape_height
             else:
                 new_row_data[row]['height'] = curr_row_height
-        # применяем изменения построчно
+        # apply changes line by line
         for row, data in new_row_data.items():
             for s in self._shapes:
                 if s._local_context['row'] == row:
@@ -141,37 +171,33 @@ class GridShape(BaseShape):
         custom_columns_width = self.columns_width
         if not custom_columns_width:
             return columns
-        # общая ширина колонок
+        # total width of columns
         full_columns_width = sum(columns.values())
-        # заменяем отрицательные индексы на абсолютные
+        # replace negative indices with absolute ones
         _filtered = {}
         for c, val in custom_columns_width.items():
             if c < 0:
                 if abs(c) > len(columns):
-                    # слишком большой индекс
-                    # del custom_columns_width[c]
+                    # index too big
                     continue
-                # del custom_columns_width[c]
-                # custom_columns_width[len(columns) + c] = val
                 _filtered[len(columns) + c] = val
             else:
                 if c > len(columns)-1:
-                #     # слишком большой индекс
-                #     del custom_columns_width[c]
+                    # index too big
                     continue
                 _filtered[c] = val
         custom_columns_width = _filtered
-        # ширина колонок с неограниченным размером
+        # column width with unlimited size
         free_size_columns = [x for x in range(len(columns)) if
-                             x not in custom_columns_width]  # колонки у которых не фиксировали размер
+                             x not in custom_columns_width]  # columns that did not have their size fixed
         if free_size_columns:
-            # неограниченные колонки делят оставшуюся ширину поровну
+            # unlimited columns divide the remaining width equally
             fixed_size = sum(custom_columns_width.values())
             free_size = full_columns_width - fixed_size
             free_columns_width = free_size / len(free_size_columns)
         else:
             free_columns_width = 0
-        # обнолвяем ширину колонок в списке
+        # update the column width in the list
         for i in range(len(columns)):
             if i in custom_columns_width:
                 columns[i] = max([1,custom_columns_width[i]])
@@ -179,56 +205,12 @@ class GridShape(BaseShape):
                 columns[i] = max([1, free_columns_width])
         return columns
 
-    # def _adjust_columns_width__(self):
-    #     custom_columns_width = self.columns_width
-    #     cells = [x.parent._data for x in self._shapes]
-    #     h_space = self.horizontal_spacing
-    #     # выносим ширину колонок в одельный список
-    #     columns = list({x['column']: {'w': x['width'], 'x': x['x']} for x in cells}.values())
-    #     # количество колонок
-    #     full_columns_width = sum([x['w'] for x in columns])
-    #
-    #     # заменяем отрицательные индексы на абсолютные
-    #     for c, val in custom_columns_width.items():
-    #         if c < 0:
-    #             del custom_columns_width[c]
-    #             custom_columns_width[len(columns) + c] = val
-    #
-    #     free_size_columns = [x for x in range(len(columns)) if
-    #                          x not in custom_columns_width]  # колонки у которых не фиксировали размер
-    #     if free_size_columns:
-    #         fixed_size = sum(custom_columns_width.values())
-    #         free_size = full_columns_width - fixed_size
-    #         free_columns_width = free_size / len(free_size_columns)
-    #     else:
-    #         free_columns_width = 0
-    #     x_coord = 0
-    #     for index, data in enumerate(columns):
-    #         if index in custom_columns_width:
-    #             data['w'] = custom_columns_width[index] - h_space//2
-    #         else:
-    #             data['w'] = free_columns_width - h_space//2
-    #         if index > 0:
-    #             data['x'] = x_coord + h_space + self.padding_left
-    #
-    #         else:
-    #             data['x'] = x_coord + self.padding_left
-    #         x_coord += data['w'] + h_space
-    #
-    #     columns = dict(enumerate(columns))
-    #
-    #     for cell in cells:
-    #         cell['x'] = columns[cell['column']]['x']
-    #         cell['width'] = columns[cell['column']]['w']
-    #     for i in range(len(self._shapes)):
-    #         self._shapes[i].parent._data.update(cells[i])
-
     def generate_cells(self, count, cols=None, rows=None):
         # todo: выравнивание неполных строк и колонок
         if not count:
             return
         cells = []
-        # рассчитываем количество строк и колонок
+        # we calculate the number of rows and columns
         columns = cols or self.columns
         rows = rows or self.rows
         if columns == 'auto' and rows == 'auto':
@@ -237,39 +219,39 @@ class GridShape(BaseShape):
             columns = count//rows or 1
         elif rows == 'auto':
             rows = count//columns or 1
-        # общая ширина, занимаемая колонками
+        #total width occupied by columns
         all_h_spacing = self.horizontal_spacing * (columns-1)
         cells_width = self.width - self.padding_left - self.padding_right - all_h_spacing
-        one_cell_width = cells_width / columns  # ширина одной колонки в случае если все колонки одинаковы
+        one_cell_width = cells_width / columns  # the width of one column if all columns are the same
         all_columns_width = {x: one_cell_width for x in range(columns)}
-        # рассчёт индивидуальной ширины
+        # calculation of individual width
         all_columns_width = self._adjust_columns_width(all_columns_width)
-        # перерассчёт координат Х
+        # recalculation of X coordinates
         all_columns_x = {}
         curr = 0
         for col, w in all_columns_width.items():
-            # здесь каждая колонка начинается после предыдущей. Отступы добавятся позже
+            # here each column starts after the previous one. Indents will be added later
             all_columns_x[col] = curr
             curr += w
 
-        # общая высота, занимаемая строками
+        # total height occupied by lines
         all_v_spacing = self.vertical_spacing * (rows-1)
         cells_height = self.height - self.padding_bottom - self.padding_top - all_v_spacing
         one_cell_height = cells_height // rows
         height_limit = self.max_row_height
         if height_limit:
             one_cell_height = min([one_cell_height, height_limit])
-        # паддинги
+        # paddings
         h_space = self.horizontal_spacing
         v_space = self.vertical_spacing
         h_pad = self.padding_left
         v_pad = self.padding_top
-        # рассчитываем ячейки
+        # calculate cells
         for i in range(count):
             col = i % columns
             row = i//columns
-            col_width = all_columns_width[col]  #  ширина текущей колонки
-            col_x = all_columns_x[col]          # координата Х
+            col_width = all_columns_width[col]  # current column width
+            col_x = all_columns_x[col]          # X coordinate
             cells.append(dict(
                 x=h_pad + col_x + (h_space*col),
                 y=v_pad + ((one_cell_height+v_space)*row),

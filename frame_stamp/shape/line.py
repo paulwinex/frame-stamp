@@ -18,26 +18,6 @@ class LineShape(BaseShape):
     default_width = 2
 
     @property
-    def padding(self):
-        raise AttributeError
-
-    @property
-    def padding_top(self):
-        raise AttributeError
-
-    @property
-    def padding_left(self):
-        raise AttributeError
-
-    @property
-    def padding_bottom(self):
-        raise AttributeError
-
-    @property
-    def padding_right(self):
-        raise AttributeError
-
-    @property
     @cached_result
     def points(self):
         return self._eval_parameter('points', default=[])

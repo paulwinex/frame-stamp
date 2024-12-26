@@ -124,7 +124,7 @@ class LabelShape(BaseShape):
 
     def _truncate_to_parent(self, text, left=False):
         if self.parent.width >= self.font.getsize(text)[0]:
-            # перенос не требуется
+            # no new line required
             return text
         single_char_width = self.font.getsize('a')[0]
         max_chars_in_line = self.parent.width // single_char_width
@@ -161,9 +161,9 @@ class LabelShape(BaseShape):
             return text
 
         max_chars_in_line = int(max([1, self.parent.width // single_char_width]))
-        if divider:     # разделяем по указанным символам
+        if divider:     # split by the specified symbols
             if not any([x in text for x in divider]):
-                # символы разделителя не найдены в тексте
+                # separator characters not found in text
                 return text
             lines = self._split_text_by_divider(text, divider, self.move_splitter_to_next_line)
             joined_lines = []
@@ -321,7 +321,7 @@ class LabelShape(BaseShape):
     @cached_result
     def font(self) -> ImageFont:
         """
-        Возвращает готовый шрифт для рендера
+        Returns a ready-to-render font
         """
         font = self._resolve_font_name(self.font_name)
         return ImageFont.FreeTypeFont(font, self.font_size)
@@ -453,16 +453,44 @@ class LabelShape(BaseShape):
         return text_width, text_height
 
     @property
+    @cached_result
+    def padding(self):
+        param = self._eval_parameter('padding', default=(0, 0, 0, 0))
+        if isinstance(param, (int, float)):
+            param = (param, param, param, param)
+        if not isinstance(param, (list, tuple)):
+            raise TypeError('Padding parameter must be list or tuple')
+        if len(param) != 4:
+            raise ValueError('Padding parameter must be size = 4')
+        return tuple(map(int, param))
+
+    @property
+    @cached_result
+    def padding_top(self):
+        return int(self._eval_parameter('padding_top', default=None) or self.padding[0])
+
+    @property
+    @cached_result
+    def padding_right(self):
+        return int(self._eval_parameter('padding_right', default=None) or self.padding[1])
+
+    @property
+    @cached_result
+    def padding_bottom(self):
+        return int(self._eval_parameter('padding_bottom', default=None) or self.padding[2])
+
+    @property
+    @cached_result
+    def padding_left(self):
+        return int(self._eval_parameter('padding_left', default=None) or self.padding[3])
+
+    @property
     def width(self):
         return self.get_size()[0] + self.padding_left + self.padding_right
 
     @property
     def height(self):
         return self.get_size()[1] + self.padding_top + self.padding_bottom
-
-    @property
-    def y_draw(self):
-        return super(LabelShape, self).y_draw - self.get_font_metrics()['offset_y']     # фикс по высоте, убираем верхнюю часть шрфита до высоты капса
 
     def _resolve_font_name(self, font_name) -> str:
         """

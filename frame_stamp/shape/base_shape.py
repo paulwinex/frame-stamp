@@ -289,7 +289,7 @@ class AbstractShape(object):
         """
         Executing an expression. The expression must be a string starting with the "=" sign.
 
-            >>> {"width": "=$other.x-$padding/2"}
+            >>> {"width": "=$other.x-$value/2"}
 
         Parameters
         ----------
@@ -351,7 +351,6 @@ class BaseShape(AbstractShape):
         color              : Text color
         alight_h           : Alignment relative to the X coordinate (left, right, center)
         alight_v           : Alignment relative to the Y coordinate (top, bottom, center)
-        padding            : Line spacing for multi-line text
         parent             : Parent object
 
     """
@@ -546,22 +545,6 @@ class BaseShape(AbstractShape):
             return int(self.parent.y + val)
 
     @property
-    def x_draw(self):
-        return self.x0 + self.padding_left
-
-    @property
-    def y_draw(self):
-        return self.y0 + self.padding_top
-
-    @property
-    def width_draw(self):
-        return self.x1 - self.padding_right
-
-    @property
-    def height_draw(self):
-        return self.y1 - self.padding_bottom
-
-    @property
     def top(self):
         return self.y0
 
@@ -669,38 +652,6 @@ class BaseShape(AbstractShape):
         point = Point(geometry_tools.rotate_point_around_point(point, self.rotation_pivot, -self.rotate))
         rotated_by_parents = self.parent.rotation_transform(point, ind+2)
         return rotated_by_parents
-
-    @property
-    @cached_result
-    def padding(self):
-        param = self._eval_parameter('padding', default=(0, 0, 0, 0))
-        if isinstance(param, (int, float)):
-            param = (param, param, param, param)
-        if not isinstance(param, (list, tuple)):
-            raise TypeError('Padding parameter must be list or tuple')
-        if len(param) != 4:
-            raise ValueError('Padding parameter must be size = 4')
-        return tuple(map(int, param))
-
-    @property
-    @cached_result
-    def padding_top(self):
-        return int(self._eval_parameter('padding_top', default=None) or self.padding[0])
-
-    @property
-    @cached_result
-    def padding_right(self):
-        return int(self._eval_parameter('padding_right', default=None) or self.padding[1])
-
-    @property
-    @cached_result
-    def padding_bottom(self):
-        return int(self._eval_parameter('padding_bottom', default=None) or self.padding[2])
-
-    @property
-    @cached_result
-    def padding_left(self):
-        return int(self._eval_parameter('padding_left', default=None) or self.padding[3])
 
     @property
     @cached_result
@@ -816,20 +767,4 @@ class RootParent(BaseShape):
 
     @property
     def global_rotate(self):
-        return 0
-
-    @property
-    def padding_top(self):
-        return 0
-
-    @property
-    def padding_right(self):
-        return 0
-
-    @property
-    def padding_bottom(self):
-        return 0
-
-    @property
-    def padding_left(self):
         return 0
