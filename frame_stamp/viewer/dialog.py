@@ -82,6 +82,7 @@ class TemplateViewer(QMainWindow):
         self.ly.addWidget(self.timeline)
         self.timeline.valueChanged.connect(self.update_image)
         self.timeline.setMaximumWidth(250)
+        self.timeline.hide()
 
         self.watcher = TemplateFileWatch()
         self.watcher.changed.connect(self.on_template_changed)
