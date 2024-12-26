@@ -2,11 +2,15 @@ from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 import os, tempfile, traceback
+import frame_stamp
 from frame_stamp.viewer.canvas import Canvas
 from frame_stamp.viewer.watch import TemplateFileWatch
 from frame_stamp.utils import jsonc, open_file_location
 from frame_stamp.stamp import FrameStamp
 from pathlib import Path
+
+
+icon_path = Path(frame_stamp.__file__).parent / 'resources' / 'icon.png'
 
 
 class TemplateViewer(QMainWindow):
@@ -16,6 +20,7 @@ class TemplateViewer(QMainWindow):
     def __init__(self):
         super(TemplateViewer, self).__init__()
         self.setWindowTitle('Template Viewer')
+        self.setWindowIcon(QIcon(str(icon_path)))
         self.setAcceptDrops(True)
 
         self.template_file: Path = None
