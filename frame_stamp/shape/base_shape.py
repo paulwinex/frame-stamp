@@ -6,6 +6,7 @@ import random
 from PIL import Image, ImageDraw
 import logging
 
+from docs.conf import project
 from frame_stamp.utils import cached_result, geometry_tools
 from frame_stamp.utils.point import Point
 from frame_stamp.utils.rect import Rect
@@ -477,6 +478,24 @@ class BaseShape(AbstractShape):
             mix_alpha_channels(grad_alpha, image)
         image.alpha_composite(grad_canvas)
 
+    def compute_rotation_offset(self):
+        x = y = 0
+        if self.rotate and self.rotation_offset:
+            points = [self.rotation_transform(pt) for pt in self.raw_bound]
+            if self.align_h == 'right':
+                max_x  = max([pt.x for pt in points])
+                x = max(0, max_x - self.parent.right)
+            elif self.align_h == 'left':
+                min_x = min([pt.x for pt in points])
+                x = min(0, min_x - self.parent.x)
+            if self.align_v == 'bottom':
+                max_y = max([pt.y for pt in points])
+                y = max(0, max_y - self.parent.bottom)
+            elif self.align_v == 'top':
+                min_y = min([pt.y for pt in points])
+                y = -max(0, self.parent.top - min_y)
+        return Point(x, y)
+
     def render(self, size, **kwargs):
         if not self.is_enabled():
             return self._get_canvas(size)
@@ -498,7 +517,7 @@ class BaseShape(AbstractShape):
         paste_pos = global_pos - zero_point
         # compute transformation offset for rotated shape
         pivot = Point(self.rotation_pivot)
-        paste_offset = self.center - self.rotation_transform(self.center)
+        paste_offset = self.center - self.rotation_transform(self.center) + self.compute_rotation_offset()
         # move rotated shape
         paste_pos -= paste_offset
         # self debug draw ##############################
@@ -524,10 +543,9 @@ class BaseShape(AbstractShape):
     @cached_result
     def x(self):
         val = self._eval_parameter('x', default=0)
-        align = self.align_h
-        if align == 'center':
+        if self.align_h == 'center':
             return int(self.parent.x + val + (self.parent.width/2) - (self.width / 2))
-        elif align == 'right':
+        elif self.align_h == 'right':
             return int(self.parent.x + val + self.parent.width - self.width)
         else:
             return int(self.parent.x + val)
@@ -642,6 +660,11 @@ class BaseShape(AbstractShape):
     @cached_result
     def rotate(self):
         return self._eval_parameter('rotate', default=0)
+
+    @property
+    @cached_result
+    def rotation_offset(self):
+        return self._eval_parameter('rotation_offset', default=False)
 
     @property
     @cached_result

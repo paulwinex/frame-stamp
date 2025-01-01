@@ -1,0 +1,31 @@
+{
+  "templates": [
+    {
+      "name": "example",
+      "defaults": {
+      },
+      "variables": {
+        "_timeline": {
+          "start": 0,
+          "end": 180
+        }
+      },
+      "shapes": [
+        {
+          "type": "rect", "id": "rect1",
+          "w": "=parent.w/3", "h": "=parent.h/4",
+          "align_v": "center", "align_h": "center",
+          "color": "blue"
+        },
+        {
+          "type": "rect", "parent": "rect1",
+          "w": "=parent.h/2", "h": "=parent.h/2",
+          "align_v": "bottom", "align_h": "right",
+          "color": "red",
+          "rotation_offset": true,
+          "rotate": "$timeline_value"
+        }
+      ]
+    }
+  ]
+}
