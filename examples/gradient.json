@@ -43,7 +43,7 @@
         {
           "type": "rect",
           "color": [0,0,0,255],
-          "w": "=parent.w/4", "h": "=parent.h/4",
+          "w": "=parent.w/4", "h": "=parent.h/3",
           "align_v": "center", "align_h": "center",
           "gradient":{
             "enabled": 1,
@@ -84,7 +84,7 @@
          },
          {
            "type": "rect", "x": 0, "y": "parent.h", "color": [0,0,0,255], "parent": "panel",
-           "w": "parent.w", "h": 10,
+           "w": "parent.w", "h": 20,
            "gradient":{
              "enabled": 1,
              "type": "linear", "use_gradient_alpha": true,
@@ -106,9 +106,6 @@
 
            }
         }
-
-
-
       ]
     }
   ]
