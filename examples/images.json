@@ -20,21 +20,12 @@
       "type": "image",
       "source": "$cat_img",
       "id": "cat1",
-      "w": "35p",
-      "x": "2p", "y": "2p",
-      "id": "cat1"
-    },
-    {
-      "type": "image",
-      "source": "$cat_img",
-      "parent": "cat1",
-      "w": "10p",
-      "x": "=(self.w-self.h)*-0.5", "y": "=parent.h+(self.w-self.h)/2",
-      "rotate": 90
+      "w": "25p",
+      "x": "2p", "y": "2p"
     },
     {
       "type": "label", "parent": "cat1",
-      "text": "Image from file", "x": "=parent.w-self.w",  "y": "=parent.h+1p",
+      "text": "Image from file", "x": "1p",  "y": "=parent.h+1p",
       "backdrop": {
         "color": "$backdrop_color",
         "padding": "0.5p"
@@ -107,7 +98,7 @@
     },
     {
       "type": "label", "parent": "encoded",
-      "text": "Embedded", "y": "=-self.h-1p",
+      "text": "Embedded", "y": "=-self.h-1p", "x": "1p",
       "backdrop": {
         "color": "$backdrop_color",
         "padding": "0.5p"
