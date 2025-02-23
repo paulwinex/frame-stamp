@@ -1,3 +1,5 @@
+from importlib import reload
+
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
@@ -6,7 +8,7 @@ import frame_stamp
 from frame_stamp.viewer.canvas import Canvas
 from frame_stamp.viewer.watch import TemplateFileWatch
 from frame_stamp.utils import jsonc, open_file_location
-from frame_stamp.stamp import FrameStamp
+from frame_stamp import stamp
 from pathlib import Path
 
 
@@ -79,6 +81,7 @@ class TemplateViewer(QMainWindow):
         self.err.hide()
         self.timeline = QSlider()
         self.timeline.setOrientation(Qt.Horizontal)
+        self.__timeline_initialized = False
         self.ly.addWidget(self.timeline)
         self.timeline.valueChanged.connect(self.update_image)
         self.timeline.setMaximumWidth(250)
@@ -145,9 +148,12 @@ class TemplateViewer(QMainWindow):
             self.update_timeline(timeline_data)
             if timeline_data:
                 variables['timeline_value'] = self.timeline.value()
+            else:
+                variables['timeline_value'] = 0
             if self.dbg.isChecked():
                 variables['debug'] = {**variables.get('debug', {}), **{'enabled': True}}
-            fs = FrameStamp(image, template, variables)
+            reload(stamp)
+            fs = stamp.FrameStamp(image, template, variables)
             if not self.tmp_file:
                 self.tmp_file = tempfile.mktemp(suffix='.png')
             fs.render(save_path=self.tmp_file)
@@ -160,6 +166,9 @@ class TemplateViewer(QMainWindow):
         if value:
             self.timeline.blockSignals(True)
             self.timeline.setRange(value.get('start', 0),  value.get('end', 100))
+            if not self.__timeline_initialized:
+                self.__timeline_initialized = True
+                self.timeline.setValue(value.get('value', 0))
             self.timeline.blockSignals(False)
 
     def get_dummy_image(self):
