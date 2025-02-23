@@ -12,7 +12,7 @@
       "shapes": [
         {
           "type": "tile",
-          "grid_rotate": -45,
+          "grid_rotate": 45,
           "tile_width": 250,
           "tile_height": 150,
           "row_offset": 250,
