@@ -48,6 +48,22 @@ class Point:
         else:
             raise TypeError(f"Unsupported operand type(s) for *: 'Point' and '{type(value)}'")
 
+    def __truediv__(self, other):
+        if isinstance(other, Point):
+            return Point(self._x / other.x, self._y / other.y)
+        elif isinstance(other, (int, float)):
+            return Point(self._x / other, self._y / other)
+        else:
+            raise TypeError(f"Unsupported operand type(s) for /: 'Point' and '{type(other)}'")
+
+    def __floordiv__(self, other):
+        if isinstance(other, Point):
+            return Point(self._x // other.x, self._y // other.y)
+        elif isinstance(other, (int, float)):
+            return Point(self._x // other, self._y // other)
+        else:
+            raise TypeError(f"Unsupported operand type(s) for //: 'Point' and '{type(other)}'")
+
     def __divmod__(self, other):
         if isinstance(other, Point):
             return Point(self._x / other.x, self._y / other.y)

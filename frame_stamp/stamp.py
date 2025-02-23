@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from .shape.base_shape import BaseShape
+from .shape import base_shape
 from PIL import Image, ImageDraw, ImageFile
 from .shape import get_shape_class
 from .utils.exceptions import PresetError
@@ -69,12 +69,12 @@ class FrameStamp(object):
         """
         return self._template
 
-    def add_shape(self, shape: BaseShape):
+    def add_shape(self, shape: base_shape.BaseShape):
         """
         Add a new shape item to a set
         """
-        if not isinstance(shape, BaseShape):
-            raise TypeError('Shape bus be subclass of {}'.format(BaseShape.__name__))
+        if not isinstance(shape, base_shape.BaseShape):
+            raise TypeError('Shape bus be subclass of {}'.format(base_shape.BaseShape.__name__))
         self._add_shape_to_scope(shape)
         self._shapes.append(shape)
 
@@ -88,7 +88,7 @@ class FrameStamp(object):
         """
         All shapes
         """
-        return list(sorted(self._shapes, key=lambda s: s.z_index))
+        return (x[1] for x in sorted(enumerate(self._shapes), key=lambda item: (item[1].z_index, item[0])))
 
     @property
     def source(self):

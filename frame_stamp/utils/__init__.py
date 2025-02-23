@@ -1,10 +1,7 @@
 import os
-import traceback
 from functools import wraps
 import subprocess
 from pydoc import locate
-import math
-
 
 USE_CACHE = not bool(os.getenv('NO_CACHE'))
 
@@ -66,16 +63,3 @@ def open_file_location(path):
         subprocess.call(('open', path))
 
 
-def rotate_point(point: list, angle, origin: list = None,  precision=3):
-    """
-    Rotate a point counterclockwise by a given angle around a given origin.
-    The angle should be given in degrees.
-
-    """
-    origin = origin or (0, 0)
-    ox, oy = origin
-    px, py = point
-    rad = math.radians(angle)
-    qx = ox + math.cos(rad) * (px - ox) - math.sin(rad) * (py - oy)
-    qy = oy + math.sin(rad) * (px - ox) + math.cos(rad) * (py - oy)
-    return round(qx, precision), round(qy, precision)

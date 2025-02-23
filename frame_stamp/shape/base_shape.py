@@ -6,7 +6,6 @@ import random
 from PIL import Image, ImageDraw
 import logging
 
-from docs.conf import project
 from frame_stamp.utils import cached_result, geometry_tools
 from frame_stamp.utils.point import Point
 from frame_stamp.utils.rect import Rect
@@ -51,7 +50,6 @@ class AbstractShape(object):
                 self._parent = parent
         else:
             self._parent = RootParent(context, **kwargs)
-        self.z_index = kwargs.get('z_index', 0) + shape_data.get('z_index', 0)
 
     def __repr__(self):
         return '<{} {}>'.format(self.__class__.__name__, self.id or 'no-id')
@@ -77,6 +75,10 @@ class AbstractShape(object):
     @cached_result
     def context(self):
         return self._context
+
+    @property
+    def defaults(self):
+        return self._context['defaults']
 
     @property
     @cached_result
@@ -116,8 +118,10 @@ class AbstractShape(object):
         return round(0.01*sqrt(w*h), 3)
 
     @property
-    def defaults(self):
-        return self.context['defaults']
+    @cached_result
+    def z_index(self):
+        parent_index = self._parent.z_index if self._parent else 0
+        return parent_index + self._eval_parameter('z_index', default=0) # shape_data.get('z_index', 0)
 
     @property
     def scope(self) -> dict:
@@ -379,16 +383,16 @@ class BaseShape(AbstractShape):
         debug_options.setdefault('color', 'yellow')
         debug_options.setdefault('width', 1)
         debug_options.setdefault('offset', 0)
-        debug_options.setdefault('parent_border_color', 'red')
-        debug_options.setdefault('parent_border_width', 1)
+        debug_options.setdefault('parent_color', 'red')
+        debug_options.setdefault('parent_width', 1)
         debug_options.setdefault('parent_offset', 0)
         debug_options.setdefault('rotation_pivot', False)
         debug_options.setdefault('rotation_pivot_color', 'green')
-        debug_options.setdefault('rotation_pivot_size', self.point/2)
+        debug_options.setdefault('rotation_pivot_size', self.point*2)
         debug_options.setdefault('parent', False)
-        debug_options.setdefault('canvas_bound', False)
-        debug_options.setdefault('canvas_bound_color', 'blue')
-        debug_options.setdefault('canvas_bound_width', 1)
+        debug_options.setdefault('canvas', False)
+        debug_options.setdefault('canvas_color', 'blue')
+        debug_options.setdefault('canvas_width', 1)
         return debug_options
 
     @property
@@ -402,18 +406,18 @@ class BaseShape(AbstractShape):
         debug_rect = Rect(zp.x, zp.y, self.width, self.height)
         points = [geometry_tools.rotate_point_around_point(pt, debug_rect.center, -self.global_rotate) for pt in debug_rect.line(as_tuple=True)]
         drw.line(points, fill=self.debug_options['color'], width=self.debug_options['width'])
-        if self.debug_options.get('canvas_bound'):
+        if self.debug_options.get('canvas'):
             drw.line([
                 (1+self.debug_options['offset'], 1+self.debug_options['offset']),
                 (w - 1-self.debug_options['offset'], 1+self.debug_options['offset']),
                 (w - 1-self.debug_options['offset'], h - 1-self.debug_options['offset']),
                 (1+self.debug_options['offset'], h - 1-self.debug_options['offset']),
                 (1+self.debug_options['offset'], 1+self.debug_options['offset'])
-            ], self.debug_options['canvas_bound_color'], self.debug_options['canvas_bound_width'])
+            ], self.debug_options['canvas_color'], self.debug_options['canvas_width'])
         return drw
 
     def _render_debug_pivot(self):
-        draw_size = self.debug_options['rotation_pivot_size']
+        draw_size = int(self.debug_options['rotation_pivot_size'])
         if draw_size:
             pivot_image = Image.new('RGBA', (draw_size, draw_size), (0, 0, 0, 0))
             draw = ImageDraw.Draw(pivot_image)
@@ -425,10 +429,16 @@ class BaseShape(AbstractShape):
             return pivot_image
 
     def _render_debug_parent(self, size, shape_canvas, paste_pos, **kwargs):
+        color = self.debug_options.get('parent_color', 'orange')
+        width = self.debug_options.get('parent_width', 1)
+        offset = self.debug_options.get('parent_offset', 0)
         canvas = self._get_canvas(size)
         drw = ImageDraw.Draw(canvas)
-        rect = Rect(self.parent.x, self.parent.y, self.parent.width-1, self.parent.height-1)
-        drw.line(rect.line(), 'orange', 1)
+        rect = Rect(self.parent.x-offset,
+                    self.parent.y-offset,
+                    self.parent.width-1+(offset*2),
+                    self.parent.height-1+(offset*2))
+        drw.line(rect.line(), color, width)
         return canvas, (0,0 )
 
     def _get_canvas(self, size):
@@ -535,7 +545,7 @@ class BaseShape(AbstractShape):
                 if pivot_image:
                     yield pivot_image, (pivot-(pivot_image.size[0]/2)).int()
             if self.debug_options['parent']:
-                parent_image, parent_paste_pos = self._render_debug_parent(size, shape_canvas, paste_pos, **kwargs)
+                parent_image, parent_paste_pos = self._render_debug_parent(size, shape_canvas, paste_pos, rotation_pivot=center, **kwargs)
                 if parent_image:
                     yield parent_image, parent_paste_pos
 
@@ -754,6 +764,10 @@ class RootParent(BaseShape):
         self._parent = None
         self._debug_render = False
         self.__cache__ = {}
+
+    @property
+    def z_index(self):
+        return 0
 
     def render(self, *args, **kwargs):
         pass
