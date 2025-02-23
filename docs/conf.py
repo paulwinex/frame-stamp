@@ -1,6 +1,7 @@
 import os, sys, json, codecs
 # import mock
 from unittest.mock import Mock
+from sphinx.builders.html import StandaloneHTMLBuilder
 
 CWD = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(CWD)
@@ -26,6 +27,12 @@ author = 'paulwinex'
 version = '0.1.0'
 
 
+StandaloneHTMLBuilder.supported_image_types = [
+    'image/svg+xml',
+    'image/gif',
+    'image/png',
+    'image/jpeg'
+]
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.todo',
@@ -51,7 +58,7 @@ html_theme = "sphinx_rtd_theme"
 
 html_theme_path = ["_themes", ]
 # html_theme_options = {}
-# html_static_path = ['_static']
+html_static_path = ['.']
 # html_sidebars = {}
 htmlhelp_basename = 'FrameStampDocs'
 
