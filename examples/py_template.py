@@ -1,7 +1,7 @@
 
 def get_template(**kwargs):
     return {
-        "name": "pytemlate",
+        "name": "pytemplate",
         "defaults": {},
         "shapes": [
             {
