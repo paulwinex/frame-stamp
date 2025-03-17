@@ -9,6 +9,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+try:
+    BICUBIC = Image.BICUBIC
+except AttributeError:
+    BICUBIC = Image.Resampling.BICUBIC
+
 
 class AbstractShape(object):
     """
@@ -407,11 +412,11 @@ class BaseShape(AbstractShape):
 
     def _apply_rotate(self, img):
         if self.rotate:
-            img = img.rotate(self.rotate, expand=False, center=self.rotate_pivot, resample=Image.BICUBIC)
+            img = img.rotate(self.rotate, expand=False, center=self.rotate_pivot, resample=BICUBIC)
         par = self.parent
         while par:
             if par.rotate:
-                img = img.rotate(par.rotate, expand=False, center=par.rotate_pivot, resample=Image.BICUBIC)
+                img = img.rotate(par.rotate, expand=False, center=par.rotate_pivot, resample=BICUBIC)
             par = par.parent
         return img
 

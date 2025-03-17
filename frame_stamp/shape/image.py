@@ -7,6 +7,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+try:
+    LANCZOS = Image.Resampling.LANCZOS
+except AttributeError:
+    LANCZOS = Image.LANCZOS
+
 
 class ImageShape(BaseShape):
     """
@@ -73,7 +78,7 @@ class ImageShape(BaseShape):
                 target_size[0] = img.size[0]
             if target_size[1] == 0:
                 target_size[1] = img.size[1]
-            img = ImageOps.fit(img, target_size, Image.Resampling.LANCZOS)
+            img = ImageOps.fit(img, target_size, LANCZOS)
         return img
 
     def _resize_values(self, src_size, trg_size):
