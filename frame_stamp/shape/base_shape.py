@@ -13,6 +13,12 @@ from frame_stamp.utils.rect import Rect
 logger = logging.getLogger(__name__)
 
 
+try:
+    BICUBIC = Image.BICUBIC
+except AttributeError:
+    BICUBIC = Image.Resampling.BICUBIC
+
+
 class AbstractShape(object):
     """
     Abstract shape.
@@ -521,7 +527,7 @@ class BaseShape(AbstractShape):
                     self._draw_gradient(shape_canvas, grad)
         if self.global_rotate:
             # rotate around center
-            shape_canvas = shape_canvas.rotate(self.global_rotate, expand=False, center=(*center,), resample=Image.BICUBIC)
+            shape_canvas = shape_canvas.rotate(self.global_rotate, expand=False, center=(*center,), resample=BICUBIC)
         # compute coords for pasting
         global_pos = Point(self.x, self.y)
         paste_pos = global_pos - zero_point
