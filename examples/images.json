@@ -1,0 +1,109 @@
+{"templates":[
+{
+  "name": "default_slate",
+  "variables": {
+    "backdrop_color": [40, 40, 40, 255],
+    "logo_img": "${PWD}/examples/images/logo-example.png",
+    "cat_img": "${PWD}/examples/images/cat.jpg",
+    "svg_img": "${PWD}/examples/images/example-logo.svg",
+    "encoded_img": "base64::cat.jpg::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"
+
+  },
+  "defaults": {
+    "font_size": "3.5u",
+    "text_color": "lightgray",
+    "color": [0, 0, 0, 150]
+  },
+  "shapes": [
+    // simple JPG image
+    {
+      "type": "image",
+      "source": "$cat_img",
+      "id": "cat1",
+      "w": "25p",
+      "x": "2p", "y": "2p"
+    },
+    {
+      "type": "label", "parent": "cat1",
+      "text": "Image from file", "x": "1p",  "y": "=parent.h+1p",
+      "backdrop": {
+        "color": "$backdrop_color",
+        "padding": "0.5p"
+      }
+    },
+
+    // PNG with transparency
+    {
+      "type": "image",
+      "source": "$logo_img",
+      "w": "20p",
+      "x": "=parent.width-self.width-2p", "y": "2p",
+      "id": "logo1"
+    },
+    {
+      "type": "label", "parent": "logo1",
+      "text": "PNG with transparency", "x": "=parent.w-self.w",  "y": "=parent.h+1p",
+      "backdrop": {
+        "color": "$backdrop_color",
+        "padding": "0.5p"
+      }
+    },
+    // SVG File
+    {
+      "type": "image",
+      "source": "$svg_img",
+      "w": "25p",
+      "x": "=parent.width-self.width-2p", "y": "=parent.h-self.h-2p",
+      "id": "logo_svg"
+    },
+    {
+      "type": "label", "parent": "logo_svg",
+      "text": "SVG File", "x": "=parent.w-self.w-2p",  "y": "=-self.h-2p",
+      "backdrop": {
+        "color": "$backdrop_color",
+        "padding": "0.5p"
+      }
+    },
+    // using source image
+    {
+      "type": "rect",
+      "w": "=parent.w*0.3", "h": "=parent.h*0.3",
+      "align_h": "center", "align_v": "center",
+      "id": "backdrop"
+    },
+    {
+      "type": "image",
+      "parent": "backdrop",
+      "source": "$source",
+      "w": "=parent.w*0.9",
+      "align_h": "center", "align_v": "center"
+    },
+
+    {
+      "type": "label", "parent": "backdrop",
+      "text": "Source Image",
+      "align_v": "center", "align_h": "center",
+      "backdrop": {
+        "color": "$backdrop_color",
+        "padding": "0.5p"
+      }
+    },
+    // encoded image
+    {
+      "type": "image",
+      "source": "$encoded_img",
+      "w": "20p",
+      "x": "2p", "y": "=parent.h-self.h-2p",
+      "id": "encoded"
+    },
+    {
+      "type": "label", "parent": "encoded",
+      "text": "Embedded", "y": "=-self.h-1p", "x": "1p",
+      "backdrop": {
+        "color": "$backdrop_color",
+        "padding": "0.5p"
+      }
+    }
+  ]
+}
+]}

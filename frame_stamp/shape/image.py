@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import os.path
 import re
 from PIL import Image, ImageChops, ImageOps
 from .base_shape import BaseShape
@@ -6,6 +7,11 @@ from frame_stamp.utils import cached_result
 import logging
 
 logger = logging.getLogger(__name__)
+
+try:
+    LANCZOS = Image.Resampling.LANCZOS
+except AttributeError:
+    LANCZOS = Image.LANCZOS
 
 
 class ImageShape(BaseShape):
@@ -20,6 +26,7 @@ class ImageShape(BaseShape):
     """
     shape_name = 'image'
 
+    @cached_result
     def _get_image(self, value):
         """
         Чтение файла с диска
@@ -33,23 +40,33 @@ class ImageShape(BaseShape):
         Image.Image
         """
         from ..utils import b64
-        if value == '$source':  # исходная картинка кадра, не путать с source самой шейпы
-            # возвращаем исходник кадра
-            return self.source_image.copy()
+        # source image of the frame, not to be confused with the source of the shape itself
+        if value == '$source':
+            # return source frame image
+            return self.source_image_raw.copy()
+        # is base64
         elif b64.is_b64(value):
-            return b64.b64_str_to_image(value)
+            return b64.b64_to_file(value)
         # looking for file
         res = self.get_resource_file(value)
+        if not os.path.exists(res):
+            raise IOError(f'Path not exists: ({value}) {res}')
         if res:
+            if res.lower().endswith('.svg'):
+                from ..utils.render_svg import render
+
+                w = super().width or None
+                h = super().height or None
+                return render(res, (w, h))
             return Image.open(str(res))
         raise IOError(f'Path not exists: ({value}) {res}')
 
     @property
     def source(self):
-        # source = self._data.get('source')
         source = self._eval_parameter('source')
         if not source:
             raise RuntimeError('Image source not set')
+        source = os.path.expandvars(source)
         img = self._get_image(source)
         # apply mask and transparency
         img = self.apply_mask(img, self.mask, self.transparency)
@@ -73,7 +90,7 @@ class ImageShape(BaseShape):
                 target_size[0] = img.size[0]
             if target_size[1] == 0:
                 target_size[1] = img.size[1]
-            img = ImageOps.fit(img, target_size, Image.Resampling.LANCZOS)
+            img = ImageOps.fit(img, target_size, LANCZOS)
         return img
 
     def _resize_values(self, src_size, trg_size):
@@ -86,10 +103,10 @@ class ImageShape(BaseShape):
     @property
     @cached_result
     def height(self):
-        h = super(ImageShape, self).height
+        h = super().height or None
         if h:
             return h
-        w = super(ImageShape, self).width
+        w = super(ImageShape, self).width or None
         if not w:
             return self.source.size[1]
         else:
@@ -101,10 +118,10 @@ class ImageShape(BaseShape):
     @property
     @cached_result
     def width(self):
-        w = super(ImageShape, self).width
+        w = super(ImageShape, self).width or None
         if w:
             return w
-        h = super(ImageShape, self).height
+        h = super(ImageShape, self).height or None
         if not h:
             return self.source.size[0]
         else:
@@ -134,7 +151,7 @@ class ImageShape(BaseShape):
 
     def apply_mask(self, img, mask, transparency=0):
         # get source
-        if not Image.isImageType(img):
+        if not isinstance(img, Image.Image):
             img = Image.open(img).convert('RGBA')
         else:
             img = img.convert('RGBA')
@@ -199,8 +216,6 @@ class ImageShape(BaseShape):
                 color=self.multiply_color).convert('RGBA'))
         return img
 
-    def draw_shape(self, size, **kwargs):
-        overlay = self._get_canvas(size)
+    def draw_shape(self, shape_canvas, canvas_size, center, zero_point, **kwargs):
         img = self._apply_multiply_color(self.source_resized)
-        overlay.paste(img, (self.x, self.y), img)
-        return overlay
+        shape_canvas.paste(img, tuple(zero_point.int()), img)

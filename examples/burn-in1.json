@@ -48,7 +48,7 @@
                 "align_v": "center", "font_size": "110%"
               },
               {
-                "type": "label", "text": "PATH: ", "y": "-0.4u",
+                "type": "label", "text": "PATH: ",
                 "align_v": "center", "align_h": "right",
                 "text_color": "$text_color_green"
               },
