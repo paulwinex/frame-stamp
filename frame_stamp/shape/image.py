@@ -7,6 +7,10 @@ from frame_stamp.utils import cached_result
 import logging
 
 logger = logging.getLogger(__name__)
+try:
+    LANCZOS = Image.Resampling.LANCZOS
+except AttributeError:
+    LANCZOS = Image.LANCZOS
 
 try:
     LANCZOS = Image.Resampling.LANCZOS
