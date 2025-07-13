@@ -293,10 +293,10 @@ class GridShape(BaseShape):
         from frame_stamp.utils.rect import Rect
 
         shapes = self.get_cell_shapes()
-        if shapes:
+        if shapes and self.is_enabled():
             for shape in shapes:
                 yield from shape.render(size, **kwargs)
-        if self.border.get('enabled'):
+        if self.border.get('enabled') and self.is_enabled():
             offset_top = self.border.get('offset_top', self.border.get('offset', 0))
             offset_bottom = self.border.get('offset_bottom', self.border.get('offset', 0))
             offset_left = self.border.get('offset_left', self.border.get('offset', 0))
