@@ -1,3 +1,5 @@
+from typing import Union
+
 from .point import Point
 
 
@@ -73,7 +75,7 @@ class Rect:
         return not (self.right < other.left or self.left > other.right or
                     self.bottom < other.top or self.top > other.bottom)
 
-    def contains(self, point: Point|list|tuple):
+    def contains(self, point: Union[Point, list, tuple]):
         """
         Проверяет, содержит ли прямоугольник указанную точку.
 
