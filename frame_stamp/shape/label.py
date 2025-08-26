@@ -12,6 +12,7 @@ from ..utils.point import Point
 from ..utils.rect import Rect
 
 logger = logging.getLogger(__name__)
+DEFAULT_FONT = Path(__file__).parent.parent.joinpath('fonts/OpenSans.ttf').as_posix()
 
 
 class LabelShape(BaseShape):
@@ -231,7 +232,11 @@ class LabelShape(BaseShape):
         """
         from datetime import datetime
         ctx = {**self.defaults, **self.variables}
-        date = datetime.fromtimestamp(ctx.get('timestamp')) or datetime.now()
+        ts = ctx.get('timestamp')
+        if ts:
+            date = datetime.fromtimestamp(ts)
+        else:
+            date = datetime.now()
         for dt_str in re.findall(r'{:.+?}', text):
             if not re.findall(r'%\w', dt_str):
                 continue
@@ -324,6 +329,8 @@ class LabelShape(BaseShape):
         Returns a ready-to-render font
         """
         font = self._resolve_font_name(self.font_name)
+        if not font:
+            font = DEFAULT_FONT
         return ImageFont.FreeTypeFont(font, self.font_size)
 
     @property
