@@ -1,15 +1,15 @@
 .PHONY: install-dev docs
 
 install:
-	poetry install
+	uv sync --extra svg
 
 install-dev:
-	poetry install --with dev
+	uv sync --group dev --extra pyside svg
 
 run:
-	poetry run sh ./frame_stamp/bin/open_viewer.sh
+	uv run sh ./frame_stamp/bin/open_viewer.sh
 
 
 docs: install-dev
-	poetry run sphinx-build -b html -c docs docs frame-stamp-docs
+	uv run sphinx-build -b html -c docs docs frame-stamp-docs
 
