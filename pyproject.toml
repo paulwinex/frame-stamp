@@ -1,6 +1,6 @@
 [project]
 name = "frame-stamp"
-version = "0.1.9"
+version = "0.1.10"
 description = "Adding technical information to images using a template."
 authors = [{ name = "paulwinex", email = "paulwinex@gmail.com" }]
 requires-python = ">=3.9,<3.13"
