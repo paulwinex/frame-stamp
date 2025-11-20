@@ -1,6 +1,6 @@
 [project]
 name = "frame-stamp"
-version = "0.1.10"
+version = "0.1.11"
 description = "Adding technical information to images using a template."
 authors = [{ name = "paulwinex", email = "paulwinex@gmail.com" }]
 requires-python = ">=3.9,<3.13"
@@ -22,5 +22,20 @@ dev = [
 ]
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv", "wheel", "setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["frame_stamp"]
+exclude = ["tests*", "*__pycache__*", "_tmp"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"frame_stamp" = [
+    "fonts/*",
+    "bin/*",
+    "resources/*",
+]
