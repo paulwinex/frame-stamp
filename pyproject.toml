@@ -1,6 +1,6 @@
 [project]
 name = "frame-stamp"
-version = "0.1.11"
+version = "0.1.12"
 description = "Adding technical information to images using a template."
 authors = [{ name = "paulwinex", email = "paulwinex@gmail.com" }]
 requires-python = ">=3.9,<3.13"
@@ -27,7 +27,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["frame_stamp"]
+include = ["frame_stamp*"]
 exclude = ["tests*", "*__pycache__*", "_tmp"]
 
 [tool.setuptools]
