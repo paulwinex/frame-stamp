@@ -1,10 +1,11 @@
+import logging
 import math
-import re, os
-import string
+import os
 import random
+import re
+import string
 
 from PIL import Image, ImageDraw
-import logging
 
 from frame_stamp.utils import cached_result, geometry_tools
 from frame_stamp.utils.point import Point
@@ -19,21 +20,29 @@ except AttributeError:
     BICUBIC = Image.Resampling.BICUBIC
 
 
-class AbstractShape(object):
+class BaseShape:
     """
-    Abstract shape.
-
+    Base Shape.
     - Data initialization
     - Methods for resolving parameters
+    - Coordinate system implementation
+    - Color
+    - Debug
 
-    Parameters
-        id
-        parent
-        enabled
+    Allowed parameters:
+        x                  : X coordinate
+        y                  : Y coordinate
+        color              : Text color
+        alight_h           : Alignment relative to the X coordinate (left, right, center)
+        alight_v           : Alignment relative to the Y coordinate (top, bottom, center)
+        parent             : Parent object
+
     """
     shape_name = None
     __instances__ = {}
     names_stop_list = ['parent']
+    default_width = 0
+    default_height = 0
 
     def __init__(self, shape_data, context, **kwargs):
         if shape_data.get('id') in self.names_stop_list:
@@ -43,6 +52,8 @@ class AbstractShape(object):
         self._parent = None
         self._context = context
         self._local_context = kwargs.get('local_context') or {}
+        self._debug_enabled = bool(os.environ.get('DEBUG_SHAPES'))
+        self._debug_variables = {}
         if 'parent' in shape_data:
             parent_name = shape_data['parent']
             if isinstance(parent_name, BaseShape):
@@ -62,6 +73,8 @@ class AbstractShape(object):
 
     def __str__(self):
         return '{} #{}'.format(self.__class__.__name__, self.id or 'no-id')
+
+    # SCOPE
 
     def clear_cache(self):
         self.__cache__.clear()
@@ -348,31 +361,7 @@ class AbstractShape(object):
             text = text.replace(pattern, str(val))
         return text
 
-
-class BaseShape(AbstractShape):
-    """
-    Base Shape.
-    - Coordinate system implementation
-    - Color
-    - Debug
-
-    Allowed parameters:
-        x                  : X coordinate
-        y                  : Y coordinate
-        color              : Text color
-        alight_h           : Alignment relative to the X coordinate (left, right, center)
-        alight_v           : Alignment relative to the Y coordinate (top, bottom, center)
-        parent             : Parent object
-
-    """
-    default_width = 0
-    default_height = 0
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._debug_enabled = bool(os.environ.get('DEBUG_SHAPES'))
-        self._debug_variables = {}
-
+    # RENDER
     @property
     @cached_result
     def debug_options(self):
@@ -461,99 +450,6 @@ class BaseShape(AbstractShape):
     @property
     def rotated_rect(self):
         return self.raw_rect.rotate(self.global_rotate, self.raw_rect.center)
-
-    def _get_render_sized_canvas(self):
-        side_size = int(self._compute_maximum_distance_from_center() * 2.2) + int(self.shape_canvas_offset()+2)
-        canvas_size = (side_size, side_size)
-        center = Point(side_size/2, side_size/2)
-        zero = Point((side_size-self.width) / 2, (side_size-self.height) / 2)
-        return self._get_canvas(canvas_size), canvas_size, center, zero
-
-    def shape_canvas_offset(self):
-        return 0
-
-    def _compute_maximum_distance_from_center(self):
-        return (self.width ** 2 + self.height ** 2) ** 0.5 / 2
-
-    def draw_shape(self, shape_canvas: Image.Image, canvas_size: tuple, center: Point, zero_point: Point, **kwargs):
-        raise NotImplementedError
-
-    def _draw_gradient(self, image, gradient: dict):
-        from ..utils.image_tools import get_gradient_renderer, mix_alpha_channels
-        # todo: need to optimize!
-        render = get_gradient_renderer(gradient['type'])
-        grad_img = render(size=(self.width, self.height), **gradient)
-        grad_canvas = Image.new('RGBA', image.size)
-        grad_canvas.paste(grad_img, self._debug_variables['zero_point'].int().tuple)
-        if gradient.get('use_gradient_alpha'):
-            # copy alpha
-            grad_alpha = grad_canvas.split()[-1].copy()
-        mix_alpha_channels(image, grad_canvas)
-        if gradient.get('use_gradient_alpha'):
-            # apply copied alpha
-            mix_alpha_channels(grad_alpha, image)
-        image.alpha_composite(grad_canvas)
-
-    def compute_rotation_offset(self):
-        x = y = 0
-        if self.rotate and self.rotation_offset:
-            points = [self.rotation_transform(pt) for pt in self.raw_bound]
-            if self.align_h == 'right':
-                max_x  = max([pt.x for pt in points])
-                x = max(0, max_x - self.parent.right)
-            elif self.align_h == 'left':
-                min_x = min([pt.x for pt in points])
-                x = min(0, min_x - self.parent.x)
-            if self.align_v == 'bottom':
-                max_y = max([pt.y for pt in points])
-                y = max(0, max_y - self.parent.bottom)
-            elif self.align_v == 'top':
-                min_y = min([pt.y for pt in points])
-                y = -max(0, self.parent.top - min_y)
-        return Point(x, y)
-
-    def render(self, size, **kwargs):
-        if not self.is_enabled():
-            return self._get_canvas(size)
-        # get current shape canvas size including rotation
-        shape_canvas, canvas_size, center, zero_point = self._get_render_sized_canvas()
-        self._debug_variables['zero_point'] = zero_point
-        # draw base shape
-        shape_canvas = self.draw_shape(shape_canvas, canvas_size, center, zero_point) or shape_canvas
-        # gradient
-        if self.gradient:
-            for grad in self.gradient:
-                if grad['enabled']:
-                    self._draw_gradient(shape_canvas, grad)
-        if self.global_rotate:
-            # rotate around center
-            shape_canvas = shape_canvas.rotate(self.global_rotate, expand=False, center=(*center,), resample=BICUBIC)
-        # compute coords for pasting
-        global_pos = Point(self.x, self.y)
-        paste_pos = global_pos - zero_point
-        # compute transformation offset for rotated shape
-        pivot = Point(self.rotation_pivot)
-        paste_offset = self.center - self.rotation_transform(self.center) + self.compute_rotation_offset()
-        # move rotated shape
-        paste_pos -= paste_offset
-        # self debug draw ##############################
-        if self.debug:
-            self._render_debug(shape_canvas)
-
-        # return main image ###########################
-        yield shape_canvas, paste_pos.int()
-        # #################
-
-        # external debug draw ##########################
-        if self.debug:
-            if self.debug_options['rotation_pivot']:
-                pivot_image = self._render_debug_pivot()
-                if pivot_image:
-                    yield pivot_image, (pivot-(pivot_image.size[0]/2)).int()
-            if self.debug_options['parent']:
-                parent_image, parent_paste_pos = self._render_debug_parent(size, shape_canvas, paste_pos, rotation_pivot=center, **kwargs)
-                if parent_image:
-                    yield parent_image, parent_paste_pos
 
     @property
     @cached_result
@@ -755,8 +651,112 @@ class BaseShape(AbstractShape):
             if func:
                 return func(file_name)
 
+    def _get_render_sized_canvas(self):
+        side_size = int(self._compute_maximum_distance_from_center() * 2.2) + int(self.shape_canvas_offset()+2)
+        canvas_size = (side_size, side_size)
+        center = Point(side_size/2, side_size/2)
+        zero = Point((side_size-self.width) / 2, (side_size-self.height) / 2)
+        return self._get_canvas(canvas_size), canvas_size, center, zero
+
+    def shape_canvas_offset(self):
+        return 0
+
+    def _compute_maximum_distance_from_center(self):
+        return (self.width ** 2 + self.height ** 2) ** 0.5 / 2
+
+    def _draw_gradient(self, image, gradient: dict):
+        from ..utils.image_tools import get_gradient_renderer, mix_alpha_channels
+        # todo: need to optimize!
+        render = get_gradient_renderer(gradient['type'])
+        grad_img = render(size=(self.width, self.height), **gradient)
+        grad_canvas = Image.new('RGBA', image.size)
+        grad_canvas.paste(grad_img, self._debug_variables['zero_point'].int().tuple)
+        if gradient.get('use_gradient_alpha'):
+            # copy alpha
+            grad_alpha = grad_canvas.split()[-1].copy()
+        mix_alpha_channels(image, grad_canvas)
+        if gradient.get('use_gradient_alpha'):
+            # apply copied alpha
+            mix_alpha_channels(grad_alpha, image)
+        image.alpha_composite(grad_canvas)
+
+    def compute_rotation_offset(self):
+        x = y = 0
+        if self.rotate and self.rotation_offset:
+            points = [self.rotation_transform(pt) for pt in self.raw_bound]
+            if self.align_h == 'right':
+                max_x  = max([pt.x for pt in points])
+                x = max(0, max_x - self.parent.right)
+            elif self.align_h == 'left':
+                min_x = min([pt.x for pt in points])
+                x = min(0, min_x - self.parent.x)
+            if self.align_v == 'bottom':
+                max_y = max([pt.y for pt in points])
+                y = max(0, max_y - self.parent.bottom)
+            elif self.align_v == 'top':
+                min_y = min([pt.y for pt in points])
+                y = -max(0, self.parent.top - min_y)
+        return Point(x, y)
+
+    def draw_shape(
+            self, shape_canvas: Image.Image, canvas_size: tuple[int, int], center: Point, zero_point: Point, **kwargs
+        ):
+        """
+        Render shape on given canvas
+        """
+        raise NotImplementedError
+
+    def render(self, size, **kwargs):
+        """
+        Main function with full render process
+        """
+        if not self.is_enabled():
+            return self._get_canvas(size)
+        # get current shape canvas size including rotation
+        shape_canvas, canvas_size, center, zero_point = self._get_render_sized_canvas()
+        self._debug_variables['zero_point'] = zero_point
+        # draw base shape
+        shape_canvas = self.draw_shape(shape_canvas, canvas_size, center, zero_point) or shape_canvas
+        # gradient
+        if self.gradient:
+            for grad in self.gradient:
+                if grad['enabled']:
+                    self._draw_gradient(shape_canvas, grad)
+        if self.global_rotate:
+            # rotate around center
+            shape_canvas = shape_canvas.rotate(self.global_rotate, expand=False, center=(*center,), resample=BICUBIC)
+        # compute coords for pasting
+        global_pos = Point(self.x, self.y)
+        paste_pos = global_pos - zero_point
+        # compute transformation offset for rotated shape
+        pivot = Point(self.rotation_pivot)
+        paste_offset = self.center - self.rotation_transform(self.center) + self.compute_rotation_offset()
+        # move rotated shape
+        paste_pos -= paste_offset
+
+        # self debug draw ##############################
+        if self.debug:
+            self._render_debug(shape_canvas)
+        # return main image ###########################
+        yield shape_canvas, paste_pos.int()
+        # #################
+
+        # external debug draw ##########################
+        if self.debug:
+            if self.debug_options['rotation_pivot']:
+                pivot_image = self._render_debug_pivot()
+                if pivot_image:
+                    yield pivot_image, (pivot-(pivot_image.size[0]/2)).int()
+            if self.debug_options['parent']:
+                parent_image, parent_paste_pos = self._render_debug_parent(size, shape_canvas, paste_pos, rotation_pivot=center, **kwargs)
+                if parent_image:
+                    yield parent_image, parent_paste_pos
+
 
 class EmptyShape(BaseShape):
+    """
+    Just empty image
+    """
     shape_name = 'empty'
 
     def draw_shape(self, size, **kwargs):
@@ -764,7 +764,9 @@ class EmptyShape(BaseShape):
 
 
 class RootParent(BaseShape):
+    """Empty Root parent shape"""
     def __init__(self, context, *args, **kwargs):
+        # don't call super class for dummy child (root parent). ALl data must be empty
         self._context = context
         self._data = {}
         self._parent = None
