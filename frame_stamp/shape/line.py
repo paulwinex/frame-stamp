@@ -1,13 +1,15 @@
 from __future__ import absolute_import
-from .base_shape import BaseShape
-from PIL import ImageDraw
+
+from PIL import ImageDraw, Image
+
+from frame_stamp.shape.base_shape import BaseShape
 from frame_stamp.utils import cached_result
-from ..utils.point import Point, PointInt
+from frame_stamp.utils.point import Point
 
 
 class LineShape(BaseShape):
     """
-    Линия
+    Simple line shape.
 
     Allowed parameters:
         points
@@ -19,22 +21,22 @@ class LineShape(BaseShape):
 
     @property
     @cached_result
-    def points(self):
+    def points(self) -> list[list]:
         return self._eval_parameter('points', default=[])
 
     @property
     @cached_result
-    def thickness(self):
+    def thickness(self) -> int|float:
         return int(self._eval_parameter('thickness', default=self.default_width))
 
     @property
     @cached_result
-    def joints(self):
+    def joints(self) -> bool:
         return self._eval_parameter('joints', default=True)
 
     @property
     @cached_result
-    def width(self):
+    def width(self) -> int:
         pts = self.points
         if pts:
             max_x = max([x[0] for x in pts])
@@ -45,7 +47,7 @@ class LineShape(BaseShape):
 
     @property
     @cached_result
-    def height(self):
+    def height(self) -> int:
         pts = self.points
         if pts:
             max_y = max([x[1] for x in pts])
@@ -54,7 +56,9 @@ class LineShape(BaseShape):
             h = 0
         return h
 
-    def draw_shape(self, shape_canvas, canvas_size, center, zero_point: Point, **kwargs):
+    def draw_shape(
+            self, shape_canvas: Image.Image, canvas_size: tuple[int, int], center: Point, zero_point: Point, **kwargs
+        ) -> None:
         pts = self.points
         if pts:
             pts = tuple(tuple([self._eval_parameter_convert('', c) for c in x]) for x in pts)

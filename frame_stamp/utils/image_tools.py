@@ -1,14 +1,21 @@
 import math
+from typing import Callable
+
 from PIL import Image, ImageDraw
 
 
 def linear_gradient(size: tuple[int, int], point1: tuple[int, int, int], point2: tuple[int, int, int],
-                    color1: tuple[int, int, int, int], color2: tuple[int, int, int, int], **kwargs):
-    assert len(size) == 2, "Size must be a tuple of (width, height)"
-    assert len(point1) == 2, "Point1 must be a tuple of (x, y)"
-    assert len(point2) == 2, "Point2 must be a tuple of (x, y)"
-    assert len(color1) == 4, "Color1 must be a tuple of (r, g, b, a)"
-    assert len(color2) == 4, "Color2 must be a tuple of (r, g, b, a)"
+                    color1: tuple[int, int, int, int], color2: tuple[int, int, int, int], **kwargs) -> Image.Image:
+    if not len(size) == 2:
+        raise ValueError("Size must be a tuple of (width, height)")
+    if not len(point1) == 2:
+        raise ValueError("Point1 must be a tuple of (x, y)")
+    if not len(point2) == 2:
+        raise ValueError("Point2 must be a tuple of (x, y)")
+    if not len(color1) == 4:
+        raise ValueError("Color1 must be a tuple of (r, g, b, a)")
+    if not len(color2) == 4:
+        raise ValueError("Color2 must be a tuple of (r, g, b, a)")
 
     img = Image.new('RGBA', size)
     draw = ImageDraw.Draw(img)
@@ -34,11 +41,16 @@ def linear_gradient(size: tuple[int, int], point1: tuple[int, int, int], point2:
 
 def radial_gradient(size: tuple[int, int], center: tuple[int, int], radius: int,
                     color1: tuple[int, int, int, int], color2: tuple[int, int, int, int], **kwargs):
-    assert len(size) == 2, "Size must be a tuple of (width, height)"
-    assert len(center) == 2, "Center must be a tuple of (x, y)"
-    assert len(color1) == 4, "Color1 must be a tuple of (r, g, b, a)"
-    assert len(color2) == 4, "Color2 must be a tuple of (r, g, b, a)"
-    assert radius > 0, "Radius must be greater than 0"
+    if not len(size) == 2:
+        raise ValueError("Size must be a tuple of (width, height)")
+    if not len(center) == 2:
+        raise ValueError("Center must be a tuple of (x, y)")
+    if not len(color1) == 4:
+        raise ValueError("Color1 must be a tuple of (r, g, b, a)")
+    if not len(color2) == 4:
+        raise ValueError("Color2 must be a tuple of (r, g, b, a)")
+    if not radius > 0:
+        raise ValueError("Radius must be greater than 0")
 
     img = Image.new('RGBA', size)
     draw = ImageDraw.Draw(img)
@@ -60,7 +72,7 @@ def radial_gradient(size: tuple[int, int], center: tuple[int, int], radius: int,
     return img
 
 
-def get_gradient_renderer(gradient_type):
+def get_gradient_renderer(gradient_type: str) -> Callable:
     if gradient_type == 'linear':
         return linear_gradient
     elif gradient_type == 'radial':
@@ -69,7 +81,7 @@ def get_gradient_renderer(gradient_type):
         raise ValueError(f"Unknown gradient type: {gradient_type}")
 
 
-def mix_alpha_channels(img1, img2):
+def mix_alpha_channels(img1: Image.Image, img2: Image.Image) -> None:
     """
     Mix alpha img1 > img2
     img2 will be changed

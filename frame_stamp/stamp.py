@@ -1,11 +1,14 @@
 from __future__ import absolute_import
-from .shape import base_shape
-from PIL import Image, ImageDraw, ImageFile
-from .shape import get_shape_class
-from .utils.exceptions import PresetError
-from .utils import exceptions
-from pathlib import Path
+
 import logging
+from pathlib import Path
+
+from PIL import Image, ImageFile
+
+from .shape import base_shape
+from .shape import get_shape_class
+from .utils import exceptions
+from .utils.exceptions import PresetError
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 logger = logging.getLogger(__name__)
@@ -17,7 +20,7 @@ class FrameStamp(object):
         JPG = "JPEG"
         PNG = "PNG"
 
-    def __init__(self, image, template, variables, **kwargs):
+    def __init__(self, image: str|Path, template: dict, variables: dict, **kwargs):
         self._template = template
         self._variables = variables or {}
         self._shapes = []
@@ -78,7 +81,7 @@ class FrameStamp(object):
         self._add_shape_to_scope(shape)
         self._shapes.append(shape)
 
-    def _add_shape_to_scope(self, shape):
+    def _add_shape_to_scope(self, shape: base_shape.BaseShape):
         if shape.id is not None:
             if shape.id in self._scope:
                 raise exceptions.PresetError('Duplicate shape ID: {}'.format(shape.id))
@@ -91,15 +94,15 @@ class FrameStamp(object):
         return (x[1] for x in sorted(enumerate(self._shapes), key=lambda item: (item[1].z_index, item[0])))
 
     @property
-    def source(self):
+    def source(self) -> Image.Image:
         return self._source
 
     def set_source(self, input_image):
         if Image.isImageType(input_image):
-            self._source = input_image.convert('RGBA')  # type: Image.Image
-            self._shared_context['source_image_raw'] = input_image.convert('RGBA')
+            self._source: Image.Image = input_image.convert('RGBA')
+            self._shared_context['source_image_raw']= input_image.convert('RGBA')
         elif isinstance(input_image, (str, Path)):
-            self._source = Image.open(input_image).convert('RGB').convert('RGBA')  # type: Image.Image
+            self._source = Image.open(input_image).convert('RGB').convert('RGBA')
             self._shared_context['source_image_raw'] = Image.open(input_image).convert('RGB').convert('RGBA')
         else:
             raise TypeError('Source image must be string or PIL.Image')
@@ -114,7 +117,8 @@ class FrameStamp(object):
         if not self.source:
             raise RuntimeError('Source image not set')
         img_size = self.source.size
-        for shape in self.get_shapes():     # type: BaseShape
+        for shape in self.get_shapes():
+            shape: base_shape.BaseShape
             if shape.skip:
                 continue
             try:

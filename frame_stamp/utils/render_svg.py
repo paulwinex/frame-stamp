@@ -1,9 +1,10 @@
-from pathlib import Path
-from PIL import Image
 from io import BytesIO
+from pathlib import Path
+
+from PIL import Image
 
 
-def render_svg_from_file(svg_file: Path, size: tuple = None) -> Image:
+def render_svg_from_file(svg_file: Path, size: tuple = None) -> Image.Image:
     if not svg_file.exists():
         raise FileNotFoundError(f"File not found: {svg_file}")
     with open(svg_file, "r") as file:
@@ -11,7 +12,7 @@ def render_svg_from_file(svg_file: Path, size: tuple = None) -> Image:
     return render_svg(svg_data, size)
 
 
-def render_svg(svg_data: str, size: tuple = None) -> Image:
+def render_svg(svg_data: str, size: tuple = None) -> Image.Image:
     try:
         import cairosvg
     except  ImportError:
@@ -20,7 +21,7 @@ def render_svg(svg_data: str, size: tuple = None) -> Image:
     return Image.open(BytesIO(png_data))
 
 
-def render(svg_source, size: tuple = None):
+def render(svg_source, size: tuple = None) -> Image.Image:
     if isinstance(svg_source, Path):
         return render_svg_from_file(svg_source)
     elif isinstance(svg_source, str):

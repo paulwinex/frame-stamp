@@ -5,13 +5,15 @@ import math
 class Point:
     def __init__(self, x, y=None):
         if isinstance(x, (list, tuple)):
-            assert len(x) == 2, 'Point must have two coordinates'
+            if not len(x) == 2:
+                raise ValueError('Point must have two coordinates')
             x, y = x
         elif isinstance(x, Point):
             x, y = x.x, x.y
         elif isinstance(x, (int, float)) and y is None:
             raise ValueError('Point must have two coordinates')
-        assert isinstance(y, (int, float)), 'Y coordinate must be int or float'
+        if not isinstance(y, (int, float)):
+            raise ValueError('Y coordinate must be int or float')
         self._x = x
         self._y = y
 
@@ -108,7 +110,7 @@ class Point:
     def y(self, value):
         self._y = value
 
-    def rotate_around(self, pivot: Point, angle: float):
+    def rotate_around(self, pivot: Point, angle: float) -> tuple[int, int]:
         theta = math.radians(angle)
 
         x_new = pivot.x + (self._x - pivot.x) * math.cos(theta) - (self._y - pivot.y) * math.sin(theta)

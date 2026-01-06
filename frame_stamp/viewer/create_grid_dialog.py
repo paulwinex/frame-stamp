@@ -1,8 +1,8 @@
 import tempfile
 from pathlib import Path
 
-from PySide6.QtWidgets import *
 from PySide6.QtCore import *
+from PySide6.QtWidgets import *
 
 
 class CreateGridDialog(QDialog):

@@ -1,16 +1,18 @@
+import os
+import tempfile
+import traceback
 from importlib import reload
-
-from PySide6.QtWidgets import *
-from PySide6.QtCore import *
-from PySide6.QtGui import *
-import os, tempfile, traceback
-import frame_stamp
-from frame_stamp.viewer.canvas import Canvas
-from frame_stamp.viewer.watch import TemplateFileWatch
-from frame_stamp.utils import jsonc, open_file_location
-from frame_stamp import stamp
 from pathlib import Path
 
+from PySide6.QtCore import *
+from PySide6.QtGui import *
+from PySide6.QtWidgets import *
+
+import frame_stamp
+from frame_stamp import stamp
+from frame_stamp.utils import jsonc, open_file_location
+from frame_stamp.viewer.canvas import Canvas
+from frame_stamp.viewer.watch import TemplateFileWatch
 
 icon_path = Path(frame_stamp.__file__).parent / 'resources' / 'icon.png'
 
@@ -100,7 +102,7 @@ class TemplateViewer(QMainWindow):
 
         self.resize(800, 600)
 
-    def set_error(self, text):
+    def set_error(self, text: str):
         self.err.setText(text)
         self.err.show()
         self.canvas.hide()
@@ -179,7 +181,7 @@ class TemplateViewer(QMainWindow):
         p.save(self.blank_image, 'PNG')
         return self.blank_image
 
-    def message(self, text, timeout=3):
+    def message(self, text: str, timeout=3):
         self.status_line.setText(str(text))
         if self.clear_timer.isActive():
             self.clear_timer.stop()
@@ -219,7 +221,7 @@ class TemplateViewer(QMainWindow):
         self.watcher.set_file(self.template_file)
         self.update_image()
 
-    def get_template_from_data(self, data, name=None) -> dict:
+    def get_template_from_data(self, data: dict, name=None) -> dict:
         if 'templates' in data:
             if len(data['templates']) > 1:
                 if name:
@@ -249,7 +251,7 @@ class TemplateViewer(QMainWindow):
         sz = QImage(path).size()
         self.message('Image loaded: {}x{}'.format(sz.width(), sz.height()), timeout=10)
 
-    def dropEvent(self, event, *args, **kwargs):
+    def dropEvent(self, event: QDropEvent, *args, **kwargs):
         mimedata = event.mimeData()
         if mimedata.hasUrls():
             for f in mimedata.urls():
@@ -257,7 +259,7 @@ class TemplateViewer(QMainWindow):
                     break
         QApplication.restoreOverrideCursor()
 
-    def dragEnterEvent(self, event):
+    def dragEnterEvent(self, event: QDragEnterEvent):
         if event.source() is self:
             event.ignore()
         else:
@@ -267,7 +269,7 @@ class TemplateViewer(QMainWindow):
             else:
                 event.ignore()
 
-    def dragMoveEvent(self, event):
+    def dragMoveEvent(self, event: QDragMoveEvent):
         if event.source() is self:
             event.ignore()
         else:
@@ -277,7 +279,7 @@ class TemplateViewer(QMainWindow):
             else:
                 event.ignore()
 
-    def on_file_dropped(self, path):
+    def on_file_dropped(self, path: str) -> bool:
         self.set_no_error()
         if Path(path).suffix in ('.json', '.yml', '.yaml', '.py'):
             self.set_template_file(path)
@@ -352,7 +354,7 @@ class TemplateViewer(QMainWindow):
         self.fs.setVisible(True)
         self.nfs.setVisible(False)
 
-    def closeEvent(self, event):
+    def closeEvent(self, event :QCloseEvent):
         self.save_state()
         super(TemplateViewer, self).closeEvent(event)
 
@@ -452,7 +454,7 @@ class B64ValueViewer(QWidget):
         self.btn = QPushButton('Copy To Clipboard', clicked=self.copy)
         self.vl.addWidget(self.btn)
 
-    def set_text(self, text):
+    def set_text(self, text: str):
         self.te.setPlainText(text)
 
     def copy(self):

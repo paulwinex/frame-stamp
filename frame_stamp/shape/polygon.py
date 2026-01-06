@@ -1,9 +1,10 @@
 from __future__ import absolute_import
 
-from . import LineShape
-from PIL import ImageDraw
+from PIL import ImageDraw, Image
+
 from frame_stamp.utils import cached_result
-from ..utils.point import Point, PointInt
+from frame_stamp.utils.point import Point
+from . import LineShape
 
 
 class PolygonShape(LineShape):
@@ -21,12 +22,12 @@ class PolygonShape(LineShape):
 
     @property
     @cached_result
-    def points(self):
+    def points(self) -> list[list]:
         return self._eval_parameter('points', default=[])
 
     @property
     @cached_result
-    def border(self):
+    def border(self) -> dict:
         value = self._eval_parameter('border', default=None)
         if value is None:
             value = {}
@@ -37,22 +38,22 @@ class PolygonShape(LineShape):
 
     @property
     @cached_result
-    def border_width(self):
+    def border_width(self) -> int:
         return self._eval_parameter('border_width', default=0)
 
     @property
     @cached_result
-    def border_color(self):
+    def border_color(self) -> tuple[int, int, int]|str:
         return self._eval_parameter('border_color', default='black')
 
     @property
     @cached_result
-    def joints(self):
+    def joints(self) -> bool:
         return self._eval_parameter('joints', default=True)
 
     @property
     @cached_result
-    def height(self):
+    def height(self) -> int:
         pts = self.points
         if pts:
             max_y = max([x[1] for x in pts])
@@ -61,7 +62,7 @@ class PolygonShape(LineShape):
             h = 0
         return h
 
-    def draw_shape(self, shape_canvas, canvas_size, center, zero_point: Point, **kwargs):
+    def draw_shape(self, shape_canvas: Image.Image, canvas_size: tuple[int, int], center: Point, zero_point: Point, **kwargs):
         pts = self.points
         if pts:
             pts = tuple(tuple([self._eval_parameter_convert('', c) for c in x]) for x in pts)

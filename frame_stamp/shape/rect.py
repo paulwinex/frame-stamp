@@ -1,13 +1,14 @@
-from .base_shape import BaseShape
-from PIL import ImageDraw
+from PIL import ImageDraw, Image
+
 from frame_stamp.utils import cached_result
-from ..utils.point import Point, PointInt
-from ..utils.rect import Rect
+from frame_stamp.utils.point import PointInt, Point
+from frame_stamp.utils.rect import Rect
+from .base_shape import BaseShape
 
 
 class RectShape(BaseShape):
     """
-    Прямоугольник
+    Rectangle shape
 
     Allowed parameters:
         border_width    : толщина обводки
@@ -20,7 +21,7 @@ class RectShape(BaseShape):
 
     @property
     @cached_result
-    def border(self):
+    def border(self) -> dict:
         value = self._eval_parameter('border', default=None)
         if value is None:
             return None
@@ -31,18 +32,18 @@ class RectShape(BaseShape):
 
     @property
     @cached_result
-    def border_width(self):
+    def border_width(self) -> int:
         return self._eval_parameter('border_width', default=0)
 
     @property
     @cached_result
-    def border_color(self):
+    def border_color(self) -> tuple[int, int, int]|str:
         return self._eval_parameter('border_color', default='black')
 
-    def shape_canvas_offset(self):
+    def shape_canvas_offset(self) -> int:
         return self.border_width
 
-    def draw_shape(self, shape_canvas, canvas_size, center, zero_point, **kwargs):
+    def draw_shape(self, shape_canvas: Image.Image, canvas_size: tuple[int, int], center: Point, zero_point: Point, **kwargs):
         img = ImageDraw.Draw(shape_canvas)
         point1 = zero_point+PointInt(self.width, self.height)
         img.rectangle((

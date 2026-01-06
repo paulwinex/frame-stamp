@@ -4,7 +4,7 @@ import math
 from .point import Point
 
 
-def rotate_point_around_point(point, center, angle):
+def rotate_point_around_point(point: tuple[int ,int], center: tuple[int, int], angle: int) -> tuple[int, int]:
     theta = math.radians(angle)
     x, y = point
     cx, cy = center
@@ -13,7 +13,7 @@ def rotate_point_around_point(point, center, angle):
     return x_new, y_new
 
 
-def rotate_point(point: list, angle, origin: list = None,  precision=3):
+def rotate_point(point: list[int, int], angle: int|float, origin: list[int, int] = None,  precision=3) -> tuple[int, int]:
     """
     Rotate a point counterclockwise by a given angle around a given origin.
     The angle should be given in degrees.
@@ -28,7 +28,7 @@ def rotate_point(point: list, angle, origin: list = None,  precision=3):
     return round(qx, precision), round(qy, precision)
 
 
-def get_rectangle_points(rect, angle=0):
+def get_rectangle_points(rect: tuple[int, int ,int ,int]|tuple[tuple], angle: int = 0) -> tuple[int, int ,int ,int]:
     """Returns the coordinates of the corners of a rectangle, taking into account rotation."""
     if all(isinstance(val, (int, float)) for val in rect):
         x0, y0, x1, y1 = rect
@@ -53,23 +53,23 @@ def get_rectangle_points(rect, angle=0):
     return points
 
 
-def separating_axis_theorem(rect1, rect2):
+def separating_axis_theorem(rect1: tuple[int, int ,int ,int], rect2: tuple[int, int ,int ,int]) -> bool:
     """Tests the intersection of two convex polygons using the separating axis theorem."""
-    def get_normals(points):
+    def get_normals(pts):
         """Returns the normals to the sides of a polygon."""
         normal_list = []
-        for i in range(len(points)):
-            p1 = points[i]
-            p2 = points[(i + 1) % len(points)]
+        for i in range(len(pts)):
+            p1 = pts[i]
+            p2 = pts[(i + 1) % len(pts)]
             edge = (p2[0] - p1[0], p2[1] - p1[1])
-            normal = (-edge[1], edge[0])
-            normal_list.append(normal)
+            nrm = (-edge[1], edge[0])
+            normal_list.append(nrm)
         return normal_list
 
-    def project(points, axis):
+    def project(pts, axis):
         """Projects points onto an axis and returns the minimum and maximum values of the projection."""
         min_proj = max_proj = None
-        for point in points:
+        for point in pts:
             proj = point[0] * axis[0] + point[1] * axis[1]
             if min_proj is None or proj < min_proj:
                 min_proj = proj
@@ -90,7 +90,8 @@ def separating_axis_theorem(rect1, rect2):
     return True
 
 
-def check_intersection(rect1, rect2, angle1=0, angle2=0, index=0):
+def check_intersection(rect1: tuple[int, int ,int ,int], rect2: tuple[int, int ,int ,int],
+                       angle1: int = 0, angle2: int = 0, index: int = 0) -> bool:
     """Checks the intersection of two rectangles, taking into account rotation."""
     if angle1 != 0 or angle2 != 0:
         points1 = get_rectangle_points(rect1, angle1)
@@ -105,12 +106,12 @@ def check_intersection(rect1, rect2, angle1=0, angle2=0, index=0):
         return not (x1_1 < x0_2 or x1_2 < x0_1 or y1_1 < y0_2 or y1_2 < y0_1)
 
 
-def distance(point1, point2):
+def distance(point1: tuple[int, int], point2: tuple[int, int]) -> float:
     """Calculates the Euclidean distance between two points."""
     return math.sqrt((point1[0] - point2[0]) ** 2 + (point1[1] - point2[1]) ** 2)
 
 
-def get_row_distances(matrix, deleting_pivot):
+def get_row_distances(matrix: tuple, deleting_pivot: tuple[int, int]) -> tuple[float]:
     """Returns a list of distances from each row to the deleting pivot point."""
     row_distances = []
     for row in matrix:
@@ -119,7 +120,7 @@ def get_row_distances(matrix, deleting_pivot):
     return row_distances
 
 
-def get_column_distances(matrix, deleting_pivot):
+def get_column_distances(matrix: tuple, deleting_pivot: tuple[int, int]) -> tuple[float]:
     """Returns a list of distances from each column to the deleting_pivot point."""
     column_distances = []
     for col_idx in range(len(matrix[0])):
@@ -128,7 +129,7 @@ def get_column_distances(matrix, deleting_pivot):
     return column_distances
 
 
-def remove_excess_elements(matrix, max_rows, max_columns, deleting_pivot):
+def remove_excess_elements(matrix: tuple, max_rows: int, max_columns: int, deleting_pivot: tuple[int, int]) -> tuple:
     """Removes extra rows and columns from the matrix."""
     if max_rows == 0 or max_columns == 0:
         return []
@@ -153,7 +154,7 @@ def remove_excess_elements(matrix, max_rows, max_columns, deleting_pivot):
     return new_matrix
 
 
-def rectangles_intersect(rect1, rect2):
+def rectangles_intersect(rect1: tuple[int, int ,int ,int], rect2: tuple[int, int ,int ,int]) -> bool:
     """
     Checks whether two rectangles intersect using the separating axis method (SAT).
     """
@@ -180,11 +181,10 @@ def rectangles_intersect(rect1, rect2):
     return True
 
 
-def rect_in_canvas(rect_points, canvas_width, canvas_height):
+def rect_in_canvas(rect_points: tuple, canvas_width: int, canvas_height: int) -> bool:
     for x, y in rect_points:
         if 0 <= x <= canvas_width and 0 <= y <= canvas_height:
             return True
-
     canvas_points = [(0, 0), (canvas_width, 0), (canvas_width, canvas_height), (0, canvas_height)]
     all_canvas_inside = all(is_point_inside_polygon(cx, cy, rect_points) for cx, cy in canvas_points)
     if all_canvas_inside:
@@ -192,7 +192,7 @@ def rect_in_canvas(rect_points, canvas_width, canvas_height):
     return False
 
 
-def is_point_inside_polygon(x, y, poly):
+def is_point_inside_polygon(x: int, y: int, poly:tuple) -> bool:
     n = len(poly)
     inside = False
     p1x, p1y = poly[0]

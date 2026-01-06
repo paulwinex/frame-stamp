@@ -1,16 +1,17 @@
 from pathlib import Path
 
 from frame_stamp.stamp import FrameStamp
-import copy
 
 
 def batch_with_sequences(source_images: list[str],
                          template: dict,
                          variables: dict,
                          output_file_name: str,
-                         output_path: str):
+                         output_path: str) -> None:
     """
-    Use list values as frame values
+    Render multiple images with same template.
+    Use list values as frame values.
+
     Example:
         {
             "variables": {

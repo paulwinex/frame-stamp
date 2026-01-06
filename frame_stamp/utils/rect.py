@@ -1,89 +1,90 @@
 from typing import Union
 
-from .point import Point
+from frame_stamp.utils.geometry_tools import rotate_point_around_point
+from frame_stamp.utils.point import Point
 
 
 class Rect:
-    def __init__(self, x, y, width, height):
+    def __init__(self, x: int, y: int, width: int, height: int):
         self._x = x
         self._y = y
         self._width = width
         self._height = height
 
     @property
-    def x(self):
+    def x(self) -> int:
         return self._x
 
     @property
-    def y(self):
+    def y(self) -> int:
         return self._y
 
     @property
-    def width(self):
+    def width(self) -> int:
         return self._width
 
     @property
-    def height(self):
+    def height(self) -> int:
         return self._height
 
     @property
-    def top(self):
+    def top(self) -> int:
         return self._y
 
     @property
-    def bottom(self):
+    def bottom(self) -> int:
         return self._y + self._height
 
     @property
-    def left(self):
+    def left(self) -> int:
         return self._x
 
     @property
-    def right(self):
+    def right(self) -> int:
         return self._x + self._width
 
     @property
-    def top_left(self):
+    def top_left(self) -> Point:
         return Point(self._x, self._y)
 
     @property
-    def top_right(self):
+    def top_right(self) -> Point:
         return Point(self._x + self._width, self._y)
 
     @property
-    def bottom_left(self):
+    def bottom_left(self) -> Point:
         return Point(self._x, self._y + self._height)
 
     @property
-    def bottom_right(self):
+    def bottom_right(self) -> Point:
         return Point(self._x + self._width, self._y + self._height)
 
     @property
-    def center(self):
+    def center(self) -> Point:
         return Point(self._x+self._width/2, self._y+self._height/2)
 
-    def intersected(self, other: 'Rect'):
+    def intersected(self, other: 'Rect') -> bool:
         """
-        Проверяет, пересекаются ли два прямоугольника.
+        Checks whether two rectangles intersect.
 
-        Аргументы:
-        other -- другой прямоугольник
+        Arguments:
+        other -- another rectangle
 
-        Возвращает:
-        True, если прямоугольники пересекаются, иначе False
+        Returns:
+        True if the rectangles intersect, False otherwise
         """
         return not (self.right < other.left or self.left > other.right or
                     self.bottom < other.top or self.top > other.bottom)
 
-    def contains(self, point: Union[Point, list, tuple]):
+    def contains(self, point: Union[Point, list, tuple]) -> bool:
         """
-        Проверяет, содержит ли прямоугольник указанную точку.
+        Checks whether the rectangle contains the specified point.
 
-        Аргументы:
-        point -- точка для проверки
+        Arguments:
+        point -- the point to check
 
-        Возвращает:
-        True, если прямоугольник содержит точку, иначе False
+        Returns:
+        True if the rectangle contains the point; False otherwise
         """
         if isinstance(point, (list, tuple)):
             assert len(point) == 2, 'Point must be a list or tuple of length 2'
@@ -91,16 +92,16 @@ class Rect:
         return (self.left <= point.x <= self.right and
                 self.top <= point.y <= self.bottom)
 
-    def map_point_to(self, point: Point, other_rect: 'Rect'):
+    def map_point_to(self, point: Point, other_rect: 'Rect') -> Point:
         """
-        Мапит координаты точки в своих локальных координатах в локальные координаты другого прямоугольника.
+        Maps the coordinates of a point in its local coordinates to the local coordinates of another rectangle.
 
-        Аргументы:
-        point -- точка для маппинга
-        other_rect -- другой прямоугольник
+        Arguments:
+        point -- the point to map
+        other_rect -- another rectangle
 
-        Возвращает:
-        Точку с координатами в локальных координатах другого прямоугольника
+        Returns:
+        A point with coordinates in the local coordinates of another rectangle
         """
         local_x = point.x - self.left
         local_y = point.y - self.top
@@ -108,19 +109,19 @@ class Rect:
         mapped_y = other_rect.top + local_y
         return Point(mapped_x, mapped_y)
 
-    def corners(self, as_tuple=True):
+    def corners(self, as_tuple: bool = True) -> tuple[tuple]|tuple[Point]:
         values = self.top_left, self.bottom_right
         if as_tuple:
             return tuple(x.tuple for x in values)
         return values
 
-    def points(self, as_tuple=True):
+    def points(self, as_tuple=True) -> tuple[tuple]|tuple[Point]:
         values = self.top_left, self.top_right, self.bottom_right, self.bottom_left
         if as_tuple:
             return tuple(x.tuple for x in values)
         return values
 
-    def line(self, as_tuple=True):
+    def line(self, as_tuple=True) -> tuple[tuple]|tuple[Point]:
         values = self.top_left, self.top_right, self.bottom_right, self.bottom_left, self.top_left
         if as_tuple:
             return tuple(x.tuple for x in values)
@@ -134,11 +135,11 @@ class Rect:
             self._height - top - bottom
         )
 
-    def pos(self):
+    def pos(self) -> Point:
         return Point(self._x, self._y)
 
     @property
-    def size(self):
+    def size(self) -> tuple[int, int]:
         return self._width, self._height
 
 
@@ -147,8 +148,6 @@ class Rect:
 
     __repr__ = __str__
 
-    def rotate(self, angle: float, pivot: Point):
-        from .geometry_tools import rotate_point_around_point
-
+    def rotate(self, angle: float, pivot: Point) -> tuple[int, int]:
         for pt in self.points():
             yield rotate_point_around_point(pt, pivot, angle)

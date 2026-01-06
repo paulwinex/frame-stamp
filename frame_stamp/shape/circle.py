@@ -1,6 +1,7 @@
-from .base_shape import BaseShape
 from PIL import ImageDraw
+
 from frame_stamp.utils import cached_result
+from .base_shape import BaseShape
 from ..utils.point import PointInt
 
 

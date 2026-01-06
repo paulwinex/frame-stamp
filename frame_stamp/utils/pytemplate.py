@@ -1,15 +1,16 @@
 import importlib.util
 from pathlib import Path
+from types import ModuleType
 
 
-def import_py_template(path, **kwargs):
+def import_py_template(path: str, **kwargs) -> str:
     module = import_module_from_path('frame_stamp_template_file', path)
     if not hasattr(module, 'get_template'):
         raise ImportError(f"Module {path} has not contains function get_template")
     return module.get_template(**kwargs)
 
 
-def import_module_from_path(module_name: str, file_path: str):
+def import_module_from_path(module_name: str, file_path: str) -> ModuleType:
     file_path = Path(file_path).resolve()
     if not file_path.exists():
         raise FileNotFoundError(f"Файл по пути {file_path} не существует.")

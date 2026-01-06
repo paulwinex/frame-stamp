@@ -6,7 +6,8 @@ from frame_stamp.utils.rect import Rect
 def create_grid_image(save_path: str, size: list,
                       background_color="#909090", line10color="#717171", line100color="#424242",
                       add_labels=True, label_color="#000000",
-                      safe_frame=True, center_cross=True):
+                      safe_frame=True, center_cross=True) -> str:
+    """Render and save image with testing grid"""
     width, height = size
     img = Image.new('RGB', (width, height), color=background_color)
     draw = ImageDraw.Draw(img)

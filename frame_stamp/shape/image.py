@@ -1,16 +1,17 @@
 from __future__ import absolute_import
+
+import colorsys
+import logging
 import os.path
 import re
+
 from PIL import Image, ImageChops, ImageOps
-from .base_shape import BaseShape
-from frame_stamp.utils import cached_result
-import logging
+
+from frame_stamp.shape.base_shape import BaseShape
+from frame_stamp.utils import cached_result, b64
+from frame_stamp.utils.point import Point
 
 logger = logging.getLogger(__name__)
-try:
-    LANCZOS = Image.Resampling.LANCZOS
-except AttributeError:
-    LANCZOS = Image.LANCZOS
 
 try:
     LANCZOS = Image.Resampling.LANCZOS
@@ -20,30 +21,21 @@ except AttributeError:
 
 class ImageShape(BaseShape):
     """
-    Картинка
+    Image from file
 
     Allowed parameters:
-        source          : путь к исходному файлу
-        transparency    : прозрчность (0-1)
-        keep_aspect     : сохранять пропорции при изменении размера
-        mask            : чёрно-белая маска
+        source          : path to source image
+        transparency    : transparency (0-1)
+        keep_aspect     : keep aspect ratio on resize
+        mask            : bw mask
     """
     shape_name = 'image'
 
     @cached_result
-    def _get_image(self, value):
+    def _get_image(self, value: str) -> Image.Image:
         """
-        Чтение файла с диска
-
-        Parameters
-        ----------
-        value: str
-
-        Returns
-        -------
-        Image.Image
+        Read file from disk
         """
-        from ..utils import b64
         # source image of the frame, not to be confused with the source of the shape itself
         if value == '$source':
             # return source frame image
@@ -66,7 +58,7 @@ class ImageShape(BaseShape):
         raise IOError(f'Path not exists: ({value}) {res}')
 
     @property
-    def source(self):
+    def source(self) -> Image.Image:
         source = self._eval_parameter('source')
         if not source:
             raise RuntimeError('Image source not set')
@@ -78,14 +70,7 @@ class ImageShape(BaseShape):
 
     @property
     @cached_result
-    def source_resized(self):
-        """
-        Исходник картинки для рисования
-
-        Returns
-        -------
-        Image.Image
-        """
+    def source_resized(self) -> Image.Image:
         img = self.source
         # resize
         if self.size != img.size:
@@ -97,7 +82,7 @@ class ImageShape(BaseShape):
             img = ImageOps.fit(img, target_size, LANCZOS)
         return img
 
-    def _resize_values(self, src_size, trg_size):
+    def _resize_values(self, src_size, trg_size) -> list[int]:
         a1 = trg_size[0] / src_size[0]
         a2 = trg_size[1] / src_size[1]
         scale = min([a1, a2])
@@ -106,7 +91,7 @@ class ImageShape(BaseShape):
 
     @property
     @cached_result
-    def height(self):
+    def height(self) -> int:
         h = super().height or None
         if h:
             return h
@@ -121,7 +106,7 @@ class ImageShape(BaseShape):
 
     @property
     @cached_result
-    def width(self):
+    def width(self) -> int:
         w = super(ImageShape, self).width or None
         if w:
             return w
@@ -136,24 +121,24 @@ class ImageShape(BaseShape):
 
     @property
     @cached_result
-    def size(self):
+    def size(self) -> tuple[int, int]:
         return self.width, self.height
 
     @property
     @cached_result
-    def source_size(self):
+    def source_size(self) -> tuple[int, int]:
         return self.source.size
 
     @property
     @cached_result
-    def mask(self):
+    def mask(self) -> Image.Image:
         mask = self._data.get('mask')
         if not mask:
             return
         img = self._get_image(mask)
         return img.convert('L')
 
-    def apply_mask(self, img, mask, transparency=0):
+    def apply_mask(self, img: Image.Image, mask: Image.Image, transparency: int = 0) -> Image.Image:
         # get source
         if not isinstance(img, Image.Image):
             img = Image.open(img).convert('RGBA')
@@ -184,17 +169,17 @@ class ImageShape(BaseShape):
 
     @property
     @cached_result
-    def transparency(self):
+    def transparency(self) -> int:
         return min(1, max(0, self._eval_parameter('transparency', default=0)))
 
     @property
     @cached_result
-    def keep_aspect(self):
+    def keep_aspect(self) -> bool:
         return bool(self._eval_parameter('keep_aspect', default=True))
 
     @property
     @cached_result
-    def multiply_color(self):
+    def multiply_color(self) -> tuple[int, int, int]:
         clr = self._eval_parameter('multiply_color', default=None)
         if clr is not None:
             if isinstance(clr, (list, tuple)):
@@ -205,14 +190,13 @@ class ImageShape(BaseShape):
                     return tuple(map(int, m.group(1).split(',')))
                 m = re.match(r"hsv\(([\d\s,]+)\)$", clr)
                 if m:
-                    import colorsys
                     hsv = tuple(map(int, m.group(1).split(',')))
                     return tuple(map(lambda x: int(x*255), colorsys.hsv_to_rgb(*map(lambda x: x/255, hsv))))
                 raise ValueError(f'Unknown color format {clr}')
             else:
                 raise TypeError(f'Invalid color type {clr}: {type(clr)}')
 
-    def _apply_multiply_color(self, img: Image):
+    def _apply_multiply_color(self, img: Image.Image) -> Image.Image:
         if self.multiply_color:
             return ImageChops.multiply(img, Image.new(
                 'RGBA',
@@ -220,6 +204,8 @@ class ImageShape(BaseShape):
                 color=self.multiply_color).convert('RGBA'))
         return img
 
-    def draw_shape(self, shape_canvas, canvas_size, center, zero_point, **kwargs):
+    def draw_shape(
+            self, shape_canvas: Image.Image, canvas_size: tuple[int, int], center: Point, zero_point: Point, **kwargs
+        ) -> None:
         img = self._apply_multiply_color(self.source_resized)
         shape_canvas.paste(img, tuple(zero_point.int()), img)
