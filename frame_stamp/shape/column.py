@@ -3,7 +3,7 @@ from .grid import GridShape
 
 class ColumnShape(GridShape):
     """
-    Частный случай формы таблицы. 1 колонка.
+    Grid with 1 column
 
     Allowed parameters:
         rows        : Количество строк
