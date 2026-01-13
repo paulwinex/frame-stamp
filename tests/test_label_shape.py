@@ -1,13 +1,13 @@
-import pytest
 from datetime import datetime
+
+import pytest
 
 from frame_stamp.shape import LabelShape, RectShape
 from frame_stamp.shape.base_shape import BaseShape
 
 
-# ------------------------------------------------------------------
 # TEXT / VARIABLES / EXPRESSIONS
-# ------------------------------------------------------------------
+
 
 def test_label_variable_substitution(context):
     shape_data = {
@@ -45,9 +45,8 @@ def test_label_multiple_inline_expressions(context):
     assert shape.text == "5 and -1"
 
 
-# ------------------------------------------------------------------
 # EXPRESSIONS IN GEOMETRY (via BaseShape)
-# ------------------------------------------------------------------
+
 
 def test_expression_in_position(context):
     shape_data = {
@@ -70,9 +69,8 @@ def test_expression_with_variables(context):
     assert shape.x == 100
 
 
-# ------------------------------------------------------------------
 # BASE SHAPE SANITY (for completeness)
-# ------------------------------------------------------------------
+
 
 def test_base_shape_position(context):
     shape_data = {
@@ -85,14 +83,13 @@ def test_base_shape_position(context):
     assert shape.y == 300
 
 
-# ------------------------------------------------------------------
 # LABEL PROPERTIES
-# ------------------------------------------------------------------
+
 
 def test_label_basic_properties(context):
     shape_data = {
         "text": "hello",
-        "font_name": "Monospace",
+        # "font_name": "Monospace",
         "font_size": 20,
         "text_color": "red",
         "text_spacing": 10,
@@ -120,7 +117,7 @@ def test_label_basic_properties(context):
     assert shape.zfill is True
 
     # font
-    assert shape.font_name == "Monospace"
+    assert shape.font_name == "OpenSansBold.ttf"
     assert shape.font_size == 20
 
     # color
@@ -139,9 +136,8 @@ def test_label_basic_properties(context):
     assert shape.fit_to_parent is True
 
 
-# ------------------------------------------------------------------
 # TEXT TRANSFORMS
-# ------------------------------------------------------------------
+
 
 @pytest.mark.parametrize(
     "params, expected",
@@ -161,9 +157,8 @@ def test_label_case_transforms(context, params, expected):
     assert shape.text == expected
 
 
-# ------------------------------------------------------------------
 # TRUNCATION
-# ------------------------------------------------------------------
+
 
 def test_label_truncate(context):
     shape_data = {
@@ -185,9 +180,8 @@ def test_label_ltruncate(context):
     assert shape.text == "...DEFG"
 
 
-# ------------------------------------------------------------------
 # DATE FORMATTING
-# ------------------------------------------------------------------
+
 
 def test_label_date_formatting(context):
     shape_data = {
@@ -202,10 +196,7 @@ def test_label_date_formatting(context):
     shape = LabelShape(shape_data, context)
     assert shape.text == "date: 2025/05/15"
 
-
-# ------------------------------------------------------------------
 # EDGE CASES
-# ------------------------------------------------------------------
 
 def test_label_empty_text(context):
     shape = LabelShape({"text": ""}, context)

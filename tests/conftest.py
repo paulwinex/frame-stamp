@@ -1,15 +1,31 @@
 # tests/conftest.py
+import json
+import tempfile
+
 import pytest
 from pathlib import Path
 from PIL import Image
 
 from frame_stamp import FrameStamp
 
+TEMPLATES_DIR = Path(__file__, '../templates').resolve()
 
 @pytest.fixture
-def temp_image(tmp_path: Path) -> Path:
+def simple_template():
+    template_path = TEMPLATES_DIR / 'simple_template.json'
+    with template_path.open() as f:
+        return json.load(f)['templates'][0]
+
+@pytest.fixture(scope='function')
+def context(temp_image, simple_template):
+    stamp = FrameStamp(temp_image, simple_template, {})
+    return stamp._shared_context
+
+
+@pytest.fixture
+def temp_image() -> Path:
     """Временная тестовая картинка"""
-    img_path = tmp_path / "source.png"
+    img_path = Path(tempfile.gettempdir(), "source.png")
     img = Image.new("RGB", (400, 300), color="white")
     img.save(img_path)
     return img_path

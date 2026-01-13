@@ -1,6 +1,5 @@
-# tests/test_baseshape_rect.py
 import pytest
-from frame_stamp.shape.rect import RectShape
+
 from frame_stamp.shape.base_shape import RootParent
 from frame_stamp.utils.point import Point
 

@@ -1,4 +1,3 @@
-# tests/test_framestamp_basic.py
 from frame_stamp.shape.base_shape import BaseShape
 
 

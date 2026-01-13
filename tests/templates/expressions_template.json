@@ -1,0 +1,19 @@
+{
+  "templates": [
+    {
+      "name": "expressions",
+      "variables": {
+        "variable1": 1,
+        "variable2": 2,
+        "variable3": 3
+      },
+      "defaults": {
+        "value1": 1,
+        "value2": 2
+      },
+      "shapes": [
+        {"type": "label", "text": "example $value1"}
+      ]
+    }
+  ]
+}
