@@ -157,7 +157,7 @@ class ImageShape(BaseShape):
             im_alpha = ImageChops.multiply(im_alpha, transp)
         if mask:
             # apply mask
-            if not Image.isImageType(mask):
+            if not  isinstance(mask, Image.Image):
                 mask = Image.open(mask).convert('L')
             else:
                 mask = mask.convert('L')
