@@ -22,7 +22,7 @@ fs.render(save_path=output_file)
 ### Initialize dev env
 
 ```shell
-poetry install
+make install
 ```
 
 ### Open UI
@@ -30,12 +30,3 @@ poetry install
 ```shell
 make run 
 ```
-
-### TODO
-
-- alignment for grid
-- add templates in yaml and py format
-- limit column with
-- fit ceil content
-- Gradient fill
-- Template Designer UI
