@@ -7,9 +7,7 @@ from typing import Generator
 from frame_stamp.utils import cached_result, geometry_tools
 from frame_stamp.utils.exceptions import PresetError
 from frame_stamp.utils.geometry_tools import rect_in_canvas
-from frame_stamp.utils.point import Point
-from frame_stamp.utils.rect import Rect
-from frame_stamp.shape import get_shape_class
+from frame_stamp import shape as shape_tools
 from frame_stamp.shape.base_shape import BaseShape, EmptyShape
 
 logger = logging.getLogger(__name__)
@@ -100,7 +98,7 @@ class TileShape(BaseShape):
             shape_type = shape_config.get('type')
             if shape_type is None:
                 raise PresetError('Shape type not defined in template element: {}'.format(shape_config))
-            shape_cls = get_shape_class(shape_type)
+            shape_cls = shape_tools.get_shape_class(shape_type)
             shape: BaseShape = shape_cls(shape_config, self.context, **kwargs)
             if shape.id:
                 raise PresetError('Shape ID for tiled element is not allowed: {}'.format(shape.id))
