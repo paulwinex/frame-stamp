@@ -1,0 +1,44 @@
+{
+  "templates": [
+    {
+      "defaults": {
+        "font_size": "10p",
+        "text1_color": [255, 0, 100, 100],
+        "text2_color": [255, 255, 0, 100]
+      },
+      "variables": {
+        "_timeline": {"start": -180, "end": 180, "value": 0}
+      },
+      "shapes": [
+        {
+          "type": "tile",
+          "grid_rotate": "$timeline_value",
+          "tile_width": 250,
+          "tile_height": 100,
+//          "debug": {"enabled": true},
+          "vertical_spacing": 70,
+          "enabled": false,
+          "pivot": ["=parent.w/2", "=parent.h/2"],
+          "shapes": [
+            {
+              "type": "label", "text": "$global_index",
+              "text_color": "$text2_color",
+//              "rotate": "$timeline_value",
+              "align_h": "center", "align_v": "center",
+              "font_size": "$font_size"
+              ,"debug": {"enabled": true, "parent": true, "canvas": false}
+            }
+          ]
+        },
+                    {
+              "type": "label", "text": "$timeline_value",
+              "text_color": "$text1_color",
+              "rotate": "$timeline_value",
+              "align_h": "center", "align_v": "center",
+              "font_size": "$font_size"
+            }
+
+      ]
+    }
+  ]
+}
