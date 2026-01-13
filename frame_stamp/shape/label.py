@@ -72,7 +72,8 @@ class LabelShape(BaseShape):
         """
         Resolve text value
         """
-        text = self._data['text']
+        text = self._data.get('text', '')
+        text = str(text)
         l_pad = r_pad = ''
         left_pad_match = re.match(r"^\s+", text)
         if left_pad_match:
