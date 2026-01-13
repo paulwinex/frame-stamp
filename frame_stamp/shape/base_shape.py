@@ -525,6 +525,11 @@ class BaseShape:
         return self.height
 
     @property
+    @cached_result
+    def size(self):
+        return self.width, self.height
+
+    @property
     def pos(self):
         return Point(self.x, self.y)
 
@@ -650,6 +655,7 @@ class BaseShape:
             func = self.context['variables'].get('get_resource_func')
             if func:
                 return func(file_name)
+        raise OSError('File not found: {}'.format(file_name))
 
     def _get_render_sized_canvas(self):
         side_size = int(self._compute_maximum_distance_from_center() * 2.2) + int(self.shape_canvas_offset()+2)
@@ -797,11 +803,6 @@ class RootParent(BaseShape):
     @cached_result
     def height(self):
         return self.source_image.size[1]
-
-    @property
-    @cached_result
-    def size(self):
-        return self.width, self.height
 
     def rotation_transform(self, point, *args, **kwargs):
         return point
