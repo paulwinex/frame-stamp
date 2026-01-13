@@ -98,7 +98,7 @@ class FrameStamp(object):
         return self._source
 
     def set_source(self, input_image):
-        if Image.isImageType(input_image):
+        if isinstance(input_image, Image.Image):
             self._source: Image.Image = input_image.convert('RGBA')
             self._shared_context['source_image_raw']= input_image.convert('RGBA')
         elif isinstance(input_image, (str, Path)):
