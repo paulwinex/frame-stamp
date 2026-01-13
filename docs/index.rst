@@ -6,11 +6,12 @@ Frame Stamp
 Установка
 =========
 
-Добавление в проект с помощью `poetry`
+Добавление в проект с помощью `poetry` или `uv`
 
 .. code-block:: bash
 
    poetry add https://github.com/paulwinex/frame-stamp.git#version
+   uv add https://github.com/paulwinex/frame-stamp.git#version
 
 Локальная разработка и запуск
 
@@ -48,3 +49,14 @@ Frame Stamp
    debug
    tricks
    faq
+
+
+TODO
+---
+
+- alignment for grid
+- add templates in yaml and py format
+- limit column with
+- fit ceil content
+- Gradient fill
+- Template Designer UI
