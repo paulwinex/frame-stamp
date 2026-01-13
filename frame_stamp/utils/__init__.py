@@ -16,7 +16,7 @@ def cached_result(func):
             inst = args[0]
             cache_key = f'{func.__qualname__}'
             try:
-                result = getattr(inst, '__cache__')[cache_key]
+                result = getattr(inst, '__cache__', {})[cache_key]
             except AttributeError:  # no cache
                 result = func(*args, **kwargs)
                 if result is not None:

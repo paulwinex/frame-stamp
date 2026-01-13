@@ -59,7 +59,8 @@ def b64_to_file(base64_str: str, image_size: tuple = None):
 
 def b64_str_to_image(base64_str: str) -> Image.Image:
     image_stream = base64.b64decode(base64_str)
-    return Image.open(image_stream)
+    bts = BytesIO(image_stream)
+    return Image.open(bts)
 
 
 def b64_str_to_dict(base64_str: str) -> dict:
