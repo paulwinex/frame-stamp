@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg5"
+   inkscape:export-filename="icon.png"
+   inkscape:export-xdpi="86.698669"
+   inkscape:export-ydpi="86.698669"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   sodipodi:docname="icon.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.78280874"
+     inkscape:cx="16.606866"
+     inkscape:cy="284.87163"
+     inkscape:window-width="2752"
+     inkscape:window-height="1081"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#ff7800;stroke:none;stroke-width:41.4051;stroke-linecap:round;stroke-miterlimit:4.3;stroke-dasharray:none"
+       id="rect900"
+       width="150"
+       height="150"
+       x="33.57682"
+       y="18.821968"
+       rx="0"
+       ry="0" />
+    <rect
+       style="fill:#f9f06b;stroke:#000000;stroke-width:16.9805;stroke-linecap:round;stroke-miterlimit:4.3;stroke-dasharray:none"
+       id="rect234"
+       width="124.40575"
+       height="80.626884"
+       x="46.373943"
+       y="53.50853"
+       ry="18.813389"
+       rx="18.813389" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:13.8681;stroke-linecap:round;stroke-miterlimit:4.3;stroke-dasharray:none"
+       id="rect898"
+       width="62.867653"
+       height="9.245512"
+       x="67.902817"
+       y="74.010574"
+       ry="4.0568171"
+       rx="4.0568171" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:13.8681;stroke-linecap:round;stroke-miterlimit:4.3;stroke-dasharray:none"
+       id="rect955"
+       width="62.867653"
+       height="9.245512"
+       x="88.443474"
+       y="104.75616"
+       ry="4.0568171"
+       rx="4.0568171" />
+  </g>
+</svg>

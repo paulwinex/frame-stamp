@@ -5,9 +5,9 @@
     "backdrop_color": [40, 40, 40, 255],
     "plate_padding": 10,
     "grid_padding": [5, 5, 5, 5],
-    "logo_img": "./images/logo-example.png",
+    "logo_img": "${PWD}/examples/images/dummy.png",
     "title_text_color": "gray",
-    "sg_project_name": "KG",
+    "sg_project_name": "PROJECT NAME",
     "sg_fps": 25,
     "date": "2020-03-01",
     "source_scene": "scene_name.mb",
@@ -17,6 +17,8 @@
     "source_path_padding": "/mnt/projects/kg/dev/textures/base/publish/001/filename_%04d.exr",
     "source_filename_padding": "filename_%04d.exr",
     "source_length": 100,
+    "start_frame": 1001,
+    "end_frame": 1100,
     "source_camera": "cam1",
     "user": "UserName",
     "client":"Client Name"
@@ -25,7 +27,7 @@
     "font_size": "3u",
     "text_color": "lightgray",
     "color": [0, 0, 0, 150],
-    "font_name": "FreeSansBold.ttf",
+//    "font_name": "FreeSansBold.ttf",
     "text_spacing": 10
   },
   "shapes": [
@@ -108,8 +110,8 @@
         {"type": "label", "text": "VERSION", "text_color": "$title_text_color"},
         {"type": "label","text": "v$sg_version", "text_color": "#a9c7e0"},
 
-        {"type": "label", "text": "LENGTH", "text_color": "$title_text_color"},
-        {"type": "label","text": "$source_length", "text_color": "#b6898d"},
+        {"type": "label", "text": "FRAME RANGE", "text_color": "$title_text_color"},
+        {"type": "label","text": "$start_frame-$end_frame ($source_length)", "text_color": "#b6898d"},
 
         {"type": "label", "text": "CAMERA NAME", "text_color": "$title_text_color"},
         {"type": "label","text": "$source_camera"},

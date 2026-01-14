@@ -18,6 +18,7 @@ class Canvas(QWidget):
     def paintEvent(self, event):
         painter = QPainter()
         painter.begin(self)
+        painter.setRenderHint(QPainter.Antialiasing)
         painter.fillRect(event.rect(), QColor('#646565'))
         if self.image:
             size = QSize(

@@ -1,0 +1,14 @@
+{
+  "templates": [
+    {
+      "name": "example",
+      "variables": {
+      },
+      "defaults": {
+      },
+      "shapes": [
+        //    {"type": "label", "text": "example"}
+      ]
+    }
+  ]
+}

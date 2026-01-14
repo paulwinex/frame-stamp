@@ -5,7 +5,7 @@
     "backdrop_color": [40, 40, 40, 255],
     "plate_padding": 10,
     "grid_padding": [5, 5, 5, 5],
-    "logo_img": "./images/logo-example.png",
+    "logo_img": "${PWD}/examples/images/dummy.png",
     "title_text_color": "gray",
     "sg_project_name": "Project Name",
     "sg_fps": 25,
@@ -14,17 +14,19 @@
     "sg_entity_name": "asset_name",
     "sg_task": "task_name",
     "sg_version": "001",
-    "sg_sequence": "/mnt/projects/kg/dev/textures/base/publish/001/filename.exr",
+    "sg_sequence": "/mnt/projects/myprj/dev/textures/base/publish/001/filename.exr",
     "source_length": 100,
     "source_camera": "cam1",
     "user": "UserName",
-    "client":"Client Name"
+    "client":"Client Name",
+    "dcc_name": "maya",
+    "dcc_version": "2020"
   },
   "defaults": {
     "font_size": "3.5u",
     "text_color": "lightgray",
     "color": [0, 0, 0, 150],
-    "font_name": "FreeSansBold.ttf",
+//    "font_name": "FreeSansBold.ttf",
     "text_spacing": 10
   },
   "shapes": [
@@ -127,7 +129,7 @@
         },
         {
           "type": "label",
-          "text": "$sg_sequence", "ltruncate_path": 3
+          "text": "$sg_sequence", "ltruncate_path": 2
         },
 
         // empty line
@@ -192,35 +194,12 @@
           "type": "label",
           "text": "$user", "text_color": "yellow"
         }
-//      ,{
-//          "type": "label", "id": "t15",
-//          "text": "ARTIST:",
-//          "align_h": "right", "text_color": "$title_text_color"
-//        }
-//      ,{
-//          "type": "label",
-//          "text": "$user", "text_color": "yellow"
-//        }
-//       ,{
-//          "type": "label",
-//          "text": "ARTIST:",
-//          "align_h": "right", "text_color": "$title_text_color"
-//        }
-//       ,{
-//          "type": "label",
-//          "text": "$user", "text_color": "yellow"
-//        }
-//       ,{
-//          "type": "label",
-//          "text": "ARTIST:",
-//          "align_h": "right", "text_color": "$title_text_color"
-//        }
-//       ,{
-//          "type": "label",
-//          "text": "$user", "text_color": "yellow"
-//        }
-
       ]
+    },
+    // dcc info
+    {
+      "type": "label", "text": "$dcc_name $dcc_version", "align_v": "bottom", "title": true,
+      "y": -10, "x": 10, "font_size": "1.5p",  "text_color": [255,255,255,100]
     },
     // color grid
     {
