@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import logging
 from pathlib import Path
+from typing import Union
 
 from PIL import Image, ImageFile
 
@@ -20,7 +21,7 @@ class FrameStamp(object):
         JPG = "JPEG"
         PNG = "PNG"
 
-    def __init__(self, image: str|Path, template: dict, variables: dict, **kwargs):
+    def __init__(self, image: Union[str, Path], template: dict, variables: dict, **kwargs):
         self._template = template
         self._variables = variables or {}
         self._shapes = []

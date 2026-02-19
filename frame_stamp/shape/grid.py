@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import logging
 from collections import defaultdict
-from typing import Literal
+from typing import Literal, Union
 
 from PIL import ImageDraw, Image
 
@@ -110,7 +110,7 @@ class GridShape(BaseShape):
 
     @property
     @cached_result
-    def rows(self) -> int|Literal['auto']:
+    def rows(self) -> Union[int, Literal['auto']]:
         return self._eval_parameter('rows', default='auto')
 
     @property
@@ -120,11 +120,11 @@ class GridShape(BaseShape):
 
     @property
     @cached_result
-    def columns(self) -> int|Literal['auto']:
+    def columns(self) -> Union[int, Literal['auto']]:
         return self._eval_parameter('columns', default='auto')
 
     @property
-    def rotate(self) -> int|float:
+    def rotate(self) -> Union[int,float]:
         if super().rotate:
             logger.warning('Grid shape does not support rotation')
         return 0
@@ -209,7 +209,7 @@ class GridShape(BaseShape):
                 columns[i] = max([1, free_columns_width])
         return columns
 
-    def generate_cells(self, count: int, cols: int = None, rows: int = None) -> list[dict]|None:
+    def generate_cells(self, count: int, cols: int = None, rows: int = None) -> Union[list[dict], None]:
         # todo: align partial rows
         if not count:
             return
@@ -290,7 +290,7 @@ class GridShape(BaseShape):
 
     @property
     @cached_result
-    def border_color(self) -> tuple[int, int, int]|str:
+    def border_color(self) -> Union[tuple[int, int, int], str]:
         return self._eval_parameter('border_color', default='black')
 
     def render(self, size: tuple[int, int], **kwargs) -> tuple[Image.Image, Point]:

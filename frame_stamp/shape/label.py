@@ -7,6 +7,7 @@ import re
 import textwrap
 from datetime import datetime
 from pathlib import Path
+from typing import Union
 
 from PIL import ImageFont, ImageDraw, ImageFilter, Image
 
@@ -340,7 +341,7 @@ class LabelShape(BaseShape):
 
     @property
     @cached_result
-    def color(self) -> tuple[int, int, int]|str:
+    def color(self) -> Union[tuple[int, int, int], str]:
         """
         Font color
         """
@@ -351,7 +352,7 @@ class LabelShape(BaseShape):
 
     @property
     @cached_result
-    def outline(self) -> dict|None:
+    def outline(self) -> Union[dict, None]:
         """
         Add outline
         """
@@ -366,7 +367,7 @@ class LabelShape(BaseShape):
 
     @property
     @cached_result
-    def backdrop(self) -> dict|None:
+    def backdrop(self) -> Union[dict, None]:
         """
         Add backdrop
         """
@@ -397,7 +398,7 @@ class LabelShape(BaseShape):
 
     @property
     @cached_result
-    def line_splitter(self) -> str|None:
+    def line_splitter(self) -> Union[str, None]:
         """
         Character to split a line when wrapping to a new line
         """
@@ -405,7 +406,7 @@ class LabelShape(BaseShape):
 
     @property
     @cached_result
-    def move_splitter_to_next_line(self) -> str|None:
+    def move_splitter_to_next_line(self) -> Union[str, None]:
         """
         Determines where the delimiter character will stay. On the current line or on a new
         """
@@ -413,7 +414,7 @@ class LabelShape(BaseShape):
 
     @property
     @cached_result
-    def max_lines_count(self) -> int|None:
+    def max_lines_count(self) -> Union[int, None]:
         """
         Limit on the number of transitions to a new line. After that the line is cut off
         """
@@ -421,7 +422,7 @@ class LabelShape(BaseShape):
 
     @property
     @cached_result
-    def lmax_lines_count(self) -> int|None:
+    def lmax_lines_count(self) -> Union[int, None]:
         """
         Limit on the number of transitions to a new line. The string is truncated from the beginning
         """
@@ -429,17 +430,17 @@ class LabelShape(BaseShape):
 
     @property
     @cached_result
-    def format_date(self) -> str|None:
+    def format_date(self) -> Union[str, None]:
         return self._eval_parameter('format_date', default=False)
 
     @property
     @cached_result
-    def suffix(self) -> str|None:
+    def suffix(self) -> Union[str, None]:
         return self._eval_parameter('suffix', default=None)
 
     @property
     @cached_result
-    def prefix(self) -> str|None:
+    def prefix(self) -> Union[str, None]:
         """
         Example:
              "text": "$version", zfill=3, prefix="v" -> "v001"

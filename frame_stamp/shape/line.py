@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+from typing import Union
+
 from PIL import ImageDraw, Image
 
 from frame_stamp.shape.base_shape import BaseShape
@@ -26,7 +28,7 @@ class LineShape(BaseShape):
 
     @property
     @cached_result
-    def thickness(self) -> int|float:
+    def thickness(self) -> Union[int, float]:
         return int(self._eval_parameter('thickness', default=self.default_width))
 
     @property

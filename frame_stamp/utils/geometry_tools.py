@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 
 import math
+from typing import Union
+
 from .point import Point
 
 
@@ -13,7 +15,7 @@ def rotate_point_around_point(point: tuple[int ,int], center: tuple[int, int], a
     return x_new, y_new
 
 
-def rotate_point(point: list[int, int], angle: int|float, origin: list[int, int] = None,  precision=3) -> tuple[int, int]:
+def rotate_point(point: list[int, int], angle: Union[int,float], origin: list[int, int] = None,  precision=3) -> tuple[int, int]:
     """
     Rotate a point counterclockwise by a given angle around a given origin.
     The angle should be given in degrees.
@@ -28,7 +30,7 @@ def rotate_point(point: list[int, int], angle: int|float, origin: list[int, int]
     return round(qx, precision), round(qy, precision)
 
 
-def get_rectangle_points(rect: tuple[int, int ,int ,int]|tuple[tuple], angle: int = 0) -> tuple[int, int ,int ,int]:
+def get_rectangle_points(rect: Union[tuple[int, int ,int ,int], tuple[tuple]], angle: int = 0) -> tuple[int, int ,int ,int]:
     """Returns the coordinates of the corners of a rectangle, taking into account rotation."""
     if all(isinstance(val, (int, float)) for val in rect):
         x0, y0, x1, y1 = rect

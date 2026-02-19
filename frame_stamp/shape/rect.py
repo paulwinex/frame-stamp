@@ -1,3 +1,5 @@
+from typing import Union
+
 from PIL import ImageDraw, Image
 
 from frame_stamp.utils import cached_result
@@ -37,7 +39,7 @@ class RectShape(BaseShape):
 
     @property
     @cached_result
-    def border_color(self) -> tuple[int, int, int]|str:
+    def border_color(self) -> Union[tuple[int, int, int], str]:
         return self._eval_parameter('border_color', default='black')
 
     def shape_canvas_offset(self) -> int:

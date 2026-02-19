@@ -109,19 +109,19 @@ class Rect:
         mapped_y = other_rect.top + local_y
         return Point(mapped_x, mapped_y)
 
-    def corners(self, as_tuple: bool = True) -> tuple[tuple]|tuple[Point]:
+    def corners(self, as_tuple: bool = True) -> Union[tuple[tuple], tuple[Point]]:
         values = self.top_left, self.bottom_right
         if as_tuple:
             return tuple(x.tuple for x in values)
         return values
 
-    def points(self, as_tuple=True) -> tuple[tuple]|tuple[Point]:
+    def points(self, as_tuple=True) -> Union[tuple[tuple],tuple[Point]]:
         values = self.top_left, self.top_right, self.bottom_right, self.bottom_left
         if as_tuple:
             return tuple(x.tuple for x in values)
         return values
 
-    def line(self, as_tuple=True) -> tuple[tuple]|tuple[Point]:
+    def line(self, as_tuple=True) -> Union[tuple[tuple], tuple[Point]]:
         values = self.top_left, self.top_right, self.bottom_right, self.bottom_left, self.top_left
         if as_tuple:
             return tuple(x.tuple for x in values)

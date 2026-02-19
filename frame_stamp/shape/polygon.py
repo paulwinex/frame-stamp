@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+from typing import Union
+
 from PIL import ImageDraw, Image
 
 from frame_stamp.utils import cached_result
@@ -43,7 +45,7 @@ class PolygonShape(LineShape):
 
     @property
     @cached_result
-    def border_color(self) -> tuple[int, int, int]|str:
+    def border_color(self) -> Union[tuple[int, int, int], str]:
         return self._eval_parameter('border_color', default='black')
 
     @property
