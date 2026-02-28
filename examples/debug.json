@@ -1,0 +1,39 @@
+{
+  "templates": [
+    {
+      "name": "timeline_example",
+      "defaults": {
+        "font_size": "4u",
+        "text_color": "white"
+      },
+      "variables": {
+        "debug": {
+          "enabled": false
+        }
+      },
+      "shapes": [
+        {
+          "type": "label",
+          "text": "Global Debug mode `='ON' if $debug['enabled'] else 'OFF'`",
+          "font_size": "6u",
+          "align_h": "center",
+          "y": "20u",
+          "backdrop": "black"
+        },
+        {
+          "type": "label",
+          "text": "Shape Debug mode `='ON' if self.debug else 'OFF'`",
+          "font_size": "6u",
+          "align_h": "center",
+          "y": "30u",
+          "backdrop": "black",
+          // rename the "debug" field to use global debug settings
+          "debug": {
+            "enabled": true,
+            "color": "aqua", "width": 3
+          }
+        }
+      ]
+    }
+  ]
+}

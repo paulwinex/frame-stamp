@@ -1,9 +1,8 @@
-# coding=utf-8
 """
-Обёртка для Json c поддержкой C++ и python комментариев.
-Для коментариев используйте двойной прямой слеш (`//`)
+A JSON wrapper with C++ support and Python comments.
+For comments, use double forward slashes (`//`)
 
-Пример
+Example
 
 .. code-block:: json
 
@@ -19,19 +18,9 @@ import re
 from json import loads as _loads, dumps as _dumps, dump as _dump
 
 
-def load(fp, *args, **kwargs):
+def load(fp, *args, **kwargs) -> str:
     """
-    Загрузка JSON файла с комментациями. Во время загрузки все комментарии удаляются
-
-    Parameters
-    ----------
-    fp: file
-    args
-    kwargs
-
-    Returns
-    -------
-    Any
+    Uploading a JSON file with comments. All comments are removed during upload.
     """
     try:
         return __clear_comments(fp.read(), **kwargs)
@@ -39,36 +28,16 @@ def load(fp, *args, **kwargs):
         raise Exception("{} {}".format(e, "File: {}".format(fp.name) if hasattr(fp, 'name') else ''))
 
 
-def loads(text, *args, **kwargs):
+def loads(text: str, *args, **kwargs) -> str:
     """
-    Загрзка JSON из строки с очисткой коментариев
-
-    Parameters
-    ----------
-    text: str
-    args
-    kwargs
-
-    Returns
-    -------
-    object
+    Loading JSON from a string with comments stripped
     """
     return __clear_comments(text, **kwargs)
 
 
-def dumps(obj, comment=None, **kwargs):
+def dumps(obj: object, comment: str = None, **kwargs) -> str:
     """
-    Запись JSON в строку с возможностью добавить комментарий в самом начале
-
-    Parameters
-    ----------
-    obj: object
-    comment: str
-    kwargs
-
-    Returns
-    -------
-    str
+    Write JSON to a string with the option to add a comment at the very beginning
     """
     if not comment:
         return _dumps(obj, **kwargs)
@@ -78,19 +47,9 @@ def dumps(obj, comment=None, **kwargs):
         return text
 
 
-def dump(obj, fp, comment=None, **kwargs):
+def dump(obj: object, fp, comment: str = None, **kwargs) -> int:
     """
-    Запись JSON в файл с возможностью добавить комментарий в самом начале
-
-    Parameters
-    ----------
-    obj: object
-    comment: str
-    kwargs
-
-    Returns
-    -------
-    int
+    Write JSON to a file with the option to add a comment at the very beginning
     """
     if not comment:
         return _dump(obj, fp, **kwargs)
@@ -99,13 +58,9 @@ def dump(obj, fp, comment=None, **kwargs):
         return fp.write(text)
 
 
-def __clear_comments(text, **kwargs):
+def __clear_comments(text: str, **kwargs) -> str:
     """
-    Очистка комментариев из строки
-
-    Returns
-    -------
-    str
+    Clearing comments from a line
     """
 
     regex = r'\s*(/{2}).*$'

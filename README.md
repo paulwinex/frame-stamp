@@ -19,22 +19,14 @@ fs = FrameStamp(input_file, template, variables)
 fs.render(save_path=output_file)
 ```
 
-### Open UI
-
-Activate Virtual env and run command.
+### Initialize dev env
 
 ```shell
-./frame_stamp/bin/open_viewer.sh 
+make install
 ```
 
-### TODO
+### Open UI
 
-- font finding
-- alignment for grid
-- add templates in yaml and py format
-- limit column with
-- fit ceil content
-- Tiling and repeat
-- Triangles
-- Gradient fill
-- random function shortcut
+```shell
+make run 
+```

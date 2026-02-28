@@ -1,12 +1,23 @@
 from __future__ import absolute_import
-from .base_shape import BaseShape
-from PIL import ImageFont, ImageDraw, ImageFilter, Image
-import string, os, html, re
-import textwrap
-from frame_stamp.utils import cached_result
+
+import html
 import logging
+import os
+import re
+import textwrap
+from datetime import datetime
+from pathlib import Path
+from typing import Union
+
+from PIL import ImageFont, ImageDraw, ImageFilter, Image
+
+from frame_stamp.shape.base_shape import BaseShape
+from frame_stamp.utils import cached_result, b64
+from frame_stamp.utils.point import Point
+from frame_stamp.utils.rect import Rect
 
 logger = logging.getLogger(__name__)
+DEFAULT_FONT = Path(__file__).parent.parent.joinpath('fonts/OpenSans.ttf').as_posix()
 
 
 class LabelShape(BaseShape):
@@ -62,7 +73,8 @@ class LabelShape(BaseShape):
         """
         Resolve text value
         """
-        text = self._data['text']
+        text = self._data.get('text', '')
+        text = str(text)
         l_pad = r_pad = ''
         left_pad_match = re.match(r"^\s+", text)
         if left_pad_match:
@@ -78,6 +90,12 @@ class LabelShape(BaseShape):
         for match in re.finditer(r'`(.*?)`', text):
             res = str(self._eval_expression('text', match.group(0)))
             text = text.replace(match.group(0), res)
+        if self.zfill:
+            text = text.zfill(self.zfill)
+        if self.prefix:
+            text = self. prefix + text
+        if self.suffix:
+            text = text + self.suffix
         if self.format_date:
             text = self._format_date_from_context(text)
         if self.truncate_path:
@@ -94,15 +112,14 @@ class LabelShape(BaseShape):
             text = text.upper()
         if self.title:
             text = text.title()
-        if self.zfill:
-            text = text.zfill(self.zfill)
+
         if self.fit_to_parent:
             text = self._fit_to_parent_width(text, self.line_splitter)
         elif self.truncate_to_parent or self.ltruncate_to_parent:
             text = self._truncate_to_parent(text, left=self.ltruncate_to_parent)
         return l_pad+text.strip()+r_pad
 
-    def _trunc_path(self, text, count, from_start=1):
+    def _trunc_path(self, text: str, count: int, from_start: str = 1) -> str:
         """
         Clip path by max element count
         """
@@ -112,9 +129,10 @@ class LabelShape(BaseShape):
         else:
             return os.path.sep.join(parts[-count:])
 
-    def _truncate_to_parent(self, text, left=False):
+    def _truncate_to_parent(self, text: str, left: bool = False) -> str:
+        """Truncate by parent container size"""
         if self.parent.width >= self.font.getsize(text)[0]:
-            # перенос не требуется
+            # no new line required
             return text
         single_char_width = self.font.getsize('a')[0]
         max_chars_in_line = self.parent.width // single_char_width
@@ -125,7 +143,7 @@ class LabelShape(BaseShape):
                 text = text[:max_chars_in_line-3] + '...'
         return text
 
-    def _render_special_characters(self, text) -> str:
+    def _render_special_characters(self, text: str) -> str:
         """
         Render of special HTML elements
         """
@@ -133,17 +151,9 @@ class LabelShape(BaseShape):
             text = re.sub(char, val, text)
         return html.unescape(text)
 
-    def _fit_to_parent_width(self, text, divider=None) -> str:
+    def _fit_to_parent_width(self, text: str, divider: bool = None) -> str:
         """
         Adding line breaks if the text does not fit the parent size.
-
-        Parameters
-        ----------
-        text: str
-
-        Returns
-        -------
-        text: str
         """
         single_char_width = self.font.getlength('a') if hasattr(self.font, 'getlength') else self.font.getsize('a')[0]
         if self.parent.width <= single_char_width:
@@ -151,9 +161,9 @@ class LabelShape(BaseShape):
             return text
 
         max_chars_in_line = int(max([1, self.parent.width // single_char_width]))
-        if divider:     # разделяем по указанным символам
+        if divider:     # split by the specified symbols
             if not any([x in text for x in divider]):
-                # символы разделителя не найдены в тексте
+                # separator characters not found in text
                 return text
             lines = self._split_text_by_divider(text, divider, self.move_splitter_to_next_line)
             joined_lines = []
@@ -189,7 +199,7 @@ class LabelShape(BaseShape):
 
         return text
 
-    def _split_text_by_divider(self, text, divider, move_divider_to_next_line=False) -> list:
+    def _split_text_by_divider(self, text: str, divider: str, move_divider_to_next_line: bool = False) -> list:
         """
         Divide text by character
         """
@@ -210,7 +220,7 @@ class LabelShape(BaseShape):
             parts.append(line)
         return parts
 
-    def _format_date_from_context(self, text):
+    def _format_date_from_context(self, text: str) -> str:
         """
         Text example:
         text = "Date: {:%Y.%m.%d %H:%I}"
@@ -219,9 +229,12 @@ class LabelShape(BaseShape):
         -------
         str
         """
-        from datetime import datetime
         ctx = {**self.defaults, **self.variables}
-        date = datetime.fromtimestamp(ctx.get('timestamp')) or datetime.now()
+        ts = ctx.get('timestamp')
+        if ts:
+            date = datetime.fromtimestamp(ts)
+        else:
+            date = datetime.now()
         for dt_str in re.findall(r'{:.+?}', text):
             if not re.findall(r'%\w', dt_str):
                 continue
@@ -236,16 +249,16 @@ class LabelShape(BaseShape):
     @cached_result
     def font_size(self) -> int:
         """Font size"""
-        size = self._eval_parameter('font_size')  # type: int
+        size = self._eval_parameter('font_size', default=self.point*4)  # type: int
         if size == 0:
             raise ValueError('Font size can`t be zero. Shape "{}"'.format(self))
-        return int(size)
+        return max(1, int(size))
 
     @property
     @cached_result
-    def spacing(self):
+    def spacing(self) -> int:
         """Distance between lines"""
-        return self._eval_parameter('text_spacing')
+        return self._eval_parameter('text_spacing', default=0)
 
     @property
     @cached_result
@@ -311,9 +324,12 @@ class LabelShape(BaseShape):
     @cached_result
     def font(self) -> ImageFont:
         """
-        Возвращает готовый шрифт для рендера
+        Returns a ready-to-render font
         """
-        return ImageFont.FreeTypeFont(self._resolve_font_name(self.font_name), self.font_size)
+        font = self._resolve_font_name(self.font_name)
+        if not font:
+            font = DEFAULT_FONT
+        return ImageFont.FreeTypeFont(font, self.font_size)
 
     @property
     @cached_result
@@ -323,48 +339,58 @@ class LabelShape(BaseShape):
         """
         return self._eval_parameter('font_name', default=None) or self._default_font_name
 
-    # @property
-    # @cached_result
-    # def default_font_name(self):
-    #     """
-    #     Путь или имя шрифта по умолчанию
-    #     """
-    #     default_name = self._eval_parameter('default_font_name', default=None) or self._default_font_name
-    #     df = self._eval_parameter('default_font', default=None)
-    #     if not df:
-    #         df = default_name
-    #     return df
-
     @property
     @cached_result
-    def color(self):
+    def color(self) -> Union[tuple[int, int, int], str]:
         """
         Font color
         """
-        clr = self._eval_parameter('text_color')
+        clr = self._eval_parameter('text_color', default='white')
         if isinstance(clr, list):
             clr = tuple(clr)
         return clr
 
     @property
     @cached_result
-    def outline(self):
+    def outline(self) -> Union[dict, None]:
         """
         Add outline
         """
-        return self._eval_parameter('outline', default={})
+        value = self._eval_parameter('outline', default=None)
+        if value is None:
+            return
+        if isinstance(value, (int, float)):
+            value = {'width': value}
+        assert isinstance(value, dict), 'Outline parameter must be type of dict or number'
+        value.setdefault('width', 3)
+        return value
 
     @property
     @cached_result
-    def backdrop(self):
+    def backdrop(self) -> Union[dict, None]:
         """
         Add backdrop
         """
-        return self._eval_parameter('backdrop', default=None)
+        backdrop = self._eval_parameter('backdrop', default=None)
+        if backdrop is None:
+            return
+        if isinstance(backdrop, (str, list)):
+            backdrop = {'color': backdrop}
+        elif isinstance(backdrop, int):
+            backdrop = {"offset": backdrop}
+        if not isinstance(backdrop, dict):
+            raise ValueError(f'Backdrop parameter must be type of dict or number, not {type(backdrop)}')
+        backdrop.setdefault('color', 'black')
+        backdrop.setdefault("offset", 5)
+        backdrop.setdefault('offset_left', backdrop['offset'])
+        backdrop.setdefault('offset_top', backdrop['offset'])
+        backdrop.setdefault('offset_right', backdrop['offset'])
+        backdrop.setdefault('offset_bottom', backdrop['offset'])
+        return backdrop
 
     @property
     @cached_result
-    def fit_to_parent(self):
+    def fit_to_parent(self) -> bool:
         """
         Fit string to parent's width with line wrap
         """
@@ -372,7 +398,7 @@ class LabelShape(BaseShape):
 
     @property
     @cached_result
-    def line_splitter(self):
+    def line_splitter(self) -> Union[str, None]:
         """
         Character to split a line when wrapping to a new line
         """
@@ -380,7 +406,7 @@ class LabelShape(BaseShape):
 
     @property
     @cached_result
-    def move_splitter_to_next_line(self):
+    def move_splitter_to_next_line(self) -> Union[str, None]:
         """
         Determines where the delimiter character will stay. On the current line or on a new
         """
@@ -388,7 +414,7 @@ class LabelShape(BaseShape):
 
     @property
     @cached_result
-    def max_lines_count(self):
+    def max_lines_count(self) -> Union[int, None]:
         """
         Limit on the number of transitions to a new line. After that the line is cut off
         """
@@ -396,7 +422,7 @@ class LabelShape(BaseShape):
 
     @property
     @cached_result
-    def lmax_lines_count(self):
+    def lmax_lines_count(self) -> Union[int, None]:
         """
         Limit on the number of transitions to a new line. The string is truncated from the beginning
         """
@@ -404,39 +430,83 @@ class LabelShape(BaseShape):
 
     @property
     @cached_result
-    def format_date(self):
+    def format_date(self) -> Union[str, None]:
         return self._eval_parameter('format_date', default=False)
 
+    @property
     @cached_result
-    def get_size(self) -> (int, int):
+    def suffix(self) -> Union[str, None]:
+        return self._eval_parameter('suffix', default=None)
+
+    @property
+    @cached_result
+    def prefix(self) -> Union[str, None]:
+        """
+        Example:
+             "text": "$version", zfill=3, prefix="v" -> "v001"
+        """
+        return self._eval_parameter('prefix', default=False)
+
+    @cached_result
+    def get_size(self) -> tuple[int, int]:
         """
         Font size in pixels
         """
-        # общая высота текста без учета элементов под бейзлойном
-        text_height = ((self.get_font_metrics()['font_height']+self.spacing)
+        ascent, descent = self.font.getmetrics()
+        text_height = ((ascent-descent+self.spacing)
                        * len(self.text.split('\n'))) - self.spacing
-        # общая ширина текста по самой длинной строке
         text_width = max([self.font.getbbox(text)[2] for text in self.text.split('\n')])
         return text_width, text_height
 
     @property
-    def width(self):
-        return self.get_size()[0]
+    @cached_result
+    def padding(self) -> tuple[int, int, int, int]:
+        param = self._eval_parameter('padding', default=(0, 0, 0, 0))
+        if isinstance(param, (int, float)):
+            param = (param, param, param, param)
+        if not isinstance(param, (list, tuple)):
+            raise TypeError('Padding parameter must be list or tuple')
+        if len(param) != 4:
+            raise ValueError('Padding parameter must be size = 4')
+        return tuple(map(int, param))
 
     @property
-    def height(self):
-        return self.get_size()[1]
+    @cached_result
+    def padding_top(self) -> int:
+        return int(self._eval_parameter('padding_top', default=None) or self.padding[0] or 0)
 
     @property
-    def y_draw(self):
-        return super(LabelShape, self).y_draw - self.get_font_metrics()['offset_y']     # фикс по высоте, убираем верхнюю часть шрфита до высоты капса
+    @cached_result
+    def padding_right(self) -> int:
+        return int(self._eval_parameter('padding_right', default=None) or self.padding[1] or 0)
 
-    def _resolve_font_name(self, font_name) -> str:
+    @property
+    @cached_result
+    def padding_bottom(self) -> int:
+        return int(self._eval_parameter('padding_bottom', default=None) or self.padding[2] or 0)
+
+    @property
+    @cached_result
+    def padding_left(self) -> int:
+        return int(self._eval_parameter('padding_left', default=None) or self.padding[3] or 0)
+
+    @property
+    def width(self) -> int:
+        return self.get_size()[0] + self.padding_left + self.padding_right
+
+    @property
+    def height(self) -> int:
+        return self.get_size()[1] + self.padding_top + self.padding_bottom
+
+    def _resolve_font_name(self, font_name: str) -> str:
         """
         Looking for font by name
         """
+        # is base64
+        if b64.is_b64(font_name):
+            return b64.b64_str_to_file(font_name)
         # has ext?
-        if not font_name.endswith('ttf'):
+        if not font_name.endswith('ttf') and not Path(font_name).suffix:
             font_name += '.ttf'
         # is abs?
         if os.path.exists(font_name):
@@ -445,6 +515,7 @@ class LabelShape(BaseShape):
         try:
             return self.get_resource_file(font_name)
         except OSError:
+            # file not found in custom dirs
             pass
         # default fonts
         font_file = os.path.join(self.default_fonts_dir, font_name)
@@ -458,66 +529,81 @@ class LabelShape(BaseShape):
             pass
         raise LookupError('Font "{}" not found'.format(font_name))
 
-    def get_font_metrics(self):
+    @cached_result
+    def get_font_metrics(self) -> dict:
         (_, font_height), (_, offset_y) = self.font.font.getsize('A')
+        ascent, descent = self.font.getmetrics()
         return dict(
             font_height=font_height,
-            offset_y=offset_y
+            offset_y=offset_y,
+            top_line=descent,
+            bottom_line=ascent
         )
 
-    def draw_shape(self, size, **kwargs):
-        canvas = self._get_canvas(size)
-        drw = ImageDraw.Draw(canvas)
+    def shape_canvas_offset(self) -> float:
+        ofs = max((self.padding_left, self.padding_top, self.padding_right, self.padding_bottom))*2
+        if self.outline:
+            ofs += self.outline.get('width', 3)*2
+        if self.backdrop:
+            offsets = [v*2 for k,v  in self.backdrop.items() if k.startswith('offset')]
+            ofs = max([ofs, max(offsets)])
+        return ofs*1.2
+
+    def draw_shape(self, shape_canvas: Image.Image, canvas_size: tuple[int, int], center: Point, zero_point: Point, **kwargs):
+        drw = ImageDraw.Draw(shape_canvas)
         is_multiline = '\n' in self.text
         printer = drw.multiline_text if is_multiline else drw.text
         text_args = dict(
             font=self.font,
             fill=self.color
         )
+        font_metrics = self.get_font_metrics()
+        render_offset = Point(self.padding_left, -font_metrics['top_line']+self.padding_top)
         if is_multiline:
             text_args['spacing'] = self.spacing - self.get_font_metrics()['offset_y']
             if self.align_h:
                 text_args['align'] = self.align_h
+        # render outline
         if self.outline:
-            # получаем словарь с параметрами обводки
             outline_text_args = text_args.copy()
-            if isinstance(self.outline, (int, float)):
-                outline = {'width': self.outline}
-            elif isinstance(self.outline, dict):
-                outline = self.outline.copy()
-            else:
-                raise TypeError('Outline parameter must be type of dict or number')
-            # заменяем цвет в аргументах
-            outline_text_args['fill'] = outline.get('color', 'black')
+            # update outline args
+            outline_text_args['fill'] = self.outline.get('color', 'black')
             if isinstance(outline_text_args['fill'], list):
                 outline_text_args['fill'] = tuple(outline_text_args['fill'])
-            # рисуем черный текст
-            printer((self.x_draw, self.y_draw), self.text, **outline_text_args)
-            # размвка
-            canvas = canvas.filter(ImageFilter.GaussianBlur(outline.get('width', 3)))
-            # фильтр жёсткости границ
+            # draw outline text
+            printer((zero_point+render_offset).tuple, self.text, **outline_text_args)
+            # blur
+            shape_canvas = shape_canvas.filter(ImageFilter.GaussianBlur(self.outline.get('width', 3)))
+            # hard edges
             x = 0
-            y = outline.get('hardness', 10)
-            STROKE = type('STROKE', (ImageFilter.BuiltinFilter,),
+            y = self.outline.get('hardness', 10)
+            stroke = type('STROKE', (ImageFilter.BuiltinFilter,),
                           {'filterargs': ((3, 3), 1, 0, (x, x, x, x, y, x, x, x, x,))})
-            canvas = canvas.filter(STROKE)
-            drw = ImageDraw.Draw(canvas)
-            # пересоздаём паинтер
+            shape_canvas = shape_canvas.filter(stroke)
+            drw = ImageDraw.Draw(shape_canvas)
+            # recreate paint function
             printer = drw.multiline_text if is_multiline else drw.text
-        printer((self.x_draw, self.y_draw), self.text, **text_args)
+        # TEXT
+        printer((zero_point+render_offset).tuple, self.text, **text_args)
+        # BACKDROP
         if self.backdrop:
-            if isinstance(self.backdrop, str):
-                backdrop = {'color': self.backdrop, "offset": 5}
-            elif isinstance(self.backdrop, dict):
-                backdrop = self.backdrop.copy()
-            else:
-                raise TypeError('Outline parameter must be type of dict or number')
-            bd = self._get_canvas(size)
-            drw = ImageDraw.Draw(bd)
-            ofs = backdrop.get('offset', 5)
-            clr = backdrop.get('color', 'black')
-            if isinstance(clr, list):
-                clr = tuple(clr)
-            drw.rectangle((self.x - ofs, self.y - ofs, self.right + ofs, self.bottom + ofs), fill=clr)
-            canvas = Image.alpha_composite(bd, canvas)
-        return canvas
+            # create temporary canvas
+            bg = Image.new('RGBA', shape_canvas.size, (0, 0, 0, 0))
+            bg_draw = ImageDraw.Draw(bg)
+            # compute rect
+            backdrop_rect = Rect(
+                zero_point.x - (self.backdrop['offset_left']),
+                zero_point.y - self.backdrop['offset_top'],
+                self.width+self.backdrop['offset_left']+self.backdrop['offset_right'],
+                self.height+self.backdrop['offset_top']+self.backdrop['offset_bottom']
+            )
+            # get color
+            color = self.backdrop.get('color', 'black')
+            if isinstance(color, list):
+                color = tuple(color)
+            # draw backdrop
+            bg_draw.rectangle((backdrop_rect.top_left.tuple, backdrop_rect.bottom_right.tuple), fill=color)
+            # merge text and backdrop
+            shape_canvas = Image.alpha_composite(bg, shape_canvas)
+        return shape_canvas
+

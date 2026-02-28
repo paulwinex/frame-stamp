@@ -1,0 +1,112 @@
+{
+  "templates": [
+    {
+      "name": "new_template",
+      "defaults": {
+        "font_size": "4u",
+        "text_color": "lightgray",
+        // "color": [0, 0, 0, 150],
+        "text_spacing": 10,
+        "debug": {"enabled": 0}
+
+      },
+      "variables": {},
+      "shapes": [
+        {
+          "type": "rect",
+          "w": "parent.w", "h": "parent.h",
+          "gradient": {
+            "enabled": true,
+            "type": "linear",
+            "point1": [0, 0],
+            "point2": [0, "self.h"],
+            "color1": [135, 206, 250, 255], "color2": [0, 105, 148, 255]
+          }
+        },
+        {
+          "type":"circle", "x": 100, "y": "=parent.h-self.h-1", "color": [50, 58, 90], "id": "circ",
+          "radius": 100,
+
+           "gradient":[
+             {
+             "type": "radial", "color1": [0, 255,255,255], "color2": [255,255,0,20],
+             "center":[30, 30], "radius": 230
+             },
+            
+             {
+             "type": "radial", "color1": [255, 255, 155,155], "color2": [255,255,255,0],
+             "center":[50, 50], "radius": 10
+             }
+           ]
+        },
+
+        {
+          "type": "rect",
+          "color": [0,0,0,255],
+          "w": "=parent.w/4", "h": "=parent.h/3",
+          "align_v": "center", "align_h": "center",
+          "gradient":{
+            "enabled": 1,
+            "type": "linear", "use_gradient_alpha": true,
+            "point1": [0,0], "point2": [0,"self.h"],
+            "color1": [255,0,0,75],
+            "color2": [255,0,0,0]
+
+          }
+        },
+        {
+          "type":"circle",
+          "color": [0, 105, 148],
+          "align_v": "center", "align_h": "center",
+          "radius": 50,
+          "gradient":[
+            {
+            "type": "linear", "color1": [0, 255,255,255], "color2": [0, 105, 148,255],
+            "center":[30, 30], "radius": 100
+            }
+
+          ]
+        },
+
+        {
+          "type": "line", "color": "black", "parent": "circ",
+          "y": "=parent.h+1", "thickness": 5,
+          "points": [
+            [0, 0], ["parent.w", 0]
+          ]
+        },
+
+         {
+           "type": "rect", "id": "panel",
+           "x": 0, "y": 0,
+           "w": "parent.w", "h": "4p",
+           "color": [214, 234, 248 ]
+         },
+         {
+           "type": "rect", "x": 0, "y": "parent.h", "color": [0,0,0,255], "parent": "panel",
+           "w": "parent.w", "h": 20,
+           "gradient":{
+             "enabled": 1,
+             "type": "linear", "use_gradient_alpha": true,
+             "point1": [0,0], "point2": [0,"self.h"],
+             "color1": [0,0,0,35],
+             "color2": [0,0,0,0]
+
+           }
+         }
+        ,{
+          "type": "rect", "w": "2p", "h": "=parent.h-6p",
+          "x": "=parent.w-4p", "y": "6p",
+          "gradient":{
+             "enabled": 1,
+             "type": "linear", "use_gradient_alpha": true,
+             "point1": [0,0], "point2": [0,"self.h"],
+             "color1": [255, 178, 0, 255],
+             "color2": [92, 2, 172 , 255]
+
+           }
+        }
+      ]
+    }
+  ]
+}

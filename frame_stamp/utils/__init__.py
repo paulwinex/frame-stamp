@@ -2,8 +2,6 @@ import os
 from functools import wraps
 import subprocess
 from pydoc import locate
-import math
-
 
 USE_CACHE = not bool(os.getenv('NO_CACHE'))
 
@@ -16,14 +14,17 @@ def cached_result(func):
     def wrapped(*args, **kwargs):
         if USE_CACHE:
             inst = args[0]
+            cache_key = f'{func.__qualname__}'
             try:
-                result = getattr(inst, '__cache__')[func.__name__]
+                result = getattr(inst, '__cache__', {})[cache_key]
             except AttributeError:  # no cache
                 result = func(*args, **kwargs)
-                inst.__cache__ = {func.__name__: result}
+                if result is not None:
+                    inst.__cache__ = {cache_key: result}
             except KeyError:    # not saved yet
                 result = func(*args, **kwargs)
-                inst.__cache__[func.__name__] = result
+                if result is not None:
+                    inst.__cache__[cache_key] = result
         else:
             result = func(*args, **kwargs)
         return result
@@ -62,19 +63,3 @@ def open_file_location(path):
         subprocess.call(('open', path))
 
 
-def rotate_point(point: list, angle, origin: list = None,  precision=3):
-    """
-    Rotate a point counterclockwise by a given angle around a given origin.
-    The angle should be given in degrees.
-
-    """
-    origin = origin or (0, 0)
-    ox, oy = origin
-    px, py = point
-    rad = math.radians(angle)
-    qx = ox + math.cos(rad) * (px - ox) - math.sin(rad) * (py - oy)
-    qy = oy + math.sin(rad) * (px - ox) + math.cos(rad) * (py - oy)
-    return round(qx, precision), round(qy, precision)
-
-
-# def interpolate_value(val1, val2, pos):

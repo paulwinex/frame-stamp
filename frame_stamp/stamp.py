@@ -1,11 +1,15 @@
 from __future__ import absolute_import
-from .shape.base_shape import BaseShape
-from PIL import Image, ImageDraw, ImageFile
-from .shape import get_shape_class
-from .utils.exceptions import PresetError
-from .utils import exceptions
-from pathlib import Path
+
 import logging
+from pathlib import Path
+from typing import Union
+
+from PIL import Image, ImageFile
+
+from .shape import base_shape
+from .shape import get_shape_class
+from .utils import exceptions
+from .utils.exceptions import PresetError
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 logger = logging.getLogger(__name__)
@@ -17,7 +21,7 @@ class FrameStamp(object):
         JPG = "JPEG"
         PNG = "PNG"
 
-    def __init__(self, image, template, variables, **kwargs):
+    def __init__(self, image: Union[str, Path], template: dict, variables: dict, **kwargs):
         self._template = template
         self._variables = variables or {}
         self._shapes = []
@@ -26,6 +30,8 @@ class FrameStamp(object):
         self._shared_context = dict(
             variables=self.variables,           # variables for rendering
             source_image=self._source,          # source image. For getting original size and other parameters
+            source_image_raw=self._source,              # source image raw data
+            source_image_path=None,             # source image path
             defaults=self.defaults,             # default values from template
             scope=self._scope,                  # list of all available shapes. Needed for queries from other shapes
             add_shape=self._add_shape_to_scope  # reference to function to add shapes, needed for combined shapes
@@ -67,16 +73,16 @@ class FrameStamp(object):
         """
         return self._template
 
-    def add_shape(self, shape: BaseShape):
+    def add_shape(self, shape: base_shape.BaseShape):
         """
         Add a new shape item to a set
         """
-        if not isinstance(shape, BaseShape):
-            raise TypeError('Shape bus be subclass of {}'.format(BaseShape.__name__))
+        if not isinstance(shape, base_shape.BaseShape):
+            raise TypeError('Shape bus be subclass of {}'.format(base_shape.BaseShape.__name__))
         self._add_shape_to_scope(shape)
         self._shapes.append(shape)
 
-    def _add_shape_to_scope(self, shape):
+    def _add_shape_to_scope(self, shape: base_shape.BaseShape):
         if shape.id is not None:
             if shape.id in self._scope:
                 raise exceptions.PresetError('Duplicate shape ID: {}'.format(shape.id))
@@ -86,17 +92,19 @@ class FrameStamp(object):
         """
         All shapes
         """
-        return list(sorted(self._shapes, key=lambda s: s.z_index))
+        return (x[1] for x in sorted(enumerate(self._shapes), key=lambda item: (item[1].z_index, item[0])))
 
     @property
-    def source(self):
+    def source(self) -> Image.Image:
         return self._source
 
     def set_source(self, input_image):
-        if Image.isImageType(input_image):
-            self._source = input_image.convert('RGBA')  # type: Image.Image
+        if isinstance(input_image, Image.Image):
+            self._source: Image.Image = input_image.convert('RGBA')
+            self._shared_context['source_image_raw']= input_image.convert('RGBA')
         elif isinstance(input_image, (str, Path)):
-            self._source = Image.open(input_image).convert('RGB').convert('RGBA')  # type: Image.Image
+            self._source = Image.open(input_image).convert('RGB').convert('RGBA')
+            self._shared_context['source_image_raw'] = Image.open(input_image).convert('RGB').convert('RGBA')
         else:
             raise TypeError('Source image must be string or PIL.Image')
         self._shared_context['source_image'] = self._source
@@ -109,15 +117,18 @@ class FrameStamp(object):
             self.set_source(input_image)
         if not self.source:
             raise RuntimeError('Source image not set')
-        # file format
         img_size = self.source.size
-        for shape in self.get_shapes():     # type: BaseShape
+        for shape in self.get_shapes():
+            shape: base_shape.BaseShape
             if shape.skip:
                 continue
-            # create a new blank sheet the size of the original
-            overlay = shape.render(img_size, **kwargs)
-            self._source = Image.alpha_composite(self.source, overlay)
-            del overlay
+            try:
+                for overlay, pos in shape.render(img_size, **kwargs):
+                    self._source.paste(overlay, tuple(pos), overlay)
+                    del overlay
+            except Exception as e:
+                logger.error('Error rendering shape %s: %s', shape, e)
+                raise
         if save_path:
             # save rendered file to RGB
             frmt = self._get_output_format(save_path)

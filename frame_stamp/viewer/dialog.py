@@ -1,32 +1,38 @@
-from PySide6.QtWidgets import *
+import os
+import tempfile
+import traceback
+from importlib import reload
+from pathlib import Path
+
 from PySide6.QtCore import *
 from PySide6.QtGui import *
-import os, tempfile, traceback
+from PySide6.QtWidgets import *
+
+import frame_stamp
+from frame_stamp import stamp
+from frame_stamp.utils import jsonc, open_file_location
 from frame_stamp.viewer.canvas import Canvas
 from frame_stamp.viewer.watch import TemplateFileWatch
-from frame_stamp.utils import jsonc, open_file_location
-from frame_stamp.stamp import FrameStamp
-from pathlib import Path
+
+icon_path = Path(frame_stamp.__file__).parent / 'resources' / 'icon.png'
 
 
 class TemplateViewer(QMainWindow):
     state_file = Path('~/.template_viewer.json').expanduser()
-    help_url = 'http://TODO'
+    help_url = 'https://github.com/paulwinex/frame-stamp'
 
     def __init__(self):
         super(TemplateViewer, self).__init__()
         self.setWindowTitle('Template Viewer')
+        self.setWindowIcon(QIcon(str(icon_path)))
         self.setAcceptDrops(True)
-
-        # from py_console import console
-        # self.c = console.Console(self)
-        # self.c.show()
 
         self.template_file: Path = None
         self.template_name: str = None
         self.image = None
         self.tmp_file: str = None
         self.blank_image = None
+        self._update_started = False
 
         menubar = QMenuBar(self)
         file_mn = QMenu('File', menubar)
@@ -45,6 +51,7 @@ class TemplateViewer(QMainWindow):
         file_mn.addAction(QAction('Open Current Template', file_mn, triggered=self.open_template))
         file_mn.addSeparator()
         file_mn.addAction(QAction('Load Background...', file_mn, triggered=self.browse_image))
+        file_mn.addAction(QAction('Create Debug Background...', file_mn, triggered=self.create_grid))
         file_mn.addAction(QAction('Save Image As...', file_mn, triggered=self.save_image))
         file_mn.addSeparator()
         file_mn.addAction(QAction('Reset', file_mn, triggered=self.reset))
@@ -74,6 +81,13 @@ class TemplateViewer(QMainWindow):
         self.err = QTextBrowser()
         self.ly.addWidget(self.err)
         self.err.hide()
+        self.timeline = QSlider()
+        self.timeline.setOrientation(Qt.Horizontal)
+        self.__timeline_initialized = False
+        self.ly.addWidget(self.timeline)
+        self.timeline.valueChanged.connect(self.update_image)
+        self.timeline.setMaximumWidth(250)
+        self.timeline.hide()
 
         self.watcher = TemplateFileWatch()
         self.watcher.changed.connect(self.on_template_changed)
@@ -88,7 +102,7 @@ class TemplateViewer(QMainWindow):
 
         self.resize(800, 600)
 
-    def set_error(self, text):
+    def set_error(self, text: str):
         self.err.setText(text)
         self.err.show()
         self.canvas.hide()
@@ -97,7 +111,10 @@ class TemplateViewer(QMainWindow):
         self.err.hide()
         self.canvas.show()
 
-    def on_template_changed(self):
+    def on_template_changed(self, *args):
+        if self._update_started:
+            return
+        self._update_started = True
         QTimer.singleShot(100, self.update_image)
 
     def update_image(self, *args):
@@ -107,10 +124,11 @@ class TemplateViewer(QMainWindow):
             self.canvas.set_image(img)
         except Exception as e:
             self.set_error(traceback.format_exc())
+        self._update_started = False
 
-    def get_current_template(self) -> dict:
+    def get_current_template(self, **kwargs) -> dict:
         if self.template_file and self.template_file.exists():
-            templates = jsonc.load(self.template_file.open(encoding='utf-8'))
+            templates = self.read_template_file(self.template_file, **kwargs)
             try:
                 template = self.get_template_from_data(templates, self.template_name)
             except Exception as e:
@@ -121,21 +139,39 @@ class TemplateViewer(QMainWindow):
         return template
 
     def render_template(self):
-        template = self.get_current_template()
         image = self.image or self.get_dummy_image()
+        template = self.get_current_template()
         viewer_variables = dict(
             # todo: custom variables from GUI
         )
         if template:
             variables = {**template.get('variables', {}), **viewer_variables}
-            fs = FrameStamp(image, template, variables,
-                            debug_shapes=self.dbg.isChecked())
+            timeline_data = variables.get('_timeline')
+            self.update_timeline(timeline_data)
+            if timeline_data:
+                variables['timeline_value'] = self.timeline.value()
+            else:
+                variables['timeline_value'] = 0
+            if self.dbg.isChecked():
+                variables['debug'] = {**variables.get('debug', {}), **{'enabled': True}}
+            reload(stamp)
+            fs = stamp.FrameStamp(image, template, variables)
             if not self.tmp_file:
                 self.tmp_file = tempfile.mktemp(suffix='.png')
             fs.render(save_path=self.tmp_file)
             return self.tmp_file
         else:
             return image
+
+    def update_timeline(self, value):
+        self.timeline.setVisible(bool(value))
+        if value:
+            self.timeline.blockSignals(True)
+            self.timeline.setRange(value.get('start', 0),  value.get('end', 100))
+            if not self.__timeline_initialized:
+                self.__timeline_initialized = True
+                self.timeline.setValue(value.get('value', 0))
+            self.timeline.blockSignals(False)
 
     def get_dummy_image(self):
         p = QPixmap(1280, 720)
@@ -145,30 +181,47 @@ class TemplateViewer(QMainWindow):
         p.save(self.blank_image, 'PNG')
         return self.blank_image
 
-    def message(self, text, timeout=3):
+    def message(self, text: str, timeout=3):
         self.status_line.setText(str(text))
         if self.clear_timer.isActive():
             self.clear_timer.stop()
         self.clear_timer.start(timeout * 1000)
+
+    def read_template_file(self, path: Path, **kwargs):
+        if not path.exists():
+            raise FileNotFoundError(path)
+        if path.suffix == '.json':
+            return jsonc.load(path.open(encoding='utf-8'))
+        elif path.suffix in ('.yml', '.yaml'):
+            try:
+                import yaml
+                return yaml.safe_load(path.open(encoding='utf-8'))
+            except ImportError:
+                raise RuntimeError('PyYAML package not installed')
+        elif path.suffix == '.py':
+            from frame_stamp.utils import pytemplate
+            return pytemplate.import_py_template(path, **kwargs)
+        else:
+            raise RuntimeError('Unknown template file format: {}'.format(path))
 
     def set_template_file(self, path: str, template_name: str = None):
         path = Path(path)
         if not path.exists():
             return
         self.template_file = path
-        data: dict = jsonc.load(path.open())
+        data: dict = self.read_template_file(path)
         template = self.get_template_from_data(data, template_name)
         if not template:
             raise Exception('Template not set')
 
         self.template_file = path
-        self.template_name = template['name']
+        self.template_name = template.get('name')
 
         self.message('Set template: {} (Template name: {})'.format(self.template_file, self.template_name))
         self.watcher.set_file(self.template_file)
         self.update_image()
 
-    def get_template_from_data(self, data, name=None) -> dict:
+    def get_template_from_data(self, data: dict, name=None) -> dict:
         if 'templates' in data:
             if len(data['templates']) > 1:
                 if name:
@@ -198,7 +251,7 @@ class TemplateViewer(QMainWindow):
         sz = QImage(path).size()
         self.message('Image loaded: {}x{}'.format(sz.width(), sz.height()), timeout=10)
 
-    def dropEvent(self, event, *args, **kwargs):
+    def dropEvent(self, event: QDropEvent, *args, **kwargs):
         mimedata = event.mimeData()
         if mimedata.hasUrls():
             for f in mimedata.urls():
@@ -206,7 +259,7 @@ class TemplateViewer(QMainWindow):
                     break
         QApplication.restoreOverrideCursor()
 
-    def dragEnterEvent(self, event):
+    def dragEnterEvent(self, event: QDragEnterEvent):
         if event.source() is self:
             event.ignore()
         else:
@@ -216,7 +269,7 @@ class TemplateViewer(QMainWindow):
             else:
                 event.ignore()
 
-    def dragMoveEvent(self, event):
+    def dragMoveEvent(self, event: QDragMoveEvent):
         if event.source() is self:
             event.ignore()
         else:
@@ -226,9 +279,9 @@ class TemplateViewer(QMainWindow):
             else:
                 event.ignore()
 
-    def on_file_dropped(self, path):
+    def on_file_dropped(self, path: str) -> bool:
         self.set_no_error()
-        if Path(path).suffix == '.json':
+        if Path(path).suffix in ('.json', '.yml', '.yaml', '.py'):
             self.set_template_file(path)
             return True
         elif Path(path).suffix in ['.jpg', '.png']:
@@ -260,6 +313,12 @@ class TemplateViewer(QMainWindow):
         path, _ = QFileDialog.getOpenFileName(self, 'Select Image', os.path.expanduser('~'), filter='Images (*.png *.jpg)')
         if path:
             self.set_image(path)
+
+    def create_grid(self):
+        from frame_stamp.viewer.create_grid_dialog import CreateGridDialog
+        dialog = CreateGridDialog(self)
+        if dialog.exec():
+            self.set_image(dialog.path)
 
     def browse_template(self):
         path, _ = QFileDialog.getOpenFileName(self, 'Select Template', os.path.expanduser('~'), filter='JSON (*.json)')
@@ -295,7 +354,7 @@ class TemplateViewer(QMainWindow):
         self.fs.setVisible(True)
         self.nfs.setVisible(False)
 
-    def closeEvent(self, event):
+    def closeEvent(self, event :QCloseEvent):
         self.save_state()
         super(TemplateViewer, self).closeEvent(event)
 
@@ -395,7 +454,7 @@ class B64ValueViewer(QWidget):
         self.btn = QPushButton('Copy To Clipboard', clicked=self.copy)
         self.vl.addWidget(self.btn)
 
-    def set_text(self, text):
+    def set_text(self, text: str):
         self.te.setPlainText(text)
 
     def copy(self):

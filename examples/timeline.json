@@ -8,9 +8,9 @@
         "text_spacing": 10
       },
       "variables": {
-      	"frame": 30,	// change this parameter to animate time line
-      	"total_frames": 200
-
+      	"frame": "$timeline_value",	// change this parameter to animate time line
+      	"total_frames": 200,
+		"_timeline": {"start": 0, "end": 200}
       },
       "shapes": [
 		  {
@@ -24,7 +24,7 @@
       		"w": "=($source_width*0.8)*($frame/$total_frames)", "h": "8u"
       	},
       	{
-      		"type": "line", "thickness": 10, "color": "gray",
+      		"type": "line", "thickness": "1p", "color": "orange",
       		"points": [
       			["=$source_width*0.1", "90u"],
       			["=$source_width*0.9", "90u"],

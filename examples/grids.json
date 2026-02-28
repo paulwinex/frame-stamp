@@ -1,0 +1,73 @@
+{
+  "templates": [
+    {
+      "name": "new",
+      "defaults": {
+        "font_size": "3.5u",
+        "text_color": "lightgray"
+      },
+      "variables": {
+      },
+      "shapes": [
+        {
+          "type": "grid", "columns": 3, "rows": 3,
+          "w": "=parent.w*0.8", "h": "=parent.h*0.8",
+          "align_h": "center", "align_v": "center",
+          "horizontal_spacing": 30,
+          "vertical_spacing": 30,
+          "border": {
+            "enabled": 1,
+            "color": "blue",
+            "width": 2,
+            "offset":10
+            // "offset_top": 0,
+            // "offset_bottom": 0,
+            // "offset_left": 10,
+            // "offset_right": 10
+
+          },
+          "shapes": [
+            {
+              "type": "label", "text": "cell $cell_index", "font_size": "5u", "text_color": "lightgray",
+              "align_h": "center", "align_v": "center"
+            },
+            {
+              "type": "label", "text": "cell $cell_index", "font_size": "5u", "text_color": "lightgray",
+              "align_h": "center", "align_v": "center"
+            },
+            {
+              "type": "label", "text": "cell $cell_index", "font_size": "5u", "text_color": "lightgray",
+              "align_h": "center", "align_v": "center"
+            },
+            {
+              "type": "label", "text": "cell $cell_index", "font_size": "5u", "text_color": "lightgray",
+              "align_h": "center", "align_v": "center"
+            },
+            {
+              "type": "label", "text": "cell $cell_index", "font_size": "5u", "text_color": "lightgray",
+              "align_h": "center", "align_v": "center"
+            },
+            {
+              "type": "label", "text": "cell $cell_index", "font_size": "5u", "text_color": "lightgray",
+              "align_h": "center", "align_v": "center"
+            },
+            {
+              "type": "label", "text": "cell $cell_index", "font_size": "5u", "text_color": "lightgray",
+              "align_h": "center", "align_v": "center"
+            },
+            {
+              "type": "label", "text": "cell $cell_index", "font_size": "5u", "text_color": "lightgray",
+              "align_h": "center", "align_v": "center"
+            },
+            {
+              "type": "label", "text": "cell $cell_index", "font_size": "5u", "text_color": "lightgray",
+              "align_h": "center", "align_v": "center"
+            }
+
+          ]
+        }
+
+      ]
+    }
+  ]
+}

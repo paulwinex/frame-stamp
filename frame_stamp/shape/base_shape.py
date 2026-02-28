@@ -1,29 +1,48 @@
-import re, os
-import string
-import random
-from PIL.ImageDraw import ImageDraw
-from PIL import Image
-from frame_stamp.utils import cached_result
 import logging
+import math
+import os
+import random
+import re
+import string
+
+from PIL import Image, ImageDraw
+
+from frame_stamp.utils import cached_result, geometry_tools
+from frame_stamp.utils.point import Point
+from frame_stamp.utils.rect import Rect
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractShape(object):
+try:
+    BICUBIC = Image.BICUBIC
+except AttributeError:
+    BICUBIC = Image.Resampling.BICUBIC
+
+
+class BaseShape:
     """
-    Абстрактная фигура.
+    Base Shape.
+    - Data initialization
+    - Methods for resolving parameters
+    - Coordinate system implementation
+    - Color
+    - Debug
 
-        - Инициализация данных
-        - Методы ресолвинга параметров
+    Allowed parameters:
+        x                  : X coordinate
+        y                  : Y coordinate
+        color              : Text color
+        alight_h           : Alignment relative to the X coordinate (left, right, center)
+        alight_v           : Alignment relative to the Y coordinate (top, bottom, center)
+        parent             : Parent object
 
-    Parameters
-        id
-        parent
-        enabled
     """
     shape_name = None
     __instances__ = {}
     names_stop_list = ['parent']
+    default_width = 0
+    default_height = 0
 
     def __init__(self, shape_data, context, **kwargs):
         if shape_data.get('id') in self.names_stop_list:
@@ -33,7 +52,8 @@ class AbstractShape(object):
         self._parent = None
         self._context = context
         self._local_context = kwargs.get('local_context') or {}
-        self._debug = bool(os.environ.get('DEBUG_SHAPES')) or self.variables.get('debug_shapes') or kwargs.get('debug_shapes')
+        self._debug_enabled = bool(os.environ.get('DEBUG_SHAPES'))
+        self._debug_variables = {}
         if 'parent' in shape_data:
             parent_name = shape_data['parent']
             if isinstance(parent_name, BaseShape):
@@ -47,23 +67,37 @@ class AbstractShape(object):
                 self._parent = parent
         else:
             self._parent = RootParent(context, **kwargs)
-        self.z_index = kwargs.get('z_index', 0) + shape_data.get('z_index', 0)
 
     def __repr__(self):
         return '<{} {}>'.format(self.__class__.__name__, self.id or 'no-id')
 
     def __str__(self):
-        return '{} #{}'.format(self.__class__.__name__, self.id or 'none')
+        return '{} #{}'.format(self.__class__.__name__, self.id or 'no-id')
+
+    # SCOPE
+
+    def clear_cache(self):
+        self.__cache__.clear()
+
+    def update_local_context(self, **kwargs):
+        self._local_context.update(kwargs)
 
     @property
     @cached_result
     def parent(self):
-        return self._parent
+        return self._parent or RootParent(self.context)
+
+    def set_parent(self, parent):
+        self._parent = parent
 
     @property
     @cached_result
     def context(self):
         return self._context
+
+    @property
+    def defaults(self):
+        return self._context['defaults']
 
     @property
     @cached_result
@@ -82,7 +116,8 @@ class AbstractShape(object):
             "source_width": self.source_image.size[0],
             "source_height": self.source_image.size[1],
             "source_aspect": self.source_image.size[1]/self.source_image.size[0],
-            "unit": self.unit,
+            "unt": self.unit,
+            "pnt": self.point,
             **self.context['variables'],
             **self._local_context
             }
@@ -90,26 +125,37 @@ class AbstractShape(object):
     @property
     @cached_result
     def unit(self):
+        # 1% from height
         return round(self.source_image.size[1]*0.01, 3)
 
     @property
-    def defaults(self):
-        return self.context['defaults']
+    @cached_result
+    def point(self):
+        # relative almost monotonic size for any aspect and size
+        from math import sqrt
+        w, h = self.source_image.size
+        return round(0.01*sqrt(w*h), 3)
 
     @property
-    def scope(self):
-        """
-        Список всех зарегистрированных нод, исключая себя и ноды без ID
+    @cached_result
+    def z_index(self):
+        parent_index = self._parent.z_index if self._parent else 0
+        return parent_index + self._eval_parameter('z_index', default=0) # shape_data.get('z_index', 0)
 
-        Returns
-        -------
-        dict
+    @property
+    def scope(self) -> dict:
+        """
+        List of all registered nodes except self and nodes without ID
         """
         return {k: v for k, v in self.context['scope'].items() if k != self.id}
 
     @property
     def source_image(self):
         return self.context['source_image']
+
+    @property
+    def source_image_raw(self):
+        return self.context['source_image_raw']
 
     def add_shape(self, shape):
         return self.context['add_shape'](shape)
@@ -123,14 +169,9 @@ class AbstractShape(object):
 
     # expressions
 
-    def _eval_parameter(self, key: str, default_key=None, **kwargs):
+    def _eval_parameter(self, key: str, default_key: str = None, **kwargs):
         """
-        Получение значения параметра по имени из данных шейпы
-
-        Parameters
-        ----------
-        key: str
-        default_key: str
+        Receive value of parameter by name from shape data
         """
         val = self._data.get(key)
         if val is None:
@@ -144,7 +185,7 @@ class AbstractShape(object):
 
     def _eval_parameter_convert(self, key, val: str, **kwargs):
         """
-        Получение реального значения параметра
+        Getting the real value of a parameter
 
         Parameters
         ----------
@@ -152,7 +193,7 @@ class AbstractShape(object):
         val: str
         default_key: str
         """
-        # определение типа
+        # type definition
         if isinstance(val, (int, float, bool)):
             return val
         elif isinstance(val, (list, tuple)):
@@ -164,7 +205,7 @@ class AbstractShape(object):
                 return val
         if not isinstance(val, str):
             raise TypeError('Unsupported type {}'.format(type(val)))
-        # остается только строка
+        # only the line remains
         if val.isdigit():  # int
             return int(val)
         elif re.match(r"^\d*\.\d*$", val):  # float
@@ -172,19 +213,26 @@ class AbstractShape(object):
         # unit
         if re.match(r"-?[\d.]+u", val):
             return float(val.rstrip('u')) * self.unit
-        # определение других вариантов
-        for func in [self._eval_percent_of_default,     # процент от значения по умолчанию
-                     self._eval_from_scope,             # данные от другой шейпы
-                     self._eval_from_variables,         # данные из переменных шаблона или из дефолтов
-                     self._eval_expression]:            # выполнения экспрешена
-            res = func(key, val, **kwargs)
+        # point
+        if re.match(r"-?[\d.]+p", val):
+            return float(val.rstrip('p')) * self.point
+
+        # identifying other options
+        for func in [self._eval_percent_of_default,     # percentage of default value
+                     self._eval_from_scope,             # data from another shape
+                     self._eval_from_variables,         # data from template variables or from defaults
+                     self._eval_expression]:            # execution of express
+            try:
+                res = func(key, val, **kwargs)
+            except KeyError:
+                continue
             if res is not None:
                 return res
         return val
 
     def _eval_percent_of_default(self, key, val, **kwargs):
         """
-        Вычисление процентного отношения от дефолного значения
+        Calculating the percentage of the default value
 
         >>> {"size": "100%"}
 
@@ -213,7 +261,7 @@ class AbstractShape(object):
 
     def _eval_from_scope(self, key: str, val: str, **kwargs):
         """
-        Обращение к значениям параметрам других шейп
+        Accessing parameter values of other shapes
 
             >>> {"x": "other_shape_id.x"}
 
@@ -240,7 +288,7 @@ class AbstractShape(object):
 
     def _eval_from_variables(self, key: str, val: str, **kwargs):
         """
-        Получение значения из глобального контекста переменных
+        Getting a value from the global variable context
 
             >>> {"text_size": "$text_size" }
 
@@ -263,9 +311,9 @@ class AbstractShape(object):
 
     def _eval_expression(self, key: str, expr: str, **kwargs):
         """
-        Выполнение экспрешена. Экспрешен должен бысть строкой, начинающийся со знака "="
+        Executing an expression. The expression must be a string starting with the "=" sign.
 
-            >>> {"width": "=$other.x-$padding/2"}
+            >>> {"width": "=$other.x-$value/2"}
 
         Parameters
         ----------
@@ -284,16 +332,20 @@ class AbstractShape(object):
                 # raise ValueError('Expression operand "{}" is nt correct: {}'.format(op, expr))
             expr = expr.replace(op, str(val if not callable(val) else val()))
         try:
-            res = eval(expr, {**locals(), **dict(
+            res = eval(expr, {**locals(), **self.render_globals()})
+        except Exception as e:
+            logger.exception('Evaluate expression error in field {}/{}: {}'.format(self, key, expr))
+            raise
+        return res
+
+    def render_globals(self):
+        return dict(
                 random=random.random,
                 uniform=random.uniform,
                 randint=random.randint,
-                random_seed=random.seed
-            )})
-        except Exception as e:
-            logger.exception('Evaluate expression error: {}'.format(expr))
-            raise
-        return res
+                random_seed=random.seed,
+                math=math
+            )
 
     def _render_variables(self, text, context):
         for pattern, name, _slice in re.findall(r"(\$([\w_]+)(\[[\d:]+])?)", text):
@@ -309,95 +361,103 @@ class AbstractShape(object):
             text = text.replace(pattern, str(val))
         return text
 
-
-class BaseShape(AbstractShape):
-    """
-    Базовая фигура.
-     - Реализация системы координат
-     - Цвет
-     - Дебаг
-
-    Allowed parameters:
-        x                  : Координата Х
-        y                  : Координата У
-
-        color              : Цвет текста
-        alight_h           : Выравнивание относительно координаты X (left, right, center)
-        alight_v           : Выравнивание относительно координаты X (top, bottom, center)
-        padding            : Выравнивание строк между собой для многострочного текста
-        parent             : Родительский объект
-
-    """
-    default_width = 0
-    default_height = 0
-
+    # RENDER
     @property
     @cached_result
-    def _debug_parent_offset(self):
-        """Смещение контура парента относительно контура объекта"""
-        return self._eval_parameter('debug_parent_offset', default=1)
+    def debug_options(self):
+        debug_options = {}
+        variables_debug_options = self.variables.get('debug')
+        if variables_debug_options is not None:
+            assert isinstance(variables_debug_options, dict),  'Debug value must be a dict'
+            debug_options.update(variables_debug_options)
+        self_debug_options = self._eval_parameter('debug', default=None)
+        if self_debug_options is not None:
+            assert isinstance(self_debug_options, dict),  'Debug value must be a dict'
+            debug_options.update(self_debug_options)
+        debug_options.setdefault('enabled', bool(self._debug_enabled))
+        debug_options.setdefault('color', 'yellow')
+        debug_options.setdefault('width', 1)
+        debug_options.setdefault('offset', 0)
+        debug_options.setdefault('parent_color', 'red')
+        debug_options.setdefault('parent_width', 1)
+        debug_options.setdefault('parent_offset', 0)
+        debug_options.setdefault('rotation_pivot', False)
+        debug_options.setdefault('rotation_pivot_color', 'green')
+        debug_options.setdefault('rotation_pivot_size', self.point*2)
+        debug_options.setdefault('parent', False)
+        debug_options.setdefault('canvas', False)
+        debug_options.setdefault('canvas_color', 'blue')
+        debug_options.setdefault('canvas_width', 1)
+        return debug_options
 
     @property
-    @cached_result
-    def _debug_self_offset(self):
-        """Смещение контура парента относительно контура объекта"""
-        return self._eval_parameter('debug_self_offset', default=0)
+    def debug(self):
+        return self.debug_options['enabled']
 
-    def _render_debug(self, default_render, size):
-        overlay = self._get_canvas(size)
-        img = ImageDraw(overlay)
-        self_ofs = self._debug_self_offset
-        img.line([
-            (self.left + self_ofs, self.top + self_ofs),
-            (self.right - self_ofs, self.top + self_ofs),
-            (self.right - self_ofs, self.bottom - self_ofs),
-            (self.left + self_ofs, self.bottom - self_ofs),
-            (self.left + self_ofs, self.top + self_ofs)
-        ], 'red', 1)
-        par_offset = self._debug_parent_offset
+    def _render_debug(self, canvas):
+        drw = ImageDraw.Draw(canvas)
+        w, h = canvas.size
+        zp = self._debug_variables.get('zero_point', Point(0, 0))
+        debug_rect = Rect(zp.x, zp.y, self.width, self.height)
+        points = [geometry_tools.rotate_point_around_point(pt, debug_rect.center, -self.global_rotate) for pt in debug_rect.line(as_tuple=True)]
+        drw.line(points, fill=self.debug_options['color'], width=self.debug_options['width'])
+        if self.debug_options.get('canvas'):
+            drw.line([
+                (1+self.debug_options['offset'], 1+self.debug_options['offset']),
+                (w - 1-self.debug_options['offset'], 1+self.debug_options['offset']),
+                (w - 1-self.debug_options['offset'], h - 1-self.debug_options['offset']),
+                (1+self.debug_options['offset'], h - 1-self.debug_options['offset']),
+                (1+self.debug_options['offset'], 1+self.debug_options['offset'])
+            ], self.debug_options['canvas_color'], self.debug_options['canvas_width'])
+        return drw
 
-        img.line([
-            (self.parent.left + par_offset, self.parent.top + par_offset),
-            (self.parent.right - par_offset, self.parent.top + par_offset),
-            (self.parent.right - par_offset, self.parent.bottom - par_offset),
-            (self.parent.left + par_offset, self.parent.bottom - par_offset),
-            (self.parent.left + par_offset, self.parent.top + par_offset)
-        ], 'yellow', 1)
-        return Image.alpha_composite(default_render, overlay)
+    def _render_debug_pivot(self):
+        draw_size = int(self.debug_options['rotation_pivot_size'])
+        if draw_size:
+            pivot_image = Image.new('RGBA', (draw_size, draw_size), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(pivot_image)
+            draw.ellipse(
+                (0, 0, draw_size, draw_size),
+                fill=self.debug_options['rotation_pivot_color'],
+                outline=None,
+                width=1)
+            return pivot_image
+
+    def _render_debug_parent(self, size, shape_canvas, paste_pos, **kwargs):
+        color = self.debug_options.get('parent_color', 'orange')
+        width = self.debug_options.get('parent_width', 1)
+        offset = self.debug_options.get('parent_offset', 0)
+        canvas = self._get_canvas(size)
+        drw = ImageDraw.Draw(canvas)
+        rect = Rect(self.parent.x-offset,
+                    self.parent.y-offset,
+                    self.parent.width-1+(offset*2),
+                    self.parent.height-1+(offset*2))
+        drw.line(rect.line(), color, width)
+        return canvas, (0,0 )
 
     def _get_canvas(self, size):
         return Image.new('RGBA', size, (0, 0, 0, 0))
 
-    def draw_shape(self, size, **kwargs):
-        raise NotImplementedError
+    @property
+    def raw_rect(self):
+        return Rect(self.x,self.y, self.width, self.height)
 
-    def render(self, size, **kwargs):
-        if not self.is_enabled():
-            return self._get_canvas(size)
-        result = self.draw_shape(size, **kwargs)
-        if self._debug:
-            result = self._render_debug(result, size)
-        result = self._apply_rotate(result)
-        return result
+    @property
+    def raw_bound(self):
+        return self.raw_rect.points()
 
-    def _apply_rotate(self, img):
-        if self.rotate:
-            img = img.rotate(self.rotate, expand=False, center=self.rotate_pivot, resample=Image.BICUBIC)
-        par = self.parent
-        while par:
-            if par.rotate:
-                img = img.rotate(par.rotate, expand=False, center=par.rotate_pivot, resample=Image.BICUBIC)
-            par = par.parent
-        return img
+    @property
+    def rotated_rect(self):
+        return self.raw_rect.rotate(self.global_rotate, self.raw_rect.center)
 
     @property
     @cached_result
     def x(self):
         val = self._eval_parameter('x', default=0)
-        align = self.align_h
-        if align == 'center':
+        if self.align_h == 'center':
             return int(self.parent.x + val + (self.parent.width/2) - (self.width / 2))
-        elif align == 'right':
+        elif self.align_h == 'right':
             return int(self.parent.x + val + self.parent.width - self.width)
         else:
             return int(self.parent.x + val)
@@ -413,22 +473,6 @@ class BaseShape(AbstractShape):
             return int(self.parent.y + val + self.parent.height - self.height)
         else:
             return int(self.parent.y + val)
-
-    @property
-    def x_draw(self):
-        return self.x0 + self.padding_left
-
-    @property
-    def y_draw(self):
-        return self.y0 + self.padding_top
-
-    @property
-    def width_draw(self):
-        return self.x1 - self.padding_right
-
-    @property
-    def height_draw(self):
-        return self.y1 - self.padding_bottom
 
     @property
     def top(self):
@@ -482,6 +526,15 @@ class BaseShape(AbstractShape):
 
     @property
     @cached_result
+    def size(self):
+        return self.width, self.height
+
+    @property
+    def pos(self):
+        return Point(self.x, self.y)
+
+    @property
+    @cached_result
     def align_v(self):
         return self._eval_parameter('align_v', default=None)
 
@@ -500,50 +553,45 @@ class BaseShape(AbstractShape):
 
     @property
     def center(self):
-        return (
-            (self.x0 + self.x1) // 2,
-            (self.y0 + self.y1) // 2
+        return Point(
+            self.center_x,
+            self.center_y
         )
 
     @property
     @cached_result
+    def center_x(self):
+        return (self.x0 + self.x1) // 2
+
+    @property
+    @cached_result
+    def center_y(self):
+        return (self.y0 + self.y1) // 2
+
+    @property
+    def global_rotate(self):
+        """Rotation including parents rotation"""
+        return self.rotate + (self.parent.global_rotate if self.parent else 0)
+
+    @property
+    @cached_result
     def rotate(self):
-        return self._eval_parameter('rotate', default=0)# + (self.parent.rotate if self.parent else 0)
+        return self._eval_parameter('rotate', default=0)
 
     @property
     @cached_result
-    def rotate_pivot(self):
-        return self._eval_parameter('rotate_pivot', default=self.center)
+    def rotation_offset(self):
+        return self._eval_parameter('rotation_offset', default=False)
 
     @property
     @cached_result
-    def padding(self):
-        param = self._eval_parameter('padding', default=(0, 0, 0, 0))
-        if not isinstance(param, (list, tuple)):
-            raise TypeError('Padding parameter must be list or tuple')
-        if len(param) != 4:
-            raise ValueError('Padding parameter must be size = 4')
-        return tuple(map(int, param))
+    def rotation_pivot(self):
+        return Point(*self._eval_parameter('rotation_pivot', default=self.center))# + (self.parent.rotation_pivot if self.parent else 0)
 
-    @property
-    @cached_result
-    def padding_top(self):
-        return int(self._eval_parameter('padding_top', default=None) or self.padding[0])
-
-    @property
-    @cached_result
-    def padding_right(self):
-        return int(self._eval_parameter('padding_right', default=None) or self.padding[1])
-
-    @property
-    @cached_result
-    def padding_bottom(self):
-        return int(self._eval_parameter('padding_bottom', default=None) or self.padding[2])
-
-    @property
-    @cached_result
-    def padding_left(self):
-        return int(self._eval_parameter('padding_left', default=None) or self.padding[3])
+    def rotation_transform(self, point, ind=0):
+        point = Point(geometry_tools.rotate_point_around_point(point, self.rotation_pivot, -self.rotate))
+        rotated_by_parents = self.parent.rotation_transform(point, ind+2)
+        return rotated_by_parents
 
     @property
     @cached_result
@@ -553,10 +601,44 @@ class BaseShape(AbstractShape):
             clr = tuple(clr)
         return clr
 
+    @property
+    @cached_result
+    def gradient(self) -> dict:
+        gradient = self._eval_parameter('gradient', default=None)
+        if gradient is None:
+            return None
+        if isinstance(gradient, dict):
+            gradient = [gradient]
+        if not isinstance(gradient, list):
+            raise TypeError('Gradient parameter must be dict, list of dict or None')
+        gradient_list = []
+        for grad in gradient:
+            if not isinstance(grad, dict):
+                raise TypeError('Gradient parameter must be dict, list of dict or None')
+            if grad.get('type') not in ('linear', 'radial'):
+                raise ValueError('Gradient type must be "linear" or "radial"')
+            grad.setdefault('enabled', True)
+            grad.setdefault('use_gradient_alpha', False)
+            if grad.get('type') == 'linear':
+                grad.setdefault('point1', (0, 0))
+                grad.setdefault('point2', (0, 100))
+                grad.setdefault('color1', (255, 255, 255, 255))
+                grad.setdefault('color2', (0, 0, 0, 255))
+            else:
+                grad.setdefault('center', (50, 50))
+                grad.setdefault('radius', 50)
+                grad.setdefault('color1', (255, 255, 255, 255))
+                grad.setdefault('color2', (0, 0, 0, 255))
+            gradient_list.append(grad)
+        return gradient_list
+
     def get_resource_search_dirs(self):
         paths = self.variables.get('local_resource_paths') or []
         paths.extend(self.defaults.get('local_resource_paths') or [])
         paths.append(os.path.abspath(os.path.dirname(__file__)+'/../fonts'))
+        search_dirs_from_env = os.getenv('FRAMESTAMP_RESOURCE_DIR')
+        if search_dirs_from_env:
+            paths.extend(search_dirs_from_env.split(os.pathsep))
         return paths
 
     def get_resource_file(self, file_name):
@@ -573,21 +655,133 @@ class BaseShape(AbstractShape):
             func = self.context['variables'].get('get_resource_func')
             if func:
                 return func(file_name)
+        raise OSError('File not found: {}'.format(file_name))
+
+    def _get_render_sized_canvas(self):
+        side_size = int(self._compute_maximum_distance_from_center() * 2.2) + int(self.shape_canvas_offset()+2)
+        canvas_size = (side_size, side_size)
+        center = Point(side_size/2, side_size/2)
+        zero = Point((side_size-self.width) / 2, (side_size-self.height) / 2)
+        return self._get_canvas(canvas_size), canvas_size, center, zero
+
+    def shape_canvas_offset(self):
+        return 0
+
+    def _compute_maximum_distance_from_center(self):
+        return (self.width ** 2 + self.height ** 2) ** 0.5 / 2
+
+    def _draw_gradient(self, image, gradient: dict):
+        from ..utils.image_tools import get_gradient_renderer, mix_alpha_channels
+        # todo: need to optimize!
+        render = get_gradient_renderer(gradient['type'])
+        grad_img = render(size=(self.width, self.height), **gradient)
+        grad_canvas = Image.new('RGBA', image.size)
+        grad_canvas.paste(grad_img, self._debug_variables['zero_point'].int().tuple)
+        if gradient.get('use_gradient_alpha'):
+            # copy alpha
+            grad_alpha = grad_canvas.split()[-1].copy()
+        mix_alpha_channels(image, grad_canvas)
+        if gradient.get('use_gradient_alpha'):
+            # apply copied alpha
+            mix_alpha_channels(grad_alpha, image)
+        image.alpha_composite(grad_canvas)
+
+    def compute_rotation_offset(self):
+        x = y = 0
+        if self.rotate and self.rotation_offset:
+            points = [self.rotation_transform(pt) for pt in self.raw_bound]
+            if self.align_h == 'right':
+                max_x  = max([pt.x for pt in points])
+                x = max(0, max_x - self.parent.right)
+            elif self.align_h == 'left':
+                min_x = min([pt.x for pt in points])
+                x = min(0, min_x - self.parent.x)
+            if self.align_v == 'bottom':
+                max_y = max([pt.y for pt in points])
+                y = max(0, max_y - self.parent.bottom)
+            elif self.align_v == 'top':
+                min_y = min([pt.y for pt in points])
+                y = -max(0, self.parent.top - min_y)
+        return Point(x, y)
+
+    def draw_shape(
+            self, shape_canvas: Image.Image, canvas_size: tuple[int, int], center: Point, zero_point: Point, **kwargs
+        ):
+        """
+        Render shape on given canvas
+        """
+        raise NotImplementedError
+
+    def render(self, size, **kwargs):
+        """
+        Main function with full render process
+        """
+        if not self.is_enabled():
+            return self._get_canvas(size)
+        # get current shape canvas size including rotation
+        shape_canvas, canvas_size, center, zero_point = self._get_render_sized_canvas()
+        self._debug_variables['zero_point'] = zero_point
+        # draw base shape
+        shape_canvas = self.draw_shape(shape_canvas, canvas_size, center, zero_point) or shape_canvas
+        # gradient
+        if self.gradient:
+            for grad in self.gradient:
+                if grad['enabled']:
+                    self._draw_gradient(shape_canvas, grad)
+        if self.global_rotate:
+            # rotate around center
+            shape_canvas = shape_canvas.rotate(self.global_rotate, expand=False, center=(*center,), resample=BICUBIC)
+        # compute coords for pasting
+        global_pos = Point(self.x, self.y)
+        paste_pos = global_pos - zero_point
+        # compute transformation offset for rotated shape
+        pivot = Point(self.rotation_pivot)
+        paste_offset = self.center - self.rotation_transform(self.center) + self.compute_rotation_offset()
+        # move rotated shape
+        paste_pos -= paste_offset
+
+        # self debug draw ##############################
+        if self.debug:
+            self._render_debug(shape_canvas)
+        # return main image ###########################
+        yield shape_canvas, paste_pos.int()
+        # #################
+
+        # external debug draw ##########################
+        if self.debug:
+            if self.debug_options['rotation_pivot']:
+                pivot_image = self._render_debug_pivot()
+                if pivot_image:
+                    yield pivot_image, (pivot-(pivot_image.size[0]/2)).int()
+            if self.debug_options['parent']:
+                parent_image, parent_paste_pos = self._render_debug_parent(size, shape_canvas, paste_pos, rotation_pivot=center, **kwargs)
+                if parent_image:
+                    yield parent_image, parent_paste_pos
 
 
 class EmptyShape(BaseShape):
+    """
+    Just empty image
+    """
     shape_name = 'empty'
 
     def draw_shape(self, size, **kwargs):
-        return self._get_canvas(size)
+        return self._get_canvas(size) # TODO try size 1x1
 
 
 class RootParent(BaseShape):
+    """Empty Root parent shape"""
     def __init__(self, context, *args, **kwargs):
+        # don't call super class for dummy child (root parent). ALl data must be empty
         self._context = context
         self._data = {}
         self._parent = None
         self._debug_render = False
+        self.__cache__ = {}
+
+    @property
+    def z_index(self):
+        return 0
 
     def render(self, *args, **kwargs):
         pass
@@ -610,18 +804,13 @@ class RootParent(BaseShape):
     def height(self):
         return self.source_image.size[1]
 
+    def rotation_transform(self, point, *args, **kwargs):
+        return point
+
     @property
-    def padding_top(self):
+    def rotate(self):
         return 0
 
     @property
-    def padding_right(self):
-        return 0
-
-    @property
-    def padding_bottom(self):
-        return 0
-
-    @property
-    def padding_left(self):
+    def global_rotate(self):
         return 0

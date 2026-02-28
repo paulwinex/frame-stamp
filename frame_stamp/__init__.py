@@ -1,9 +1,13 @@
-import multiprocessing
-from pathlib import Path
 import logging
-from .stamp import FrameStamp
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
+from typing import Callable
+
 from PIL import Image
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+
+from .__version__ import __version__
+from .stamp import FrameStamp
 
 
 def process_sequence(src_dir: str, output_dir: str, template: dict, context: dict, file_pattern: str = '*.*',
@@ -28,7 +32,7 @@ def _executor_helper(kwargs):
         logging.exception('Render error')
 
 
-def run_single_thread(files, template, output_dir, context, context_callback, **kwargs):
+def run_single_thread(files: list[Path], template: dict, output_dir: str, context: dict, context_callback: Callable, **kwargs):
     for i, file in enumerate(files):
         render_single_frame(
             image_path=file,
@@ -40,8 +44,8 @@ def run_single_thread(files, template, output_dir, context, context_callback, **
         )
 
 
-def run_multiprocess(files, template, output_path, context, **kwargs):
-    # get cp count
+def run_multiprocess(files: list[Path], template: dict, output_path: str, context: dict, **kwargs):
+    # get cpu count
     callback = kwargs.get('context_callback')
     workers = kwargs.get('max_workers') or context.get('max_workers') or multiprocessing.cpu_count()
     logging.info(f'Use Multiprocess render ({workers} cpu)')

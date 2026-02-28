@@ -5,13 +5,15 @@ from ..utils import load_from_dotted
 from .base_shape import BaseShape
 # import all shapes
 from .rect import RectShape
+from .circle import CircleShape
 from .line import LineShape
+from .polygon import PolygonShape
 from .image import ImageShape
 from .label import LabelShape
 from .grid import GridShape
 from .row import RowShape
 from .column import ColumnShape
-# from .tile import TileShape
+from .tile import TileShape
 
 BASE_DIR = os.path.dirname(__file__)
 

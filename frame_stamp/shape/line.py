@@ -1,12 +1,17 @@
 from __future__ import absolute_import
-from .base_shape import BaseShape
-from PIL import ImageDraw
+
+from typing import Union
+
+from PIL import ImageDraw, Image
+
+from frame_stamp.shape.base_shape import BaseShape
 from frame_stamp.utils import cached_result
+from frame_stamp.utils.point import Point
 
 
 class LineShape(BaseShape):
     """
-    Линия
+    Simple line shape.
 
     Allowed parameters:
         points
@@ -17,89 +22,52 @@ class LineShape(BaseShape):
     default_width = 2
 
     @property
-    def padding(self):
-        raise AttributeError
-
-    @property
-    def padding_top(self):
-        raise AttributeError
-
-    @property
-    def padding_left(self):
-        raise AttributeError
-
-    @property
-    def padding_bottom(self):
-        raise AttributeError
-
-    @property
-    def padding_right(self):
-        raise AttributeError
-
-    @property
     @cached_result
-    def points(self):
+    def points(self) -> list[list]:
         return self._eval_parameter('points', default=[])
 
     @property
     @cached_result
-    def thickness(self):
+    def thickness(self) -> Union[int, float]:
         return int(self._eval_parameter('thickness', default=self.default_width))
 
     @property
     @cached_result
-    def joints(self):
+    def joints(self) -> bool:
         return self._eval_parameter('joints', default=True)
 
     @property
     @cached_result
-    def x(self):
+    def width(self) -> int:
         pts = self.points
         if pts:
-            _x = min([x[0] for x in pts])
-        else:
-            _x = 0
-        return _x + self.parent.x
-
-    @property
-    @cached_result
-    def y(self):
-        pts = self.points
-        if pts:
-            _y = min([x[1] for x in pts])
-        else:
-            _y = 0
-        return _y + self.parent.y
-
-    @property
-    @cached_result
-    def width(self):
-        pts = self.points
-        if pts:
-            w = max([x[0] for x in pts])
+            max_x = max([x[0] for x in pts])
+            w = max_x
         else:
             w = 0
-        return w + self.parent.x - self.x
+        return w
 
     @property
     @cached_result
-    def height(self):
+    def height(self) -> int:
         pts = self.points
         if pts:
-            h = max([x[1] for x in pts])
+            max_y = max([x[1] for x in pts])
+            h = max_y
         else:
             h = 0
-        return h + self.parent.y - self.y
+        return h
 
-    def draw_shape(self, size, **kwargs):
-        canvas = self._get_canvas(size)
+    def draw_shape(
+            self, shape_canvas: Image.Image, canvas_size: tuple[int, int], center: Point, zero_point: Point, **kwargs
+        ) -> None:
         pts = self.points
         if pts:
             pts = tuple(tuple([self._eval_parameter_convert('', c) for c in x]) for x in pts)
-            img = ImageDraw.Draw(canvas)
+            pts = [(Point(*pt) + zero_point).tuple for pt in pts]
+            img = ImageDraw.Draw(shape_canvas)
             img.line(pts, width=self.thickness, fill=self.color)
             if self.joints:
                 for (x, y) in pts:
-                    img.ellipse(((x - self.thickness/2)+1, (y - self.thickness/2)+1,
-                                 (x + self.thickness/2)-1, (y + self.thickness/2)-1), fill=self.color)
-        return canvas
+                    img.ellipse(((x - self.thickness / 2) + 1, (y - self.thickness / 2) + 1,
+                                 (x + self.thickness / 2) - 1, (y + self.thickness / 2) - 1), fill=self.color)

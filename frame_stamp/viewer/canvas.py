@@ -1,6 +1,6 @@
-from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
+from PySide6.QtWidgets import *
 
 
 class Canvas(QWidget):
@@ -9,15 +9,16 @@ class Canvas(QWidget):
         self.image = None
         self.path = None
 
-    def set_image(self, path):
+    def set_image(self, path: str):
         self.path = path
         pix = QPixmap(path)
         self.image = pix
         self.repaint()
 
-    def paintEvent(self, event):
+    def paintEvent(self, event: QPaintEvent):
         painter = QPainter()
         painter.begin(self)
+        painter.setRenderHint(QPainter.Antialiasing)
         painter.fillRect(event.rect(), QColor('#646565'))
         if self.image:
             size = QSize(

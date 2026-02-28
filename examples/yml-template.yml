@@ -1,0 +1,19 @@
+name: test
+shapes:
+
+  - type: label
+    text: YAML Template Example
+    align_v: center
+    align_h: center
+    font_size: 74
+    font_color: "#ffffff"
+    backdrop: black
+
+  - type: label
+    text: "(PyYaml package is required)"
+    align_h: center
+    align_v: bottom
+    font_size: "2p"
+    text_color: "#ddd"
+    y: -20
+

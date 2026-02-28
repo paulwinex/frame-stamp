@@ -1,16 +1,17 @@
 Frame Stamp
 -----------
 
-Пакет для добавления информации на кадры используя шаблон и контекст с переменными.
+Библиотека для добавления информации на кадры используя шаблон и контекст с переменными.
 
 Установка
 =========
 
-Добавление в проект с помощью `poetry`
+Добавление в проект с помощью `poetry` или `uv`
 
 .. code-block:: bash
 
-   poetry add https://github.com/paulwinex/frame-stamp.git
+   poetry add https://github.com/paulwinex/frame-stamp.git#version
+   uv add https://github.com/paulwinex/frame-stamp.git#version
 
 Локальная разработка и запуск
 
@@ -43,6 +44,19 @@ Frame Stamp
    viewer
    shapes/index
    expressions
+   environment_variables
    development
+   debug
    tricks
    faq
+
+
+TODO
+---
+
+- alignment for grid
+- add templates in yaml and py format
+- limit column with
+- fit ceil content
+- Gradient fill
+- Template Designer UI

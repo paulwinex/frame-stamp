@@ -1,0 +1,37 @@
+{
+  "templates": [
+    {
+      "defaults": {
+        "font_size": "5p",
+        "text1_color": [255, 0, 100, 100],
+        "text2_color": [255, 255, 0, 100]
+      },
+      "variables": {
+        "studio_name": "MyStudio"
+      },
+      "shapes": [
+        {
+          "type": "tile",
+          "grid_rotate": 45,
+          "tile_width": 250,
+          "tile_height": 150,
+          "row_offset": 250,
+          "shapes": [
+            {
+              "type": "label", "text": "$studio_name",
+              "text_color": "$text1_color",
+              "align_h": "center", "align_v": "center",
+              "font_size": "$font_size"
+            },
+            {
+              "type": "label", "text": "DEMO",
+              "text_color": "$text2_color",
+              "align_h": "center", "align_v": "center",
+              "font_size": "$font_size"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
